@@ -251,12 +251,26 @@ def main():
         input_tokens = 0
         output_tokens = 0
         
-        # Regex for tokens (looking for "X input tokens, Y output tokens")
-        token_match = re.search(r"(\d+,?\d*)\s*input tokens,\s*(\d+,?\d*)\s*output tokens", output_text)
+        # More robust regex for tokens
+        token_match = re.search(r"(\d+(?:,\d+)*)\s*input tokens,\s*(\d+(?:,\d+)*)\s*output tokens", output_text)
+        if not token_match:
+            # Try a simpler match if the first one fails
+            token_match = re.search(r"input tokens:\s*(\d+).*output tokens:\s*(\d+)", output_text, re.IGNORECASE | re.DOTALL)
+            
         if token_match:
-            input_tokens = int(token_match.group(1).replace(",", ""))
-            output_tokens = int(token_match.group(2).replace(",", ""))
-            log(f"({agent_name}): Captured usage - {input_tokens} in, {output_tokens} out.")
+            try:
+                input_tokens = int(token_match.group(1).replace(",", ""))
+                output_tokens = int(token_match.group(2).replace(",", ""))
+                log(f"({agent_name}): Captured usage - {input_tokens} in, {output_tokens} out.")
+            except (ValueError, IndexError):
+                log(f"({agent_name}): Failed to parse token counts from match.")
+
+        # Check for TASKS.md bloat
+        if os.path.exists(tasks_path):
+            with open(tasks_path, "r") as f:
+                task_lines = f.readlines()
+                if len(task_lines) > 200:
+                    log(f"WARNING ({agent_name}): {tasks_path} is getting large ({len(task_lines)} lines). Consider archiving completed tasks.")
 
         # Update BILLING.md
         if os.path.exists(billing_path) and os.access(billing_path, os.W_OK):
