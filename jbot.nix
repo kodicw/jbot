@@ -34,35 +34,21 @@ in
           lib.makeBinPath [
             pkgs.coreutils
             pkgs.bash
+            pkgs.procps
+            pkgs.nix
             pkgs.git
             pkgs.gh
             pkgs.curl
             pkgs.findutils
             pkgs.gnused
             pkgs.gawk
-            cfg.geminiPackage
-            pkgs.python3
             pkgs.jq
             pkgs.nixfmt-rfc-style
             pkgs.statix
+            cfg.geminiPackage
+            pkgs.python3
           ]
         }";
-        # Sandboxing
-        ProtectSystem = "strict";
-        ProtectHome = "read-only";
-        PrivateTmp = true;
-        NoNewPrivileges = true;
-        CapabilityBoundingSet = "";
-        # Bind project directory as writable
-        BindPaths = [ cfg.projectDir ];
-        # Bind essential paths as read-only
-        BindReadOnlyPaths = [
-          "/nix/store"
-          "/etc/ssl/certs"
-          "/etc/static/charsets"
-          "/etc/resolv.conf"
-          "/etc/hosts"
-        ];
         ExecStart = "${pkgs.writeShellScript "jbot-loop" ''
           set -euo pipefail
 
@@ -122,11 +108,18 @@ in
 
           # Run gemini in YOLO mode directly; it will use its tools to modify the project.
           echo "[$(date)] JBot: Invoking Gemini CLI..."
-          ${pkgs.gemini-cli}/bin/gemini -y -p "$(cat "$PREPARED_PROMPT")"
+          ${cfg.geminiPackage}/bin/gemini -y -p "$(cat "$PREPARED_PROMPT")"
 
           echo "[$(date)] JBot: Execution loop finished."
         ''}";
         WorkingDirectory = cfg.projectDir;
+
+        # Sandboxing
+        ProtectSystem = "strict";
+        ProtectHome = "read-only";
+        PrivateTmp = true;
+        ReadOnlyPaths = [ "/" ];
+        BindPaths = [ cfg.projectDir ];
       };
     };
 

@@ -16,10 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented `.memory_queue.json` to `.memory.log` persistence loop.
 - Added `.project_goal` file for dynamic project objective management.
 - Improved Python context injection using environment variables for robustness.
-- **Added `nixfmt` and `statix` to the JBot environment.**
-- **Added `geminiPackage` option to the JBot module for flexibility.**
-- **Enhanced execution loop with `trap` for cleanup and better logging.**
-- **Added `gemini-cli`, `python3`, and `jq` to the development shell.**
+- Added `nixfmt` and `statix` to the JBot environment.
+- Added `geminiPackage` option to the JBot module for flexibility.
+- Enhanced execution loop with `trap` for cleanup and better logging.
+- Added `gemini-cli`, `python3`, and `jq` to the development shell.
+- **Added NixOS tests to verify module behavior and sandboxing.**
+
 
 ### Changed
 - Refactored project documentation to match JBot's identity.
