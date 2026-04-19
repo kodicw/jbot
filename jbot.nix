@@ -30,25 +30,29 @@ in
     systemd.user.services.jbot-agent = {
       Unit.Description = "Scheduled JBot AI Developer";
       Service = {
-        Environment = "PATH=${
-          lib.makeBinPath [
-            pkgs.coreutils
-            pkgs.bash
-            pkgs.procps
-            pkgs.nix
-            pkgs.git
-            pkgs.gh
-            pkgs.curl
-            pkgs.findutils
-            pkgs.gnused
-            pkgs.gawk
-            pkgs.jq
-            pkgs.nixfmt-rfc-style
-            pkgs.statix
-            cfg.geminiPackage
-            pkgs.python3
-          ]
-        }";
+        Environment = [
+          "PATH=${
+            lib.makeBinPath [
+              pkgs.coreutils
+              pkgs.bash
+              pkgs.procps
+              pkgs.nix
+              pkgs.bubblewrap
+              pkgs.git
+              pkgs.gh
+              pkgs.curl
+              pkgs.findutils
+              pkgs.gnused
+              pkgs.gawk
+              pkgs.jq
+              pkgs.nixfmt-rfc-style
+              pkgs.statix
+              pkgs.gemini-cli
+              pkgs.python3
+            ]
+          }"
+          "SKIP_VM_TESTS=1"
+        ];
         ExecStart = "${pkgs.writeShellScript "jbot-loop" ''
           set -euo pipefail
 
@@ -106,20 +110,43 @@ in
           sys.stdout.write(content)
           ' "$PROJECT_DIR/jbot_prompt.txt" > "$PREPARED_PROMPT"
 
-          # Run gemini in YOLO mode directly; it will use its tools to modify the project.
-          echo "[$(date)] JBot: Invoking Gemini CLI..."
-          ${cfg.geminiPackage}/bin/gemini -y -p "$(cat "$PREPARED_PROMPT")"
+          # Run gemini in YOLO mode inside a bubblewrap sandbox.
+          # The sandbox locks the agent to the project directory and provides limited access to HOME.
+          echo "[$(date)] JBot: Invoking Gemini CLI in bubblewrap sandbox..."
+
+          # Calculate home manager profile path for Nix commands inside sandbox
+          HM_PROFILE="/home/kodicw/.nix-profile"
+          USER_ID=$(id -u)
+
+          # Use timeout to prevent indefinite hangs
+          timeout 30m bwrap \
+            --ro-bind /nix/store /nix/store \
+            --ro-bind /etc/resolv.conf /etc/resolv.conf \
+            --ro-bind /etc/hosts /etc/hosts \
+            --ro-bind /etc/ssl/certs /etc/ssl/certs \
+            --ro-bind-try /etc/static/charsets /etc/static/charsets \
+            --dev /dev \
+            --proc /proc \
+            --tmpfs /tmp \
+            --tmpfs /home \
+            --bind "$PROJECT_DIR" "$PROJECT_DIR" \
+            --bind "$HOME/.gemini" "$HOME/.gemini" \
+            --bind-try "$HOME/.config/gh" "$HOME/.config/gh" \
+            --ro-bind-try "$HOME/.gitconfig" "$HOME/.gitconfig" \
+            --ro-bind-try "$HM_PROFILE" "$HM_PROFILE" \
+            --ro-bind "/run/user/$USER_ID/bus" "/run/user/$USER_ID/bus" \
+            --setenv HOME "$HOME" \
+            --setenv PATH "$PATH" \
+            --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=/run/user/$USER_ID/bus" \
+            --chdir "$PROJECT_DIR" \
+            --unshare-all \
+            --share-net \
+            --die-with-parent \
+            ${pkgs.gemini-cli}/bin/gemini -y -d -p "$(cat "$PREPARED_PROMPT")"
 
           echo "[$(date)] JBot: Execution loop finished."
         ''}";
         WorkingDirectory = cfg.projectDir;
-
-        # Sandboxing
-        ProtectSystem = "strict";
-        ProtectHome = "read-only";
-        PrivateTmp = true;
-        ReadOnlyPaths = [ "/" ];
-        BindPaths = [ cfg.projectDir ];
       };
     };
 

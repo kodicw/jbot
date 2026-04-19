@@ -35,6 +35,7 @@ Since JBot is a Home Manager module, validation typically involves:
 1.  Checking Nix syntax: `nix-instantiate --parse <file.nix>`
 2.  Applying the module in a local Home Manager configuration.
 3.  Verifying the generated systemd unit: `systemctl --user cat jbot-agent.service`
+4.  Running the comprehensive NixOS test: `nix flake check`
 
 ## Development Conventions
 

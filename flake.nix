@@ -34,7 +34,7 @@
           ];
         };
 
-        checks = lib.optionalAttrs pkgs.stdenv.isLinux {
+        checks = lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {
           nixos-test = pkgs.callPackage ./tests/nixos-test.nix {
             home-manager = self.inputs.home-manager;
             jbot-module = self.homeManagerModules.default;

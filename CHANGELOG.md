@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `geminiPackage` option to the JBot module for flexibility.
 - Enhanced execution loop with `trap` for cleanup and better logging.
 - Added `gemini-cli`, `python3`, and `jq` to the development shell.
+- **Added comprehensive NixOS tests to verify prompt injection and memory persistence using a mock Gemini CLI.**
 - **Added NixOS tests to verify module behavior and sandboxing.**
 
 
