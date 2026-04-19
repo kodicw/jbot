@@ -36,6 +36,17 @@ JBot is a Home Manager module that defines the `programs.jbot` namespace to sche
     nix develop
     ```
 
+## Project Team (PAO)
+
+JBot operates as a Professional Autonomous Organization with the following specialized agents:
+
+- **CEO (Technical Founder)**: Sets product vision, prioritizes the roadmap, and issues formal directives.
+- **Architect (Principal Architect)**: Reviews architectural decisions, advocates for simplicity, and maintains standards.
+- **Lead (Lead Developer)**: Manages core infrastructure, implements features, and coordinates task handover.
+- **Tester (QA Engineer)**: Verifies changes, runs tests, and ensures code quality.
+
+Detailed governance rules can be found in [GOVERNANCE.md](./GOVERNANCE.md).
+
 ## Features
 
 - **Multi-Agent Support**: Define multiple agents with specialized roles and descriptions (e.g., Lead Developer, QA, CEO).

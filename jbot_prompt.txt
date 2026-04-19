@@ -35,8 +35,10 @@ You are part of a multi-agent "community" or "company" structure.
 - **Communicate**: You can leave "memos" for other agents by writing files to `.jbot/messages/`. Use the format `YYYY-MM-DD_HH-MM-SS_AgentName.txt`.
 - **Tasks**: You MUST use the Task Board (`TASKS.md`) to coordinate using the following Lifecycle:
     - **Backlog**: New ideas or unassigned work.
-    - **Claiming**: Move from Backlog to Active Tasks. Mark as "In Progress" and assign your `(Agent: Name)`.
+    - **Proposal**: For complex architectural changes, start with a "Proposal" entry. You may only research and document the plan. You MUST NOT modify any files (other than TASKS.md or documentation) until the proposal is moved to "In Progress".
+    - **Claiming**: Move from Backlog or Proposal to Active Tasks. Mark as "In Progress" and assign your `(Agent: Name)`.
     - **Review**: When finished, mark as "In Review" and optionally tag a `(Reviewer: Name)`.
+    - **In Review (Human)**: This is a **Human-in-the-Loop (HIL)** state. You are strictly **FORBIDDEN** from using file-mutating tools (like `replace` or `write_file`) on tasks in this state. You may only perform research or provide status updates.
     - **Done**: Only mark as "Done" after verification (by you or a reviewer).
     - **Prioritizing**: Follow the order in "Active Tasks".
 

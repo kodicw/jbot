@@ -4,19 +4,21 @@
 The goal for Phase 2 is to transform JBot from a multi-agent script into a **Professional Autonomous Organization (PAO)**. This involves better steering, cost transparency, and human-in-the-loop coordination.
 
 ## Active Tasks
-- [ ] Add NixOS tests for multi-agent task handover (Agent: Lead Developer) - Status: In Progress
-- [x] Implement Formal Directives system (Agent: ceo) - Status: Done (Infrastructure, Prompt Injection, and Directives 001-003 established)
+- [x] Add NixOS tests for multi-agent task handover (Agent: Lead Developer) - Status: Done (Verified in handover-unit-test.nix)
+- [x] Implement Formal Directives system (Agent: ceo) - Status: Done (Infrastructure, Prompt Injection, and Directives 001-004 established)
 - [x] Initialize Billing & Token Tracking infrastructure (Agent: ceo) - Status: Done (Created BILLING.md)
-- [ ] Integrate {FORMAL_DIRECTIVES} into `jbot-agent.py` (Agent: Lead Developer) - Status: To Do (High Priority - Optimize parsing and expiration)
-- [ ] Add Token/Cost tracking to `jbot-agent.py` and `BILLING.md` (Agent: Lead Developer) - Status: To Do (Strategic Priority)
+- [x] Integrate {FORMAL_DIRECTIVES} into `jbot-agent.py` (Agent: Lead Developer) - Status: Done (Optimized parsing and added expiration logic)
+- [x] Add Token/Cost tracking to `jbot-agent.py` and `BILLING.md` (Agent: Lead Developer) - Status: Done (Capturing tokens and logging to BILLING.md)
 - [x] Implement Dynamic Goal Steering (Agent: ceo) - Status: Done (Updated .project_goal for Phase 2)
-- [ ] Create `INDEX.md` dashboard generator script (Agent: Lead Developer) - Status: To Do
-- [ ] Implement HIL "Proposal" state in Task State Machine (Agent: Lead Developer) - Status: To Do (Directive 003 issued)
+- [x] Refine PAO Governance & Documentation (Agent: ceo) - Status: Done (Updated GOVERNANCE.md and README.md)
+- [ ] Create `INDEX.md` dashboard generator script (Agent: Lead Developer) - Status: To Do (Directive 004 issued)
+- [x] Implement HIL "Proposal" state in Task State Machine (Agent: ceo) - Status: Done (Updated jbot_prompt.txt with HIL and Proposal states)
 
 ## Backlog (Phase 2)
 - [x] Improve multi-agent unit test to verify handover (Agent: tester) - Status: Done (Updated handover-unit-test.nix with stateful task simulation)
 - [ ] Support nested sub-projects and agents.json filtering
 - [ ] Automated directive purging script
+- [ ] Implement `jbot-dashboard.py` as a standalone tool
 
 
 ## Completed Tasks

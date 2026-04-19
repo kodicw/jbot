@@ -1,44 +1,42 @@
-# Infrastructure Governance Model
+# Professional Autonomous Organization (PAO) Governance
 
-This document outlines the decision-making process for this repository and the infrastructure standards it defines.
+This document outlines the decision-making process for JBot as a Professional Autonomous Organization.
 
-## Goals
+## PAO Vision
+JBot operates as a decentralized, multi-agent entity focused on infrastructure automation. We prioritize operational transparency, strategic steering, and human-in-the-loop coordination.
 
-1.  **Stability**: Ensure that changes do not break existing deployments or environments.
-2.  **Reproducibility**: Maintain the "pure" and declarative nature of system and container configurations.
-3.  **Transparency**: Make it clear how and why decisions are made.
-4.  **Security**: Prioritize secure-by-default configurations across all layers (OS, Container, App).
+## Roles & Responsibilities
 
-## Roles
+### Technical Founder (CEO)
+- **Vision:** Sets the high-level product vision and long-term goals.
+- **Steering:** Issues Formal Directives and updates the `.project_goal`.
+- **Roadmap:** Prioritizes the `TASKS.md` board.
 
-### Maintainers
+### Principal Architect
+- **Critique:** Reviews architectural decisions and advocates for simplicity.
+- **Standards:** Defines engineering standards and core infrastructure patterns.
 
-Maintainers have write access to the repository and are responsible for reviewing and merging pull requests. They ensure that all contributions align with our [Engineering Standards](./CONTRIBUTING.md).
+### Lead Developer
+- **Execution:** Manages the core JBot infrastructure and implements key features.
+- **Coordination:** Oversees task handover and agent synchronization.
 
-### Contributors
-
-Anyone who submits a pull request or opens an issue. Contributors must follow the [Code of Conduct](./CODE_OF_CONDUCT.md) and the contribution guidelines.
+### QA Engineer (Tester)
+- **Verification:** Runs tests, reports regressions, and ensures code quality.
+- **Validation:** Verifies that architectural changes meet the defined criteria.
 
 ## Decision Process
 
-### Infrastructure Standards
+### Strategic Steering (Directives)
+The CEO and Lead Developer can issue **Formal Directives** via `.jbot/directives/`. These carry maximum precedence in agent prompts.
+- Directives follow the `NNN_YYYY-MM-DD_Topic.md` naming convention.
+- Directives automatically expire or are purged to prevent "Directive Bloat".
 
-Changes to our core agent infrastructure (e.g., our Home Manager module structure, system prompt configuration, or sandboxing patterns) follow a "Proposal" process:
+### Task State Machine
+Agents use `TASKS.md` for coordination. Tasks follow a lifecycle:
+`Backlog` -> `To Do` -> `In Progress` -> `In Review (Human)` -> `Done`.
 
-1.  **Draft**: A contributor opens an issue or a draft PR with the proposal.
-2.  **Review**: Maintainers and the community provide feedback.
-3.  **RFC**: For major changes, we may request a more formal Request for Comments (RFC).
-4.  **Approval**: At least two maintainers must approve the proposal.
-5.  **Implementation**: Once approved, the change is implemented and documented.
+### Human-in-the-Loop (HIL)
+Tasks marked `In Review (Human)` require manual approval before final implementation. Agents are forbidden from modifying critical infrastructure files while a task is in this state.
 
-### Template Updates
-
-Minor updates to templates (e.g., dependency bumps, bug fixes) follow the standard [Pull Request Process](./CONTRIBUTING.md#6-pull-request-process).
-
-## Conflict Resolution
-
-In the event of a disagreement, the final decision rests with the lead maintainer. We strive for consensus, but progress should not be blocked indefinitely.
-
-## Meeting Cadence
-
-If needed, maintainers will hold a monthly "Infrastructure Sync" to discuss long-term roadmap items. Notes will be published in the repository under an appropriate documentation directory (e.g., `docs/meetings/`).
+## Resource Management
+Token usage and estimated costs are tracked in `BILLING.md`. The PAO strives for cost-efficiency and transparent resource allocation.

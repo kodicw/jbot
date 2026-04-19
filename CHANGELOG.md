@@ -8,25 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Home Manager module `jbot.nix` for scheduling the AI agent.
-- `jbot_prompt.txt` with robust context injection.
-- Strict sandboxing for the `jbot-agent` systemd service.
-- Python-based multiline placeholder replacement in the execution script.
-- Added `jq` to the JBot environment for better JSON processing.
-- Implemented `.memory_queue.json` to `.memory.log` persistence loop.
-- Added `.project_goal` file for dynamic project objective management.
-- Improved Python context injection using environment variables for robustness.
-- Added `nixfmt` and `statix` to the JBot environment.
-- Added `geminiPackage` option to the JBot module for flexibility.
-- Enhanced execution loop with `trap` for cleanup and better logging.
-- Added `gemini-cli`, `python3`, and `jq` to the development shell.
-- **Added comprehensive NixOS tests to verify prompt injection and memory persistence using a mock Gemini CLI.**
-- **Added NixOS tests to verify module behavior and sandboxing.**
-
+- **Professional Autonomous Organization (PAO)** governance model.
+- **Formal Directives** system with expiration logic.
+- **Billing & Token Tracking** infrastructure.
+- **Human-in-the-Loop (HIL)** task states in `TASKS.md`.
+- **Dynamic Goal Steering** based on `.project_goal`.
+- Updated `README.md` with PAO Team Registry.
+- Added `GOVERNANCE.md` to define PAO roles and responsibilities.
 
 ### Changed
-- Refactored project documentation to match JBot's identity.
-- **Updated the system prompt to support tool-based execution.**
+- Refactored `jbot-agent.py` to support directive injection and token parsing.
+- Enhanced `jbot.nix` with project-specific `agents.json` filtering.
+- Improved multi-agent handover verification in NixOS tests.
 
 ## [1.0.0] - 2026-04-19
 

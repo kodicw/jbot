@@ -33,9 +33,11 @@ let
         fi
         # Simulate agent1 updating TASKS.md to assign task to agent2
         echo "- [ ] Test task handover (Agent: agent2)" >> TASKS.md
-        # Simulate agent1 issuing a directive
+        # Simulate agent1 issuing a directive that is NOT expired
         mkdir -p .jbot/directives
-        echo "Strictly follow the handover protocol." > .jbot/directives/2026-04-19_protocol.txt
+        echo "Strictly follow the handover protocol." > .jbot/directives/2099-01-01_protocol.txt
+        # Simulate an expired directive
+        echo "Old instruction." > .jbot/directives/2000-01-01_old.txt
         ;;
       agent2)
         # Verify it sees the task
@@ -43,13 +45,21 @@ let
            echo "Error: agent2 did not see its task in prompt"
            exit 1
         fi
-        # Verify it sees the directive
+        # Verify it sees the active directive
         if ! echo "$PROMPT" | grep -q "Strictly follow the handover protocol."; then
-           echo "Error: agent2 did not see the directive in prompt"
+           echo "Error: agent2 did not see the active directive in prompt"
+           exit 1
+        fi
+        # Verify it does NOT see the expired directive
+        if echo "$PROMPT" | grep -q "Old instruction."; then
+           echo "Error: agent2 saw an expired directive in prompt"
            exit 1
         fi
         ;;
     esac
+
+    # Simulate token output
+    echo "Usage: 1,000 input tokens, 500 output tokens (1,500 total)"
 
     echo '{"scope": "local", "status": "success", "summary": "Finished work as '$AGENT_NAME'", "next_step": "None"}' > "$MEMORY_OUTPUT"
   '';
@@ -71,13 +81,14 @@ pkgs.runCommand "jbot-handover-unit-test"
   # Initial files
   echo "Goal: Test multi-agent handover and directives" > .project_goal
   echo "# Task Board" > TASKS.md
+  echo "# Billing" > BILLING.md
   mkdir -p .jbot
   echo '{"agent1": {"role": "Lead Dev", "description": "Lead Developer", "projectDir": "'$PROJECT_DIR'"}, "agent2": {"role": "QA", "description": "QA Engineer", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
 
   export PROMPT_FILE="${jbot-prompt-txt}"
   export GEMINI_PACKAGE="gemini"
 
-  # 1. Run agent1 - it will create a task for agent2 and a directive
+  # 1. Run agent1 - it will create a task for agent2 and directives
   export AGENT_NAME="agent1"
   export AGENT_ROLE="Lead Dev"
   export AGENT_DESCRIPTION="Lead Developer"
@@ -89,12 +100,19 @@ pkgs.runCommand "jbot-handover-unit-test"
     exit 1
   fi
 
-  if [ ! -f .jbot/directives/2026-04-19_protocol.txt ]; then
+  if [ ! -f .jbot/directives/2099-01-01_protocol.txt ]; then
     echo "Error: directive was not created by agent1"
     exit 1
   fi
 
-  # 2. Run agent2 - it should see agent1's task and directive in its prompt
+  # Check BILLING.md for agent1
+  if ! grep -q "agent1 | 1000/500" BILLING.md; then
+    echo "Error: BILLING.md not updated for agent1"
+    cat BILLING.md
+    exit 1
+  fi
+
+  # 2. Run agent2 - it should see agent1's task and active directive in its prompt
   export AGENT_NAME="agent2"
   export AGENT_ROLE="QA"
   export AGENT_DESCRIPTION="QA Engineer"
@@ -107,6 +125,13 @@ pkgs.runCommand "jbot-handover-unit-test"
     exit 1
   fi
 
-  echo "Multi-agent handover and directives test passed!"
+  # Check BILLING.md for agent2
+  if ! grep -q "agent2 | 1000/500" BILLING.md; then
+    echo "Error: BILLING.md not updated for agent2"
+    cat BILLING.md
+    exit 1
+  fi
+
+  echo "Multi-agent handover, directives, and billing test passed!"
   touch $out
 ''

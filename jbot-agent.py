@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
 import os
 import sys
 import json
 import subprocess
 import tempfile
+import re
 from datetime import datetime
 
 def log(msg):
@@ -112,10 +112,28 @@ def main():
         dir_files = sorted([f for f in os.listdir(dir_path) if f.endswith((".txt", ".md")) and f != "README.md"])
         if dir_files:
             dir_list = []
+            today = datetime.now().strftime("%Y-%m-%d")
             for df in dir_files:
-                with open(os.path.join(dir_path, df), "r") as f:
-                    dir_list.append(f"--- Directive {df} ---\n{f.read()}")
-            directives = "\n".join(dir_list)
+                # Check for expiration if filename starts with YYYY-MM-DD
+                is_expired = False
+                if len(df) >= 10 and df[4] == '-' and df[7] == '-':
+                    try:
+                        exp_date = df[:10]
+                        if today > exp_date:
+                            is_expired = True
+                            log(f"({agent_name}): Directive {df} has expired.")
+                    except:
+                        pass
+                
+                if not is_expired:
+                    try:
+                        with open(os.path.join(dir_path, df), "r") as f:
+                            dir_list.append(f"--- Directive {df} ---\n{f.read()}")
+                    except Exception as e:
+                        log(f"Error reading directive {df}: {e}")
+            
+            if dir_list:
+                directives = "\n".join(dir_list)
 
     # Read and replace prompt
     with open(prompt_file, "r") as f:
@@ -146,12 +164,61 @@ def main():
 
     log(f"({agent_name}): Invoking Gemini CLI...")
     
-    # We use the environment PATH which should already be set up by bubblewrap/systemd
+    # Capture output for token tracking while still showing real-time logs
+    full_output = []
     try:
-        subprocess.run([gemini_pkg, "-y", "-d", "-p", prompt_content], check=True)
-    except subprocess.CalledProcessError as e:
-        log(f"Error: Gemini CLI failed with exit code {e.returncode}")
-        sys.exit(e.returncode)
+        process = subprocess.Popen([gemini_pkg, "-y", "-d", "-p", prompt_content], 
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        
+        for line in process.stdout:
+            print(line, end="", flush=True)
+            full_output.append(line)
+        
+        process.wait()
+        if process.returncode != 0:
+            log(f"Error: Gemini CLI failed with exit code {process.returncode}")
+            sys.exit(process.returncode)
+
+        # Parse tokens from output
+        output_text = "".join(full_output)
+        input_tokens = 0
+        output_tokens = 0
+        
+        # Regex for tokens (looking for "X input tokens, Y output tokens")
+        token_match = re.search(r"(\d+,?\d*)\s*input tokens,\s*(\d+,?\d*)\s*output tokens", output_text)
+        if token_match:
+            input_tokens = int(token_match.group(1).replace(",", ""))
+            output_tokens = int(token_match.group(2).replace(",", ""))
+            log(f"({agent_name}): Captured usage - {input_tokens} in, {output_tokens} out.")
+
+        # Update BILLING.md
+        if os.path.exists("BILLING.md"):
+            try:
+                task_name = "Automated Task"
+                if os.path.exists("TASKS.md"):
+                    with open("TASKS.md", "r") as f:
+                        for line in f:
+                            if "In Progress" in line and f"(Agent: {agent_name})" in line:
+                                parts = line.split("] ")
+                                if len(parts) > 1:
+                                    task_name = parts[1].split(" (Agent:")[0].strip()
+                                break
+                
+                today_str = datetime.now().strftime("%Y-%m-%d")
+                total_tokens = input_tokens + output_tokens
+                # Dummy cost calculation: $1.00 per 1M tokens
+                cost = (total_tokens / 1_000_000) * 1.0
+                
+                with open("BILLING.md", "a") as f:
+                    f.write(f"| {today_str} | {agent_name} | {input_tokens}/{output_tokens} | ${cost:.4f} | {task_name} |\n")
+                
+                log(f"({agent_name}): Updated BILLING.md")
+            except Exception as e:
+                log(f"Error updating BILLING.md: {e}")
+
+    except Exception as e:
+        log(f"Error: Execution failed: {e}")
+        sys.exit(1)
     finally:
         if os.path.exists(prepared_prompt_path):
             os.remove(prepared_prompt_path)
