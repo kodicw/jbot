@@ -42,6 +42,17 @@ pkgs.runCommand "jbot-unit-test"
     cp ${jbot-dashboard-py} jbot-dashboard.py
     echo "Goal: Test the unit test" > .project_goal
     echo "# Task Board" > TASKS.md
+    echo "- [x] Task 1" >> TASKS.md
+    echo "# Billing & Token Tracking" > BILLING.md
+    echo "| Date | Agent | Tokens | Cost | Task |" >> BILLING.md
+    echo "|------|-------|--------|------|------|" >> BILLING.md
+    echo "| 2026-04-19 | dev | 100/200 | $0.0003 | Task 1 |" >> BILLING.md
+    echo "" >> BILLING.md
+    echo "## Summary" >> BILLING.md
+    echo "- **Total Estimated Cost:** $0.0000" >> BILLING.md
+    echo "- **Total Tokens:** 0" >> BILLING.md
+    echo "- **Last Updated:** 2026-04-19" >> BILLING.md
+
     mkdir -p .jbot/directives
     echo "This is a test directive" > .jbot/directives/001_test.txt
     mkdir -p .jbot
@@ -84,6 +95,12 @@ pkgs.runCommand "jbot-unit-test"
 
     if ! grep -q "JBot PAO Dashboard" INDEX.md; then
       echo "Error: INDEX.md content incorrect"
+      exit 1
+    fi
+
+    # Check for ROI/Cost metrics
+    if ! grep -q "Resource Health & ROI" INDEX.md; then
+      echo "Error: ROI section missing in INDEX.md"
       exit 1
     fi
 

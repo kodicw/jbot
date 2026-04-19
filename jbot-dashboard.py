@@ -4,15 +4,32 @@ import re
 import argparse
 from datetime import datetime
 
+def find_file_upwards(filename, start_dir):
+    current = os.path.abspath(start_dir)
+    while True:
+        target = os.path.join(current, filename)
+        if os.path.exists(target):
+            return target
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    return None
+
 def generate_dashboard(output_file="INDEX.md", project_dir="."):
     os.chdir(project_dir)
     dashboard_content = "# JBot PAO Dashboard\n\n"
     dashboard_content += f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
 
+    # Find core files upwards
+    goal_path = find_file_upwards(".project_goal", project_dir)
+    tasks_path = find_file_upwards("TASKS.md", project_dir)
+    billing_path = find_file_upwards("BILLING.md", project_dir)
+    changelog_path = find_file_upwards("CHANGELOG.md", project_dir)
+
     # 1. Company Vision
     dashboard_content += "## 🎯 Company Vision\n"
-    goal_path = ".project_goal"
-    if os.path.exists(goal_path):
+    if goal_path and os.path.exists(goal_path):
         with open(goal_path, "r") as f:
             dashboard_content += f"> {f.read().strip()}\n\n"
     else:
@@ -34,8 +51,7 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
 
     # 3. Active Tasks
     dashboard_content += "## 🚀 Active Tasks\n"
-    tasks_path = "TASKS.md"
-    if os.path.exists(tasks_path):
+    if tasks_path and os.path.exists(tasks_path):
         with open(tasks_path, "r") as f:
             lines = f.readlines()
             active_tasks = []
@@ -57,16 +73,17 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
                 dashboard_content += "\n"
             else:
                 dashboard_content += "No active tasks.\n\n"
+    else:
+        dashboard_content += "No Task Board found.\n\n"
 
     # 4. Resource Health & ROI
     dashboard_content += "## 💰 Resource Health & ROI\n"
-    if os.path.exists("BILLING.md"):
-        with open("BILLING.md", "r") as f:
+    if billing_path and os.path.exists(billing_path):
+        with open(billing_path, "r") as f:
             lines = f.readlines()
             total_tokens = 0
             total_cost = 0.0
             log_entries = []
-            log_header = False
             for line in lines:
                 if "|" in line and "Tokens" not in line and "---" not in line:
                     parts = [p.strip() for p in line.split("|") if p.strip()]
@@ -83,8 +100,8 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
 
             # Count completed tasks
             done_tasks = 0
-            if os.path.exists("TASKS.md"):
-                with open("TASKS.md", "r") as tf:
+            if tasks_path and os.path.exists(tasks_path):
+                with open(tasks_path, "r") as tf:
                     done_tasks = len([l for l in tf.readlines() if l.strip().startswith("- [x]")])
 
             roi = total_cost / done_tasks if done_tasks > 0 else 0.0
@@ -101,12 +118,28 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
                 if len(parts) >= 5:
                     dashboard_content += f"| {parts[4]} | {parts[1]} | {parts[2]} | {parts[3]} |\n"
             dashboard_content += "\n"
+    else:
+        dashboard_content += "No billing data found.\n\n"
 
 
-    # 5. Recent Milestones
+    # 5. Sub-Projects
+    dashboard_content += "## 📂 Sub-Projects\n"
+    sub_projects = []
+    for item in os.listdir("."):
+        if os.path.isdir(item) and not item.startswith(".") and item != "tests":
+            if os.path.exists(os.path.join(item, ".jbot")):
+                sub_projects.append(item)
+    
+    if sub_projects:
+        for sp in sub_projects:
+            dashboard_content += f"- **{sp}**\n"
+        dashboard_content += "\n"
+    else:
+        dashboard_content += "No sub-projects detected.\n\n"
+
+    # 6. Recent Milestones
     dashboard_content += "## 🏆 Recent Milestones\n"
-    changelog_path = "CHANGELOG.md"
-    if os.path.exists(changelog_path):
+    if changelog_path and os.path.exists(changelog_path):
         with open(changelog_path, "r") as f:
             lines = f.readlines()
             milestones = []
@@ -117,6 +150,8 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
             for m in milestones[:5]:
                 dashboard_content += f"{m}\n"
             dashboard_content += "\n"
+    else:
+        dashboard_content += "No changelog found.\n\n"
 
     with open(output_file, "w") as f:
         f.write(dashboard_content)

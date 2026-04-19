@@ -9,6 +9,18 @@ from datetime import datetime
 def log(msg):
     print(f"[{datetime.now()}] JBot: {msg}")
 
+def find_file_upwards(filename, start_dir):
+    current = os.path.abspath(start_dir)
+    while True:
+        target = os.path.join(current, filename)
+        if os.path.exists(target):
+            return target
+        parent = os.path.dirname(current)
+        if parent == current:
+            break
+        current = parent
+    return None
+
 def main():
     agent_name = os.environ.get("AGENT_NAME")
     agent_role = os.environ.get("AGENT_ROLE")
@@ -30,6 +42,12 @@ def main():
     os.makedirs(".jbot/directives", exist_ok=True)
 
     log(f"({agent_name}): Starting execution loop as {agent_role}...")
+
+    # Find core files upwards
+    tasks_path = find_file_upwards("TASKS.md", project_dir) or "TASKS.md"
+    billing_path = find_file_upwards("BILLING.md", project_dir) or "BILLING.md"
+    goal_path = find_file_upwards(".project_goal", project_dir) or ".project_goal"
+    changelog_path = find_file_upwards("CHANGELOG.md", project_dir) or "CHANGELOG.md"
 
     # Automated Purging
     if os.path.exists("jbot-purge.py"):
@@ -66,8 +84,8 @@ def main():
     tree = subprocess.check_output(["find", ".", "-maxdepth", "2", "-not", "-path", "*/.*"], text=True).strip()
     
     goal = "Maintain and improve the JBot project infrastructure."
-    if os.path.exists(".project_goal"):
-        with open(".project_goal", "r") as f:
+    if os.path.exists(goal_path):
+        with open(goal_path, "r") as f:
             goal = f.read().strip()
 
     rag_formatted = "No previous memory found."
@@ -83,23 +101,49 @@ def main():
                     rag_entries.append(line.strip())
             rag_formatted = "\n".join(rag_entries[-10:])
 
-    task_board = "No Task Board found. Please initialize TASKS.md if needed."
-    if os.path.exists("TASKS.md"):
-        with open("TASKS.md", "r") as f:
+    task_board = f"No Task Board found at {tasks_path}. Please initialize it if needed."
+    if os.path.exists(tasks_path):
+        with open(tasks_path, "r") as f:
             task_board = f.read()
 
-    # Team Registry
+    # Team Registry (Enhanced for hierarchy)
     team_registry = "No team registry found."
     if os.path.exists(".jbot/agents.json"):
         with open(".jbot/agents.json", "r") as f:
             agents = json.load(f)
-            registry_lines = []
+            registry_sections = {
+                "Teammates": [],
+                "Supervisors (Parent Projects)": [],
+                "Sub-projects (Nested Agents)": []
+            }
+            
+            curr_pd = os.path.abspath(project_dir)
+            
             for name, info in agents.items():
+                if name == agent_name: continue
+                
+                agent_pd = os.path.abspath(info.get('projectDir', curr_pd))
                 role_info = f"- {name}: {info.get('role')} ({info.get('description')})"
                 if info.get("supervisor"):
                     role_info += f" [Supervisor: {info.get('supervisor')}]"
-                registry_lines.append(role_info)
-            team_registry = "\n".join(registry_lines)
+                
+                if agent_pd == curr_pd:
+                    registry_sections["Teammates"].append(role_info)
+                elif curr_pd.startswith(agent_pd):
+                    registry_sections["Supervisors (Parent Projects)"].append(f"{role_info} [Dir: {agent_pd}]")
+                elif agent_pd.startswith(curr_pd):
+                    registry_sections["Sub-projects (Nested Agents)"].append(f"{role_info} [Dir: {agent_pd}]")
+                else:
+                    # Should not happen with current filter, but for safety:
+                    registry_sections["Teammates"].append(role_info)
+            
+            registry_lines = []
+            for section, lines in registry_sections.items():
+                if lines:
+                    registry_lines.append(f"### {section}")
+                    registry_lines.extend(lines)
+            
+            team_registry = "\n".join(registry_lines) if registry_lines else "No other agents in visibility."
 
     # Messages
     messages = "No recent messages."
@@ -208,11 +252,11 @@ def main():
             log(f"({agent_name}): Captured usage - {input_tokens} in, {output_tokens} out.")
 
         # Update BILLING.md
-        if os.path.exists("BILLING.md"):
+        if os.path.exists(billing_path) and os.access(billing_path, os.W_OK):
             try:
                 task_name = "Automated Task"
-                if os.path.exists("TASKS.md"):
-                    with open("TASKS.md", "r") as f:
+                if os.path.exists(tasks_path):
+                    with open(tasks_path, "r") as f:
                         for line in f:
                             if "In Progress" in line and f"(Agent: {agent_name})" in line:
                                 parts = line.split("] ")
@@ -225,12 +269,12 @@ def main():
                 # Dummy cost calculation: $1.00 per 1M tokens
                 cost = (total_tokens / 1_000_000) * 1.0
                 
-                with open("BILLING.md", "a") as f:
+                with open(billing_path, "a") as f:
                     f.write(f"| {today_str} | {agent_name} | {input_tokens}/{output_tokens} | ${cost:.4f} | {task_name} |\n")
                 
-                log(f"({agent_name}): Updated BILLING.md")
+                log(f"({agent_name}): Updated {billing_path}")
             except Exception as e:
-                log(f"Error updating BILLING.md: {e}")
+                log(f"Error updating billing: {e}")
 
         # Update Dashboard
         if os.path.exists("jbot-dashboard.py"):

@@ -56,18 +56,22 @@ let
           default = null;
           description = "Name of the supervisor agent who can assign tasks to this agent.";
         };
+        maxCost = lib.mkOption {
+          type = lib.types.float;
+          default = 1.0;
+          description = "Maximum cumulative cost (in USD) allowed for this agent before it stops running.";
+        };
       };
     };
   agentsJson = pkgs.writeText "agents.json" (
     builtins.toJSON (
       lib.mapAttrs (name: agent: {
-        inherit (agent)
-          role
-          description
-          interval
-          projectDir
-          supervisor
-          ;
+        role = agent.role;
+        description = agent.description;
+        interval = agent.interval;
+        projectDir = toString agent.projectDir;
+        supervisor = agent.supervisor;
+        maxCost = agent.maxCost;
       }) cfg.agents
     )
   );
@@ -108,6 +112,7 @@ in
                     pkgs.findutils
                     pkgs.gnused
                     pkgs.gawk
+                    pkgs.bc
                     pkgs.jq
                     pkgs.nixfmt-rfc-style
                     pkgs.statix
@@ -147,6 +152,19 @@ in
               export PROJECT_DIR="$PROJECT_DIR"
               export PROMPT_FILE="${agent.promptFile}"
               export GEMINI_PACKAGE="${agent.geminiPackage}/bin/gemini"
+
+              echo "[$(date)] JBot (${name}): Checking budget (Max: \$${toString agent.maxCost})..."
+              CURRENT_COST=0
+              if [ -f "$PROJECT_DIR/BILLING.md" ]; then
+                # Sum up costs for this agent from the table. Note: parts[3] is cost.
+                CURRENT_COST=$(grep "| .* | $AGENT_NAME |" "$PROJECT_DIR/BILLING.md" | awk -F'|' '{gsub(/[ \$\t]/,"",$4); sum += $4} END {print sum}')
+                if [ -z "$CURRENT_COST" ]; then CURRENT_COST=0; fi
+              fi
+
+              if (( $(echo "$CURRENT_COST >= ${toString agent.maxCost}" | bc -l) )); then
+                echo "[$(date)] JBot (${name}): Budget limit reached (\$CURRENT_COST >= \$${toString agent.maxCost}). Aborting."
+                exit 0
+              fi
 
               echo "[$(date)] JBot (${name}): Launching agent runner in sandbox..."
 
