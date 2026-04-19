@@ -1,24 +1,28 @@
 import os
 import json
 import re
+import argparse
 from datetime import datetime
 
-def generate_dashboard():
+def generate_dashboard(output_file="INDEX.md", project_dir="."):
+    os.chdir(project_dir)
     dashboard_content = "# JBot PAO Dashboard\n\n"
     dashboard_content += f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
 
     # 1. Company Vision
     dashboard_content += "## 🎯 Company Vision\n"
-    if os.path.exists(".project_goal"):
-        with open(".project_goal", "r") as f:
+    goal_path = ".project_goal"
+    if os.path.exists(goal_path):
+        with open(goal_path, "r") as f:
             dashboard_content += f"> {f.read().strip()}\n\n"
     else:
         dashboard_content += "No current vision defined.\n\n"
 
     # 2. Team Roster
     dashboard_content += "## 👥 Team Roster\n"
-    if os.path.exists(".jbot/agents.json"):
-        with open(".jbot/agents.json", "r") as f:
+    agents_path = ".jbot/agents.json"
+    if os.path.exists(agents_path):
+        with open(agents_path, "r") as f:
             agents = json.load(f)
             dashboard_content += "| Agent | Role | Description |\n"
             dashboard_content += "|-------|------|-------------|\n"
@@ -30,8 +34,9 @@ def generate_dashboard():
 
     # 3. Active Tasks
     dashboard_content += "## 🚀 Active Tasks\n"
-    if os.path.exists("TASKS.md"):
-        with open("TASKS.md", "r") as f:
+    tasks_path = "TASKS.md"
+    if os.path.exists(tasks_path):
+        with open(tasks_path, "r") as f:
             lines = f.readlines()
             active_tasks = []
             in_active_section = False
@@ -53,27 +58,43 @@ def generate_dashboard():
             else:
                 dashboard_content += "No active tasks.\n\n"
 
-    # 4. Resource Health
-    dashboard_content += "## 💰 Resource Health (Billing)\n"
+    # 4. Resource Health & ROI
+    dashboard_content += "## 💰 Resource Health & ROI\n"
     if os.path.exists("BILLING.md"):
         with open("BILLING.md", "r") as f:
             lines = f.readlines()
-            summary = []
-            log_header = False
+            total_tokens = 0
+            total_cost = 0.0
             log_entries = []
+            log_header = False
             for line in lines:
-                if line.startswith("- **Total"):
-                    summary.append(line.strip())
-                if line.startswith("| Date |"):
-                    log_header = True
-                    continue
-                if log_header and line.startswith("|"):
-                    log_entries.append(line.strip())
-            
-            for s in summary:
-                dashboard_content += f"{s}\n"
-            
-            dashboard_content += "\n| Recent Activity | Agent | Tokens | Cost |\n"
+                if "|" in line and "Tokens" not in line and "---" not in line:
+                    parts = [p.strip() for p in line.split("|") if p.strip()]
+                    if len(parts) >= 4:
+                        try:
+                            tokens = parts[2].split("/")
+                            if len(tokens) == 2:
+                                total_tokens += int(tokens[0]) + int(tokens[1])
+                            cost = float(parts[3].replace("$", ""))
+                            total_cost += cost
+                            log_entries.append(line.strip())
+                        except:
+                            pass
+
+            # Count completed tasks
+            done_tasks = 0
+            if os.path.exists("TASKS.md"):
+                with open("TASKS.md", "r") as tf:
+                    done_tasks = len([l for l in tf.readlines() if l.strip().startswith("- [x]")])
+
+            roi = total_cost / done_tasks if done_tasks > 0 else 0.0
+
+            dashboard_content += f"- **Total Tokens:** {total_tokens:,}\n"
+            dashboard_content += f"- **Total Cost:** ${total_cost:.4f}\n"
+            dashboard_content += f"- **Tasks Completed:** {done_tasks}\n"
+            dashboard_content += f"- **Avg Cost/Task:** ${roi:.4f}\n\n"
+
+            dashboard_content += "| Recent Activity | Agent | Tokens | Cost |\n"
             dashboard_content += "|-----------------|-------|--------|------|\n"
             for entry in log_entries[-5:]:
                 parts = [p.strip() for p in entry.split("|") if p.strip()]
@@ -81,10 +102,12 @@ def generate_dashboard():
                     dashboard_content += f"| {parts[4]} | {parts[1]} | {parts[2]} | {parts[3]} |\n"
             dashboard_content += "\n"
 
+
     # 5. Recent Milestones
     dashboard_content += "## 🏆 Recent Milestones\n"
-    if os.path.exists("CHANGELOG.md"):
-        with open("CHANGELOG.md", "r") as f:
+    changelog_path = "CHANGELOG.md"
+    if os.path.exists(changelog_path):
+        with open(changelog_path, "r") as f:
             lines = f.readlines()
             milestones = []
             for line in lines:
@@ -95,9 +118,14 @@ def generate_dashboard():
                 dashboard_content += f"{m}\n"
             dashboard_content += "\n"
 
-    with open("INDEX.md", "w") as f:
+    with open(output_file, "w") as f:
         f.write(dashboard_content)
-    print("Dashboard generated successfully: INDEX.md")
+    print(f"Dashboard generated successfully: {output_file}")
 
 if __name__ == "__main__":
-    generate_dashboard()
+    parser = argparse.ArgumentParser(description="JBot PAO Dashboard Generator")
+    parser.add_argument("-o", "--output", default="INDEX.md", help="Output file (default: INDEX.md)")
+    parser.add_argument("-d", "--dir", default=".", help="Project directory (default: .)")
+    args = parser.parse_args()
+    
+    generate_dashboard(output_file=args.output, project_dir=args.dir)

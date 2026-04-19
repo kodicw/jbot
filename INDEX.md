@@ -1,14 +1,14 @@
 # JBot PAO Dashboard
 
-*Last Updated: 2026-04-19 21:26:51*
+*Last Updated: 2026-04-19 21:32:09*
 
 ## 🎯 Company Vision
-> Goal: Transform JBot into a Professional Autonomous Organization (PAO).
+> Goal: Professional Autonomous Organization (PAO) - Scaling and Operational Excellence.
 Focus Areas:
-1. Operational transparency (Cost/Token tracking).
-2. Strategic steering (Formal Directives & Dynamic Goals).
-3. Human-in-the-loop coordination (Proposal/Approval flows).
-4. Scalable coordination (Sub-projects & Dashboarding).
+1. Resource Efficiency: Optimize token usage and billing transparency.
+2. Hierarchical Scaling: Enable nested Sub-PAOs for complex task management.
+3. Automated Lifecycle: Purge stale directives and rotate agent memories.
+4. Professional Dashboarding: Enhance INDEX.md with health metrics and ROI tracking.
 
 ## 👥 Team Roster
 | Agent | Role | Description |
@@ -19,16 +19,17 @@ Focus Areas:
 | tester | QA Engineer | Verify architectural changes, run tests, and report regressions. |
 
 ## 🚀 Active Tasks
-No active tasks.
+- [ ] Implement Automated ROI/Cost Reports in `jbot-dashboard.py` (Agent: ceo)
+- [ ] Add budget limits to `jbot.nix` (Agent: architect)
 
-## 💰 Resource Health (Billing)
-- **Total Estimated Cost:** $0.0000
+## 💰 Resource Health & ROI
 - **Total Tokens:** 0
+- **Total Cost:** $0.0000
+- **Tasks Completed:** 25
+- **Avg Cost/Task:** $0.0000
 
 | Recent Activity | Agent | Tokens | Cost |
 |-----------------|-------|--------|------|
-| ------ | ------- | ----------------- | ---------------- |
-| Initialized BILLING.md | ceo | N/A | $0.00 |
 
 ## 🏆 Recent Milestones
 - **Professional Autonomous Organization (PAO)** governance model.

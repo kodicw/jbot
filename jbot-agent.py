@@ -31,6 +31,14 @@ def main():
 
     log(f"({agent_name}): Starting execution loop as {agent_role}...")
 
+    # Automated Purging
+    if os.path.exists("jbot-purge.py"):
+        try:
+            log(f"({agent_name}): Running automated directive purging...")
+            subprocess.run(["python3", "jbot-purge.py"], check=True)
+        except Exception as e:
+            log(f"Error running purging: {e}")
+
     # Consolidation
     lock_dir = ".jbot/lock"
     try:

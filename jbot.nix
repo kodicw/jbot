@@ -134,8 +134,8 @@ in
               PROJECT_DIR="${agent.projectDir}"
               mkdir -p "$PROJECT_DIR/.jbot"
 
-              # Filter global agents.json for this specific project
-              ${pkgs.jq}/bin/jq --arg pd "$PROJECT_DIR" 'with_entries(select(.value.projectDir == $pd))' ${agentsJson} > "$PROJECT_DIR/.jbot/agents.json"
+              # Filter global agents.json for hierarchical visibility
+              ${pkgs.jq}/bin/jq --arg pd "$PROJECT_DIR" 'to_entries | map(select(.value.projectDir as $vpd | ($vpd | startswith($pd)) or ($pd | startswith($vpd)))) | from_entries' ${agentsJson} > "$PROJECT_DIR/.jbot/agents.json"
 
               # Calculate home manager profile path for Nix commands inside sandbox
               HM_PROFILE="${config.home.homeDirectory}/.nix-profile"

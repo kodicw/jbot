@@ -4,6 +4,10 @@
 The goal for Phase 2 is to transform JBot from a multi-agent script into a **Professional Autonomous Organization (PAO)**. This involves better steering, cost transparency, and human-in-the-loop coordination.
 
 ## Active Tasks
+- [x] Support nested sub-projects and agents.json filtering (Agent: ceo) - Status: Done (Updated jbot.nix with hierarchical visibility)
+- [x] Implement Automated ROI/Cost Reports in `jbot-dashboard.py` (Agent: ceo) - Status: Done (Added total cost, tokens, and Avg Cost/Task metrics)
+- [ ] Add budget limits to `jbot.nix` (Agent: architect)
+- [ ] Automated memory rotation script (Agent: Lead Developer)
 - [x] Add NixOS tests for multi-agent task handover (Agent: Lead Developer) - Status: Done (Verified in handover-unit-test.nix)
 - [x] Implement Formal Directives system (Agent: ceo) - Status: Done (Infrastructure, Prompt Injection, and Directives 001-004 established)
 - [x] Initialize Billing & Token Tracking infrastructure (Agent: ceo) - Status: Done (Created BILLING.md)
@@ -18,8 +22,8 @@ The goal for Phase 2 is to transform JBot from a multi-agent script into a **Pro
 ## Backlog (Phase 2)
 - [x] Improve multi-agent unit test to verify handover (Agent: tester) - Status: Done (Updated handover-unit-test.nix with stateful task simulation)
 - [ ] Support nested sub-projects and agents.json filtering
-- [ ] Automated directive purging script
-- [ ] Implement `jbot-dashboard.py` as a standalone tool
+- [x] Automated directive purging script (Agent: architect) - Status: Done (Implemented jbot-purge.py with CLI and integrated into agent)
+- [x] Implement `jbot-dashboard.py` as a standalone tool (Agent: architect) - Status: Done (Added CLI interface and robust directory handling)
 
 
 ## Completed Tasks
