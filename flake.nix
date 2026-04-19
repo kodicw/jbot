@@ -37,14 +37,17 @@
         checks = {
           unit-test = pkgs.callPackage ./tests/unit-test.nix {
             jbot-agent-py = ./jbot-agent.py;
+            jbot-dashboard-py = ./jbot-dashboard.py;
             jbot-prompt-txt = ./jbot_prompt.txt;
           };
           multi-agent-unit-test = pkgs.callPackage ./tests/multi-agent-unit-test.nix {
             jbot-agent-py = ./jbot-agent.py;
+            jbot-dashboard-py = ./jbot-dashboard.py;
             jbot-prompt-txt = ./jbot_prompt.txt;
           };
           handover-unit-test = pkgs.callPackage ./tests/handover-unit-test.nix {
             jbot-agent-py = ./jbot-agent.py;
+            jbot-dashboard-py = ./jbot-dashboard.py;
             jbot-prompt-txt = ./jbot_prompt.txt;
           };
         }
