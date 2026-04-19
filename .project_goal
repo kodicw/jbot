@@ -1,1 +1,5 @@
 Maintain and improve the JBot project infrastructure.
+Please research and propose architecture updates based on the following questions (refer to IDEAS.md):
+1. What if users want to have multiple agents?
+2. What if they want to give them roles and descriptions?
+3. What if users want to have an entire open-source community working on a project or a company structure like QA, CEO, boss?

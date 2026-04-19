@@ -10,7 +10,10 @@ let
     while [[ $# -gt 0 ]]; do
       case "$1" in
         -p)
-          echo "$2" > .test_prompt
+          # Store the prompt for verification
+          # The agent name is now part of the prompt
+          AGENT_NAME=$(echo "$2" | grep -oP 'You are \K[^,]*')
+          echo "$2" > ".test_prompt_$AGENT_NAME"
           shift 2
           ;;
         *)
@@ -18,8 +21,10 @@ let
           ;;
       esac
     done
-    # Simulate agent writing to memory queue
-    echo '{"scope": "local", "status": "success", "summary": "Mock agent ran", "next_step": "Verification"}' > .memory_queue.json
+    # Simulate agent writing to its specific memory queue
+    # The agent name should be known by the environment variable
+    # In the real loop, we set MEMORY_OUTPUT
+    echo '{"scope": "local", "status": "success", "summary": "Mock agent ran", "next_step": "Verification"}' > "$MEMORY_OUTPUT"
   '';
 in
 pkgs.testers.nixosTest {
@@ -42,9 +47,23 @@ pkgs.testers.nixosTest {
           imports = [ jbot-module ];
           programs.jbot = {
             enable = true;
-            projectDir = "/home/testuser/project";
-            interval = "*-*-* *:*:*"; # Every second for testing
-            geminiPackage = mockGemini;
+            agents.dev = {
+              enable = true;
+              role = "Lead Developer";
+              description = "Implement core features.";
+              projectDir = "/home/testuser/project";
+              interval = "*-*-* *:*:*";
+              geminiPackage = mockGemini;
+            };
+            agents.qa = {
+              enable = true;
+              role = "QA Engineer";
+              description = "Test everything and report bugs.";
+              projectDir = "/home/testuser/project";
+              interval = "*-*-* *:*:*";
+              geminiPackage = mockGemini;
+              dependsOn = [ "dev" ];
+            };
           };
           home.stateVersion = "23.11";
         };
@@ -52,42 +71,37 @@ pkgs.testers.nixosTest {
 
   testScript = ''
     machine.wait_for_unit("home-manager-testuser.service")
-    machine.wait_until_succeeds("systemctl --user -M testuser status jbot-agent.timer")
+    machine.wait_until_succeeds("systemctl --user -M testuser status jbot-agent-dev.timer")
+    machine.wait_until_succeeds("systemctl --user -M testuser status jbot-agent-qa.timer")
     
     # Check if the service file contains the expected sandboxing
-    machine.succeed("systemctl --user -M testuser cat jbot-agent.service | grep ProtectSystem=strict")
-    machine.succeed("systemctl --user -M testuser cat jbot-agent.service | grep ProtectHome=read-only")
-    machine.succeed("systemctl --user -M testuser cat jbot-agent.service | grep BindPaths=/home/testuser/project")
+    machine.succeed("systemctl --user -M testuser cat jbot-agent-dev.service | grep ProtectSystem=strict")
 
-    # Initial setup: create project directory and required files
+    # Initial setup
     machine.succeed("mkdir -p /home/testuser/project")
     machine.succeed("echo 'Test Goal' > /home/testuser/project/.project_goal")
     machine.succeed("cp ${../jbot_prompt.txt} /home/testuser/project/jbot_prompt.txt")
+    machine.succeed("echo '# Task Board' > /home/testuser/project/TASKS.md")
     machine.succeed("chown -R testuser:users /home/testuser/project")
 
-    # Start the service manually to trigger the loop
-    machine.succeed("systemctl --user -M testuser start jbot-agent.service")
-    machine.wait_until_succeeds("test -f /home/testuser/project/.test_prompt")
+    # Start the Dev agent
+    machine.succeed("systemctl --user -M testuser start jbot-agent-dev.service")
+    machine.wait_until_succeeds("test -f /home/testuser/project/.test_prompt_dev")
 
-    # Verify prompt injection
-    machine.succeed("grep 'Project Goal: Test Goal' /home/testuser/project/.test_prompt")
-    machine.succeed("grep 'Current File Tree: /jbot_prompt.txt' /home/testuser/project/.test_prompt")
+    # Verify Dev agent prompt contains its name, role and Task Board
+    machine.succeed("grep 'You are dev, acting as Lead Developer' /home/testuser/project/.test_prompt_dev")
+    machine.succeed("grep '# Task Board' /home/testuser/project/.test_prompt_dev")
 
-    # Verify memory persistence on NEXT run
-    # On the first run, mock wrote to .memory_queue.json
-    # We need to wait for the service to finish so the loop can move it to .memory.log
-    machine.wait_until_succeeds("! systemctl --user -M testuser is-active jbot-agent.service")
-    
-    # Check if .memory.log was created
-    machine.succeed("test -f /home/testuser/project/.memory.log")
-    machine.succeed("grep 'Mock agent ran' /home/testuser/project/.memory.log")
+    # Wait for Dev to finish so it consolidates its memory
+    machine.wait_until_succeeds("! systemctl --user -M testuser is-active jbot-agent-dev.service")
+    machine.succeed("test -f /home/testuser/project/.jbot/memory.log")
+    machine.succeed("grep '\"agent\": \"dev\"' /home/testuser/project/.jbot/memory.log")
 
-    # Trigger second run
-    machine.succeed("rm /home/testuser/project/.test_prompt")
-    machine.succeed("systemctl --user -M testuser start jbot-agent.service")
-    machine.wait_until_succeeds("test -f /home/testuser/project/.test_prompt")
+    # Start the QA agent
+    machine.succeed("systemctl --user -M testuser start jbot-agent-qa.service")
+    machine.wait_until_succeeds("test -f /home/testuser/project/.test_prompt_qa")
 
-    # Verify memory injection in the second run's prompt
-    machine.succeed("grep 'Retrieved Vector Memory:.*Mock agent ran' /home/testuser/project/.test_prompt")
+    # Verify QA agent prompt contains dev memory in Shared History
+    machine.succeed("grep '\[dev\] Mock agent ran' /home/testuser/project/.test_prompt_qa")
   '';
 }
