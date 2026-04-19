@@ -61,6 +61,10 @@
           memory-rotation-test = pkgs.callPackage ./tests/memory-rotation-test.nix {
             jbot-rotate-py = ./jbot-rotate.py;
           };
+          hierarchy-unit-test = pkgs.callPackage ./tests/hierarchy-unit-test.nix {
+            jbot-agent-py = ./jbot-agent.py;
+            jbot-prompt-txt = ./jbot_prompt.txt;
+          };
         }
         // lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {
           nixos-test = pkgs.callPackage ./tests/nixos-test.nix {

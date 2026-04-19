@@ -1,6 +1,6 @@
 # JBot PAO Dashboard
 
-*Last Updated: 2026-04-19 23:03:29*
+*Last Updated: 2026-04-19 23:04:06*
 
 ## 🎯 Company Vision
 > Goal: Professional Autonomous Organization (PAO) - Phase 3: Hierarchical Scaling.
@@ -25,11 +25,17 @@ Focus Areas:
 - [ ] Create `jbot-init-subproject` script (Agent: lead) - Status: Backlog
 
 ## 💰 Resource Health & ROI
-- **Total Tokens:** 1,000
-- **Total Cost:** $0.0010
-- **Tasks Completed:** 30
-- **Avg Cost/Task:** $0.000033
+- **Total Tokens (Org-wide):** 1,000
+- **Total Cost (Org-wide):** $0.0010
+- **Global Avg Cost/Done Task:** $0.000033
 
+### 🤖 Agent Efficiency (Main Project)
+| Agent | Tasks | Tokens | Cost | Avg Cost/Task |
+|-------|-------|--------|------|---------------|
+| architect | 2 | 1,000 | $0.0010 | $0.000500 |
+| ceo | 1 | 0 | $0.0000 | $0.000000 |
+
+### 🕒 Recent Activity
 | Recent Activity | Agent | Tokens | Cost |
 |-----------------|-------|--------|------|
 | Add budget limits to jbot.nix | architect | 500/500 | $0.0010 |

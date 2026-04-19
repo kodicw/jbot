@@ -6,7 +6,6 @@ This file tracks the resource consumption of the JBot autonomous organization.
 - **Total Estimated Cost:** $0.0010
 - **Total Tokens:** 1,000
 - **Last Updated:** 2026-04-19
-
 ## Usage Log
 | Date | Agent | Tokens (In/Out) | Estimated Cost | Task |
 |------|-------|-----------------|----------------|------|
