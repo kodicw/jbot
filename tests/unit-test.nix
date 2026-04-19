@@ -1,0 +1,71 @@
+{
+  pkgs,
+  jbot-agent-py,
+  jbot-prompt-txt,
+  ...
+}:
+let
+  mockGemini = pkgs.writeShellScriptBin "gemini" ''
+    echo "MOCK GEMINI CALLED with args: $@"
+    # Store the prompt passed via -p
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        -p)
+          echo "$2" > "$PROJECT_DIR/.prompt_received"
+          shift 2
+          ;;
+        *)
+          shift
+          ;;
+      esac
+    done
+    echo '{"scope": "local", "status": "success", "summary": "Mock unit test success"}' > "$MEMORY_OUTPUT"
+  '';
+in
+pkgs.runCommand "jbot-unit-test"
+{
+  nativeBuildInputs = [
+    pkgs.python3
+    pkgs.coreutils
+    pkgs.findutils
+    pkgs.jq
+    mockGemini
+  ];
+} ''
+  export PROJECT_DIR=$TMPDIR/project
+  mkdir -p $PROJECT_DIR
+  cd $PROJECT_DIR
+
+  # Initial files
+  echo "Goal: Test the unit test" > .project_goal
+  echo "# Task Board" > TASKS.md
+  mkdir -p .jbot
+  echo '{"dev": {"role": "Lead", "description": "Lead Dev", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
+
+  export AGENT_NAME="dev"
+  export AGENT_ROLE="Lead"
+  export AGENT_DESCRIPTION="Lead Dev"
+  export PROMPT_FILE="${jbot-prompt-txt}"
+  export GEMINI_PACKAGE="gemini"
+  export MEMORY_OUTPUT=".jbot/queues/dev.json"
+
+  python3 ${jbot-agent-py}
+
+  # Verifications
+  if ! grep -q "You are dev, acting as Lead" .prompt_received; then
+    echo "Error: Prompt did not contain agent identity"
+    exit 1
+  fi
+
+  if ! grep -q "Goal: Test the unit test" .prompt_received; then
+    echo "Error: Prompt did not contain project goal"
+    exit 1
+  fi
+
+  if [ ! -f .jbot/queues/dev.json ]; then
+    echo "Error: Memory output not created"
+    exit 1
+  fi
+
+  touch $out
+''

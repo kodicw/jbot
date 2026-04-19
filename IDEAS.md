@@ -6,7 +6,7 @@
 - [x] **Robust Coordination:** Added agent-specific memory queues and a consolidation lock to prevent race conditions in multi-agent environments.
 - [x] **Task Board (Blackboard):** Explicitly implemented a `TASKS.md` manager that agents use to claim and update work status. Injected into the prompt for better coordination.
 - [x] **Script-Based Wrapper:** Extracted the entire execution loop into `jbot-agent.py`. This moves logic out of the systemd unit and makes it more portable and testable.
-- [x] **Agent Registry:** A `.jbot/agents.json` file is now generated and injected, allowing agents to know their teammates' roles.
-- [x] **Direct Messaging:** Agents can now communicate via `.jbot/messages/` for asynchronous coordination.
-- **Hierarchical Coordination:** Research ways for a "Lead" or "CEO" agent to explicitly assign tasks or approve changes from other agents.
+- [x] Agent Registry: A `.jbot/agents.json` file is now generated and injected, allowing agents to know their teammates' roles. Now project-scoped for better isolation.
+- [x] Direct Messaging: Agents can now communicate via `.jbot/messages/` for asynchronous coordination.
+- [x] Hierarchical Coordination: Implemented via `supervisor` option in `jbot.nix` and hierarchical rules in `jbot_prompt.txt`. "Lead" and "CEO" roles have architectural authority.
 - **Efficient Testing:** How can we make testing methods more efficient without needing a full QEMU VM? We should research using `pkgs.runCommand` for logic validation and `bubblewrap` direct execution for sandbox verification.

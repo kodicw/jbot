@@ -86,7 +86,10 @@ def main():
             agents = json.load(f)
             registry_lines = []
             for name, info in agents.items():
-                registry_lines.append(f"- {name}: {info.get('role')} ({info.get('description')})")
+                role_info = f"- {name}: {info.get('role')} ({info.get('description')})"
+                if info.get("supervisor"):
+                    role_info += f" [Supervisor: {info.get('supervisor')}]"
+                registry_lines.append(role_info)
             team_registry = "\n".join(registry_lines)
 
     # Messages
