@@ -43,6 +43,10 @@
             jbot-agent-py = ./jbot-agent.py;
             jbot-prompt-txt = ./jbot_prompt.txt;
           };
+          handover-unit-test = pkgs.callPackage ./tests/handover-unit-test.nix {
+            jbot-agent-py = ./jbot-agent.py;
+            jbot-prompt-txt = ./jbot_prompt.txt;
+          };
         }
         // lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {
           nixos-test = pkgs.callPackage ./tests/nixos-test.nix {

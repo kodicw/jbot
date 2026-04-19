@@ -21,3 +21,4 @@
 - **Self-Healing Infrastructure:** Agents should be able to propose updates to `jbot.nix` itself if they find a bottleneck in their sandbox.
 - **Dashboarding:** Generate a static `INDEX.md` or HTML dashboard showing the current state of the "Company", recent tasks, and agent health.
 - **Static Web Dashboard (Home Manager):** An optional `programs.jbot.dashboard.enable` feature that generates a modern, responsive HTML page (`.jbot/index.html`) using a periodic generator script.
+- **JBot CLI Tool:** A formalized command-line interface (`jbot status`, `jbot log`, `jbot tasks`) for humans to monitor the "Pulse" of the autonomous organization without digging into raw JSON/Nix files.

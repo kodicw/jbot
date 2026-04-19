@@ -27,6 +27,7 @@ def main():
     os.makedirs(".jbot/queues", exist_ok=True)
     os.makedirs(".jbot/memory", exist_ok=True)
     os.makedirs(".jbot/messages", exist_ok=True)
+    os.makedirs(".jbot/directives", exist_ok=True)
 
     log(f"({agent_name}): Starting execution loop as {agent_role}...")
 
@@ -104,6 +105,18 @@ def main():
                     msg_list.append(f"--- Message {mf} ---\n{f.read()}")
             messages = "\n".join(msg_list)
 
+    # Formal Directives
+    directives = "No formal directives."
+    dir_path = ".jbot/directives"
+    if os.path.exists(dir_path):
+        dir_files = sorted([f for f in os.listdir(dir_path) if f.endswith((".txt", ".md")) and f != "README.md"])
+        if dir_files:
+            dir_list = []
+            for df in dir_files:
+                with open(os.path.join(dir_path, df), "r") as f:
+                    dir_list.append(f"--- Directive {df} ---\n{f.read()}")
+            directives = "\n".join(dir_list)
+
     # Read and replace prompt
     with open(prompt_file, "r") as f:
         prompt_content = f.read()
@@ -117,7 +130,8 @@ def main():
         "{RAG_DATABASE_RESULTS}": rag_formatted,
         "{TASK_BOARD}": task_board,
         "{TEAM_REGISTRY}": team_registry,
-        "{MESSAGES}": messages
+        "{MESSAGES}": messages,
+        "{DIRECTIVES}": directives
     }
 
     for k, v in replacements.items():

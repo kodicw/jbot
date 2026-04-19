@@ -17,4 +17,7 @@ result
 .memory_queue.json
 .project_goal
 .test_prompt
-.jbot/
+.jbot/*
+!.jbot/directives/
+
+

@@ -40,6 +40,8 @@ pkgs.runCommand "jbot-unit-test"
     # Initial files
     echo "Goal: Test the unit test" > .project_goal
     echo "# Task Board" > TASKS.md
+    mkdir -p .jbot/directives
+    echo "This is a test directive" > .jbot/directives/001_test.txt
     mkdir -p .jbot
     echo '{"dev": {"role": "Lead", "description": "Lead Dev", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
 
@@ -60,6 +62,11 @@ pkgs.runCommand "jbot-unit-test"
 
     if ! grep -q "Goal: Test the unit test" .prompt_received; then
       echo "Error: Prompt did not contain project goal"
+      exit 1
+    fi
+
+    if ! grep -q "This is a test directive" .prompt_received; then
+      echo "Error: Prompt did not contain formal directive"
       exit 1
     fi
 
