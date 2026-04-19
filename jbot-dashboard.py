@@ -109,7 +109,7 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
             dashboard_content += f"- **Total Tokens:** {total_tokens:,}\n"
             dashboard_content += f"- **Total Cost:** ${total_cost:.4f}\n"
             dashboard_content += f"- **Tasks Completed:** {done_tasks}\n"
-            dashboard_content += f"- **Avg Cost/Task:** ${roi:.4f}\n\n"
+            dashboard_content += f"- **Avg Cost/Task:** ${roi:.6f}\n\n"
 
             dashboard_content += "| Recent Activity | Agent | Tokens | Cost |\n"
             dashboard_content += "|-----------------|-------|--------|------|\n"
@@ -155,6 +155,35 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
 
     with open(output_file, "w") as f:
         f.write(dashboard_content)
+    
+    # Update BILLING.md summary
+    if billing_path and os.path.exists(billing_path):
+        with open(billing_path, "r") as f:
+            billing_lines = f.readlines()
+        
+        new_billing_lines = []
+        in_summary = False
+        for line in billing_lines:
+            if "## Summary" in line:
+                in_summary = True
+                new_billing_lines.append(line)
+                new_billing_lines.append(f"- **Total Estimated Cost:** ${total_cost:.4f}\n")
+                new_billing_lines.append(f"- **Total Tokens:** {total_tokens:,}\n")
+                new_billing_lines.append(f"- **Last Updated:** {datetime.now().strftime('%Y-%m-%d')}\n\n")
+                continue
+            
+            if in_summary:
+                if line.startswith("- **") or line.strip() == "":
+                    continue
+                else:
+                    in_summary = False
+            
+            new_billing_lines.append(line)
+            
+        with open(billing_path, "w") as f:
+            f.writelines(new_billing_lines)
+        print(f"Billing summary updated: {billing_path}")
+
     print(f"Dashboard generated successfully: {output_file}")
 
 if __name__ == "__main__":
