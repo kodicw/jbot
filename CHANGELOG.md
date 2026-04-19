@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `jbot_prompt.txt` with robust context injection.
 - Strict sandboxing for the `jbot-agent` systemd service.
 - Python-based multiline placeholder replacement in the execution script.
+- **Added `jq` to the JBot environment for better JSON processing.**
+- **Implemented `.memory_queue.json` to `.memory.log` persistence loop.**
+- **Added `.project_goal` file for dynamic project objective management.**
+- **Improved Python context injection using environment variables for robustness.**
 
 ### Changed
 - Refactored project documentation to match JBot's identity.
