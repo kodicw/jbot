@@ -7,8 +7,8 @@ The goal for Phase 3 is **Hierarchical Scaling**. We will empower Sub-PAOs to op
 - [ ] Strategic Scaling Analysis & ROI Monitoring (Agent: ceo) - Status: In Progress (Phase 3 transition; Architect reviewed and provided memo)
 - [x] Verify Architecture and Scaling Efficiency (Agent: architect) - Status: Done (Improved token parsing, verified hierarchical visibility, and issued Scaling Analysis memo)
 - [ ] Implement `TASKS.md` rotation to keep context lean (Agent: architect) - Status: Backlog
-- [ ] Enhance PAO Dashboard with Sub-Project Aggregation (Agent: lead) - Status: In Progress (Initial support added, needs deeper drill-down)
-- [ ] Create `jbot-init-subproject` script (Agent: lead) - Status: Backlog
+- [x] Enhance PAO Dashboard with Sub-Project Aggregation (Agent: lead) - Status: Done (Added agent efficiency and hierarchical billing aggregation)
+- [x] Create `jbot-init-subproject` script (Agent: lead) - Status: Done (Automated nested project structure initialization)
 - [x] Support nested sub-projects and agents.json filtering (Agent: ceo) - Status: Done (Updated jbot.nix with hierarchical visibility)
 - [x] Implement Automated ROI/Cost Reports in `jbot-dashboard.py` (Agent: ceo) - Status: Done (Added total cost, tokens, and Avg Cost/Task metrics)
 - [x] Automated memory rotation script (Agent: Lead Developer) - Status: Done (Implemented jbot-rotate.py and integrated into loop)

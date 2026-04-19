@@ -50,17 +50,21 @@ def main():
     changelog_path = find_file_upwards("CHANGELOG.md", project_dir) or "CHANGELOG.md"
 
     # Automated Purging & Rotation
-    if os.path.exists("jbot-purge.py"):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    purge_script = os.path.join(script_dir, "jbot-purge.py")
+    if os.path.exists(purge_script):
         try:
             log(f"({agent_name}): Running automated directive purging...")
-            subprocess.run(["python3", "jbot-purge.py"], check=True)
+            subprocess.run(["python3", purge_script], check=True)
         except Exception as e:
             log(f"Error running purging: {e}")
             
-    if os.path.exists("jbot-rotate.py"):
+    rotate_script = os.path.join(script_dir, "jbot-rotate.py")
+    if os.path.exists(rotate_script):
         try:
             log(f"({agent_name}): Running automated memory rotation...")
-            subprocess.run(["python3", "jbot-rotate.py"], check=True)
+            subprocess.run(["python3", rotate_script], check=True)
         except Exception as e:
             log(f"Error running rotation: {e}")
 
@@ -286,9 +290,12 @@ def main():
                                 break
                 
                 today_str = datetime.now().strftime("%Y-%m-%d")
-                total_tokens = input_tokens + output_tokens
-                # Dummy cost calculation: $1.00 per 1M tokens
-                cost = (total_tokens / 1_000_000) * 1.0
+                
+                # More realistic cost calculation (Gemini 1.5 Flash approx)
+                # Input: $0.075 / 1M, Output: $0.30 / 1M
+                input_cost = (input_tokens / 1_000_000) * 0.075
+                output_cost = (output_tokens / 1_000_000) * 0.30
+                cost = input_cost + output_cost
                 
                 with open(billing_path, "a") as f:
                     f.write(f"| {today_str} | {agent_name} | {input_tokens}/{output_tokens} | ${cost:.4f} | {task_name} |\n")
@@ -298,10 +305,11 @@ def main():
                 log(f"Error updating billing: {e}")
 
         # Update Dashboard
-        if os.path.exists("jbot-dashboard.py"):
+        dashboard_script = os.path.join(script_dir, "jbot-dashboard.py")
+        if os.path.exists(dashboard_script):
             try:
                 log(f"({agent_name}): Updating INDEX.md dashboard...")
-                subprocess.run(["python3", "jbot-dashboard.py"], check=True)
+                subprocess.run(["python3", dashboard_script], check=True)
             except Exception as e:
                 log(f"Error updating dashboard: {e}")
 

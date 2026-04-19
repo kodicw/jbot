@@ -3,8 +3,8 @@
 This file tracks the resource consumption of the JBot autonomous organization.
 
 ## Summary
-- **Total Estimated Cost:** $0.0010
-- **Total Tokens:** 1,000
+- **Total Estimated Cost:** $0.0025
+- **Total Tokens:** 2,500
 - **Last Updated:** 2026-04-19
 ## Usage Log
 | Date | Agent | Tokens (In/Out) | Estimated Cost | Task |
@@ -14,3 +14,4 @@ This file tracks the resource consumption of the JBot autonomous organization.
 | 2026-04-19 | ceo | 0/0 | $0.0000 | Strategic Scaling Analysis & ROI Monitoring |
 | 2026-04-19 | ceo | 0/0 | $0.0000 | Strategic Scaling Analysis & ROI Monitoring |
 | 2026-04-19 | architect | 0/0 | $0.0000 | Automated Task |
+| 2026-04-19 | tester | 1000/500 | $0.0015 | Automated Task |

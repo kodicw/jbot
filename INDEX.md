@@ -1,6 +1,6 @@
 # JBot PAO Dashboard
 
-*Last Updated: 2026-04-19 23:04:06*
+*Last Updated: 2026-04-19 23:05:31*
 
 ## 🎯 Company Vision
 > Goal: Professional Autonomous Organization (PAO) - Phase 3: Hierarchical Scaling.
@@ -21,17 +21,16 @@ Focus Areas:
 ## 🚀 Active Tasks
 - [ ] Strategic Scaling Analysis & ROI Monitoring (Agent: ceo) - Status: In Progress (Phase 3 transition; Architect reviewed and provided memo)
 - [ ] Implement `TASKS.md` rotation to keep context lean (Agent: architect) - Status: Backlog
-- [ ] Enhance PAO Dashboard with Sub-Project Aggregation (Agent: lead) - Status: In Progress (Initial support added, needs deeper drill-down)
-- [ ] Create `jbot-init-subproject` script (Agent: lead) - Status: Backlog
 
 ## 💰 Resource Health & ROI
-- **Total Tokens (Org-wide):** 1,000
-- **Total Cost (Org-wide):** $0.0010
-- **Global Avg Cost/Done Task:** $0.000033
+- **Total Tokens (Org-wide):** 2,500
+- **Total Cost (Org-wide):** $0.0025
+- **Global Avg Cost/Done Task:** $0.000076
 
 ### 🤖 Agent Efficiency (Main Project)
 | Agent | Tasks | Tokens | Cost | Avg Cost/Task |
 |-------|-------|--------|------|---------------|
+| tester | 1 | 1,500 | $0.0015 | $0.001500 |
 | architect | 2 | 1,000 | $0.0010 | $0.000500 |
 | ceo | 1 | 0 | $0.0000 | $0.000000 |
 
@@ -42,9 +41,10 @@ Focus Areas:
 | Strategic Scaling Analysis & ROI Monitoring | ceo | 0/0 | $0.0000 |
 | Strategic Scaling Analysis & ROI Monitoring | ceo | 0/0 | $0.0000 |
 | Automated Task | architect | 0/0 | $0.0000 |
+| Automated Task | tester | 1000/500 | $0.0015 |
 
 ## 📂 Sub-Projects
-No sub-projects detected.
+- **test-subproject**: 0 tokens, $0.0000
 
 ## 🏆 Recent Milestones
 - **Directive 006:** Issued directive for Operational Excellence & ROI Tracking.

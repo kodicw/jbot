@@ -172,7 +172,7 @@ in
                 --unshare-all \
                 --share-net \
                 --die-with-parent \
-                ${pkgs.python3}/bin/python3 ${./jbot-agent.py}
+                ${pkgs.python3}/bin/python3 ${./.}/jbot-agent.py
             ''}";
 
             WorkingDirectory = agent.projectDir;
