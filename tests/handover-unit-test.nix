@@ -1,6 +1,7 @@
 {
   pkgs,
   jbot-agent-py,
+  jbot-dashboard-py,
   jbot-prompt-txt,
   ...
 }:

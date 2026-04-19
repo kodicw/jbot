@@ -1,6 +1,7 @@
 {
   pkgs,
   jbot-agent-py,
+  jbot-dashboard-py,
   jbot-prompt-txt,
   ...
 }:
@@ -38,6 +39,7 @@ pkgs.runCommand "jbot-unit-test"
     cd $PROJECT_DIR
 
     # Initial files
+    cp ${jbot-dashboard-py} jbot-dashboard.py
     echo "Goal: Test the unit test" > .project_goal
     echo "# Task Board" > TASKS.md
     mkdir -p .jbot/directives
@@ -72,6 +74,16 @@ pkgs.runCommand "jbot-unit-test"
 
     if [ ! -f .jbot/queues/dev.json ]; then
       echo "Error: Memory output not created"
+      exit 1
+    fi
+
+    if [ ! -f INDEX.md ]; then
+      echo "Error: INDEX.md not created"
+      exit 1
+    fi
+
+    if ! grep -q "JBot PAO Dashboard" INDEX.md; then
+      echo "Error: INDEX.md content incorrect"
       exit 1
     fi
 
