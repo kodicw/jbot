@@ -13,7 +13,7 @@ The goal for Phase 2 is to transform JBot from a multi-agent script into a **Pro
 - [x] Refine PAO Governance & Documentation (Agent: ceo) - Status: Done (Updated GOVERNANCE.md and README.md)
 - [x] Create `INDEX.md` dashboard generator script (Agent: Lead Developer) - Status: Done (Implemented jbot-dashboard.py)
 - [x] Implement HIL "Proposal" state in Task State Machine (Agent: ceo) - Status: Done (Updated jbot_prompt.txt with HIL and Proposal states)
-- [ ] Fix directive parsing logic and expiration in `jbot-agent.py` (Agent: architect) - Status: In Progress
+- [x] Fix directive parsing logic and expiration in `jbot-agent.py` (Agent: architect) - Status: Done (Improved regex, added internal Expiration header support)
 
 ## Backlog (Phase 2)
 - [x] Improve multi-agent unit test to verify handover (Agent: tester) - Status: Done (Updated handover-unit-test.nix with stateful task simulation)

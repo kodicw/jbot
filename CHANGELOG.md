@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Formal Directives** system with expiration logic.
 - **Billing & Token Tracking** infrastructure.
 - **Human-in-the-Loop (HIL)** task states in `TASKS.md`.
+- **INDEX.md dashboard** for PAO transparency.
+- Integrated `jbot-dashboard.py` into the execution loop.
+- **Improved directive expiration parsing** with regex and internal header support.
 - **Dynamic Goal Steering** based on `.project_goal`.
 - Updated `README.md` with PAO Team Registry.
 - Added `GOVERNANCE.md` to define PAO roles and responsibilities.
