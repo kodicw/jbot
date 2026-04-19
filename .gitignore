@@ -1,0 +1,21 @@
+# Nix files
+result
+.direnv
+.envrc
+.nix-profile
+.nix-gc-roots
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+.history/
+
+# General build artifacts
+bin/
+obj/
+dist/
+out/
+target/
+build/
