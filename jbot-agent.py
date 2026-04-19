@@ -225,11 +225,12 @@ def main():
                 log(f"Error updating BILLING.md: {e}")
 
         # Update Dashboard
-        try:
-            log(f"({agent_name}): Updating INDEX.md dashboard...")
-            subprocess.run(["python3", "jbot-dashboard.py"], check=True)
-        except Exception as e:
-            log(f"Error updating dashboard: {e}")
+        if os.path.exists("jbot-dashboard.py"):
+            try:
+                log(f"({agent_name}): Updating INDEX.md dashboard...")
+                subprocess.run(["python3", "jbot-dashboard.py"], check=True)
+            except Exception as e:
+                log(f"Error updating dashboard: {e}")
 
     except Exception as e:
         log(f"Error: Execution failed: {e}")
