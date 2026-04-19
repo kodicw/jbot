@@ -53,6 +53,11 @@ let
         };
       };
     };
+  agentsJson = pkgs.writeText "agents.json" (builtins.toJSON (
+    lib.mapAttrs (name: agent: {
+      inherit (agent) role description interval;
+    }) cfg.agents
+  ));
 in
 {
   options.programs.jbot = {
@@ -110,116 +115,25 @@ in
               "${config.home.homeDirectory}/.config/gh"
             ];
 
-            ExecStart = "${pkgs.writeShellScript "jbot-loop-${name}" ''
+            ExecStart = "${pkgs.writeShellScript "jbot-launcher-${name}" ''
               set -euo pipefail
 
               PROJECT_DIR="${agent.projectDir}"
-              cd "$PROJECT_DIR"
-
-              mkdir -p .jbot/queues .jbot/memory
-
-              PREPARED_PROMPT=$(mktemp)
-              trap "rm -f $PREPARED_PROMPT" EXIT
-
-              echo "[$(date)] JBot (${name}): Starting execution loop as ${agent.role}..."
-
-              # Process ALL memory queues into shared memory
-              # We use a simple lock via mkdir to prevent race conditions during consolidation
-              LOCK_DIR=".jbot/lock"
-              if mkdir "$LOCK_DIR" 2>/dev/null; then
-                  trap 'rm -rf "$LOCK_DIR"; rm -f "$PREPARED_PROMPT"' EXIT
-                  for q in .jbot/queues/*.json; do
-                      if [ -f "$q" ]; then
-                          AGENT_ID=$(basename "$q" .json)
-                          echo "[$(date)] JBot (${name}): Consolidating memory from $AGENT_ID..."
-                          # Wrap entry with agent identity
-                          echo "{\"agent\": \"$AGENT_ID\", \"content\": $(cat "$q")}" >> .jbot/memory.log
-                          rm "$q"
-                      fi
-                  done
-                  rm -rf "$LOCK_DIR"
-                  trap "rm -f $PREPARED_PROMPT" EXIT
-              fi
-
-              # Get directory tree (excluding .git and other noise)
-              DIRECTORY_TREE=$(find . -maxdepth 2 -not -path '*/.*' | sed 's/^\.//' | sort)
-
-              # Load project goal
-              PROJECT_GOAL=$(cat .project_goal 2>/dev/null || echo "Maintain and improve the JBot project infrastructure.")
-
-              # Load shared memory (last 20 entries)
-              if [ -f .jbot/memory.log ]; then
-                  RAG_RESULTS=$(tail -n 20 .jbot/memory.log)
-              else
-                  RAG_RESULTS="No previous memory found."
-              fi
-
-              # Load Task Board
-              if [ -f TASKS.md ]; then
-                  TASK_BOARD=$(cat TASKS.md)
-              else
-                  TASK_BOARD="No Task Board found. Please initialize TASKS.md if needed."
-              fi
-
-              # Use Python for robust multiline replacement
-              export AGENT_NAME_VAR="${name}"
-              export AGENT_ROLE_VAR="${agent.role}"
-              export AGENT_DESCRIPTION_VAR="${agent.description}"
-              export PROJECT_GOAL_VAR="$PROJECT_GOAL"
-              export DIRECTORY_TREE_VAR="$DIRECTORY_TREE"
-              export RAG_RESULTS_VAR="$RAG_RESULTS"
-              export TASK_BOARD_VAR="$TASK_BOARD"
-
-              ${pkgs.python3}/bin/python3 -c '
-              import sys
-              import os
-              import json
-
-              prompt_path = sys.argv[1]
-              name = os.environ.get("AGENT_NAME_VAR", "")
-              role = os.environ.get("AGENT_ROLE_VAR", "")
-              desc = os.environ.get("AGENT_DESCRIPTION_VAR", "")
-              goal = os.environ.get("PROJECT_GOAL_VAR", "")
-              tree = os.environ.get("DIRECTORY_TREE_VAR", "")
-              rag_raw = os.environ.get("RAG_RESULTS_VAR", "")
-              task_board = os.environ.get("TASK_BOARD_VAR", "")
-
-              # Format RAG results nicely
-              rag_lines = []
-              for line in rag_raw.splitlines():
-                  if line.strip():
-                      try:
-                          data = json.loads(line)
-                          agent_id = data.get("agent", "unknown")
-                          content = data.get("content", {})
-                          summary = content.get("summary", "No summary")
-                          rag_lines.append(f"[{agent_id}] {summary}")
-                      except:
-                          rag_lines.append(line)
-              rag_formatted = "\n".join(rag_lines[-10:]) # Keep last 10 for prompt
-
-              with open(prompt_path, "r") as f:
-                  content = f.read()
-
-              content = content.replace("{AGENT_NAME}", name)
-              content = content.replace("{AGENT_ROLE}", role)
-              content = content.replace("{AGENT_DESCRIPTION}", desc)
-              content = content.replace("{PROJECT_GOAL}", goal)
-              content = content.replace("{DIRECTORY_TREE}", tree)
-              content = content.replace("{RAG_DATABASE_RESULTS}", rag_formatted)
-              content = content.replace("{TASK_BOARD}", task_board)
-
-              sys.stdout.write(content)
-              ' "${agent.promptFile}" > "$PREPARED_PROMPT"
-
-              echo "[$(date)] JBot (${name}): Invoking Gemini CLI in bubblewrap sandbox..."
+              mkdir -p "$PROJECT_DIR/.jbot"
+              cp ${agentsJson} "$PROJECT_DIR/.jbot/agents.json"
 
               # Calculate home manager profile path for Nix commands inside sandbox
               HM_PROFILE="${config.home.homeDirectory}/.nix-profile"
               USER_ID=$(id -u)
 
-              # Target for agent output
-              export MEMORY_OUTPUT=".jbot/queues/${name}.json"
+              export AGENT_NAME="${name}"
+              export AGENT_ROLE="${agent.role}"
+              export AGENT_DESCRIPTION="${agent.description}"
+              export PROJECT_DIR="$PROJECT_DIR"
+              export PROMPT_FILE="${agent.promptFile}"
+              export GEMINI_PACKAGE="${agent.geminiPackage}/bin/gemini"
+
+              echo "[$(date)] JBot (${name}): Launching agent runner in sandbox..."
 
               timeout 30m bwrap \
                 --ro-bind /nix/store /nix/store \
@@ -244,9 +158,7 @@ in
                 --unshare-all \
                 --share-net \
                 --die-with-parent \
-                ${agent.geminiPackage}/bin/gemini -y -d -p "$(cat "$PREPARED_PROMPT")"
-
-              echo "[$(date)] JBot (${name}): Execution loop finished."
+                ${pkgs.python3}/bin/python3 ${./jbot-agent.py}
             ''}";
 
             WorkingDirectory = agent.projectDir;

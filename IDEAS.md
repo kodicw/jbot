@@ -5,5 +5,8 @@
 - [x] **Community/Company Structure:** Simulated by multi-agent coordination using shared memory logs, agent-specific queues, and role-based guidance in the prompt.
 - [x] **Robust Coordination:** Added agent-specific memory queues and a consolidation lock to prevent race conditions in multi-agent environments.
 - [x] **Task Board (Blackboard):** Explicitly implemented a `TASKS.md` manager that agents use to claim and update work status. Injected into the prompt for better coordination.
-- **Script-Based Wrapper:** Should the entire execution loop be wrapped in a standalone script (e.g., using Nushell) that takes arguments for roles, directories, and descriptions? This would move logic out of the systemd unit and make it more portable and testable. (Partially addressed by multi-agent support; needs better coordination mechanisms).
+- [x] **Script-Based Wrapper:** Extracted the entire execution loop into `jbot-agent.py`. This moves logic out of the systemd unit and makes it more portable and testable.
+- [x] **Agent Registry:** A `.jbot/agents.json` file is now generated and injected, allowing agents to know their teammates' roles.
+- [x] **Direct Messaging:** Agents can now communicate via `.jbot/messages/` for asynchronous coordination.
+- **Hierarchical Coordination:** Research ways for a "Lead" or "CEO" agent to explicitly assign tasks or approve changes from other agents.
 - **Efficient Testing:** How can we make testing methods more efficient without needing a full QEMU VM? We should research using `pkgs.runCommand` for logic validation and `bubblewrap` direct execution for sandbox verification.
