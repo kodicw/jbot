@@ -22,6 +22,9 @@
           packages = [
             pkgs.nixfmt-rfc-style
             pkgs.statix
+            pkgs.gemini-cli
+            pkgs.python3
+            pkgs.jq
           ];
         };
       }

@@ -19,6 +19,11 @@ in
       default = "hourly";
       description = "Systemd calendar interval for the JBot agent.";
     };
+    geminiPackage = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.gemini-cli;
+      description = "The Gemini CLI package to use.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -35,7 +40,7 @@ in
             pkgs.findutils
             pkgs.gnused
             pkgs.gawk
-            pkgs.gemini-cli
+            cfg.geminiPackage
             pkgs.python3
             pkgs.jq
             pkgs.nixfmt-rfc-style

@@ -15,6 +15,7 @@ JBot is a Home Manager module that defines the `programs.jbot` namespace to sche
       enable = true;
       projectDir = "/path/to/your/project";
       interval = "hourly";
+      # geminiPackage = pkgs.gemini-cli; # Optional
     };
     ```
 3.  Enter the development environment:
