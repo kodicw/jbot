@@ -13,12 +13,14 @@
 
 ## Phase 2: Professional Autonomous Organization (PAO)
 
-- **Dynamic Goal Steering:** The CEO agent should be able to update the `.project_goal` file to shift focus based on progress.
-- **Formal Directives:** A system for "Pinning" messages as high-priority directives that all agents must follow until rescinded.
-- **Resource/Cost Tracking:** Agents should log their estimated token usage to a shared `BILLING.md` or similar to track operational costs.
-- **Sub-Project Isolation:** Support for nested `agents.json` or sub-directories for large monorepos where different teams work on different components.
+- [x] **Multi-User Project Isolation (MANDATORY):** Scaling is handled via NixOS/Home Manager using dedicated users per project. This is now a core design requirement in GOVERNANCE.md.
+- **Strategic Goal Steering:** The CEO agent should be able to update the `.project_goal` file to shift focus based on progress.
+
 - **Human-in-the-loop Gatekeeping:** A "Proposal" state for tasks where a human (or CEO) must approve a change before execution.
 - **Self-Healing Infrastructure:** Agents should be able to propose updates to `jbot.nix` itself if they find a bottleneck in their sandbox.
 - **Dashboarding:** Generate a static `INDEX.md` or HTML dashboard showing the current state of the "Company", recent tasks, and agent health.
 - **Static Web Dashboard (Home Manager):** An optional `programs.jbot.dashboard.enable` feature that generates a modern, responsive HTML page (`.jbot/index.html`) using a periodic generator script.
 - **JBot CLI Tool:** A formalized command-line interface (`jbot status`, `jbot log`, `jbot tasks`) for humans to monitor the "Pulse" of the autonomous organization without digging into raw JSON/Nix files.
+- **Interactive Notifications (Inline Reply):** Leverage DBus and ChromeOS native reply capabilities to allow the human to respond directly from the notification tray. Middleware should capture this input and write it to `.jbot/messages/human.txt`.
+- **Multi-LLM Engine Middleware:** Refactor `jbot-agent.py` to support different backends (`claude-code`, `opencode`, `gemini-cli`) with a unified wrapper for token tracking and command execution.
+- **Two-Way Agent Feedback Loop:** Support for a `.jbot/messages/human.txt` file injected as `{HUMAN_INPUT}` to allow the human to respond to agent queries.

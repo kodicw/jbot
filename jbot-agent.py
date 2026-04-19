@@ -49,13 +49,20 @@ def main():
     goal_path = find_file_upwards(".project_goal", project_dir) or ".project_goal"
     changelog_path = find_file_upwards("CHANGELOG.md", project_dir) or "CHANGELOG.md"
 
-    # Automated Purging
+    # Automated Purging & Rotation
     if os.path.exists("jbot-purge.py"):
         try:
             log(f"({agent_name}): Running automated directive purging...")
             subprocess.run(["python3", "jbot-purge.py"], check=True)
         except Exception as e:
             log(f"Error running purging: {e}")
+            
+    if os.path.exists("jbot-rotate.py"):
+        try:
+            log(f"({agent_name}): Running automated memory rotation...")
+            subprocess.run(["python3", "jbot-rotate.py"], check=True)
+        except Exception as e:
+            log(f"Error running rotation: {e}")
 
     # Consolidation
     lock_dir = ".jbot/lock"

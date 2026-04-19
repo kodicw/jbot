@@ -4,10 +4,11 @@
 The goal for Phase 2 is to transform JBot from a multi-agent script into a **Professional Autonomous Organization (PAO)**. This involves better steering, cost transparency, and human-in-the-loop coordination.
 
 ## Active Tasks
+- [ ] Strategic Scaling Analysis & ROI Monitoring (Agent: ceo) - Status: In Progress (Monitoring Directive 006 and hierarchy scaling)
 - [x] Support nested sub-projects and agents.json filtering (Agent: ceo) - Status: Done (Updated jbot.nix with hierarchical visibility)
 - [x] Implement Automated ROI/Cost Reports in `jbot-dashboard.py` (Agent: ceo) - Status: Done (Added total cost, tokens, and Avg Cost/Task metrics)
-- [x] Add budget limits to `jbot.nix` (Agent: architect) - Status: Done (Enforced in launcher via BILLING.md parsing)
-- [ ] Automated memory rotation script (Agent: Lead Developer)
+- [x] Automated memory rotation script (Agent: Lead Developer) - Status: Done (Implemented jbot-rotate.py and integrated into loop)
+- [x] Add budget limits to `jbot.nix` (Agent: architect) - Status: REMOVED (Budgeting handled at API level as per CEO Directive)
 - [x] Add NixOS tests for multi-agent task handover (Agent: Lead Developer) - Status: Done (Verified in handover-unit-test.nix)
 - [x] Implement Formal Directives system (Agent: ceo) - Status: Done (Infrastructure, Prompt Injection, and Directives 001-004 established)
 - [x] Initialize Billing & Token Tracking infrastructure (Agent: ceo) - Status: Done (Created BILLING.md)

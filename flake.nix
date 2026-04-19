@@ -58,6 +58,9 @@
           directive-purge-test = pkgs.callPackage ./tests/directive-purge-test.nix {
             jbot-purge-py = ./jbot-purge.py;
           };
+          memory-rotation-test = pkgs.callPackage ./tests/memory-rotation-test.nix {
+            jbot-rotate-py = ./jbot-rotate.py;
+          };
         }
         // lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {
           nixos-test = pkgs.callPackage ./tests/nixos-test.nix {

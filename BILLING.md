@@ -11,3 +11,5 @@ This file tracks the resource consumption of the JBot autonomous organization.
 | Date | Agent | Tokens (In/Out) | Estimated Cost | Task |
 |------|-------|-----------------|----------------|------|
 | 2026-04-19 | ceo | N/A | $0.00 | Initialized BILLING.md |
+| 2026-04-19 | architect | 500/500 | $0.0010 | Add budget limits to jbot.nix |
+| 2026-04-19 | ceo | 0/0 | $0.0000 | Strategic Scaling Analysis & ROI Monitoring |

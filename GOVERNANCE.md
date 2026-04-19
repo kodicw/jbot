@@ -5,7 +5,12 @@ This document outlines the decision-making process for JBot as a Professional Au
 ## PAO Vision
 JBot operates as a decentralized, multi-agent entity focused on infrastructure automation. We prioritize operational transparency, strategic steering, and human-in-the-loop coordination.
 
-## Roles & Responsibilities
+## Core Architectural Requirements
+
+1. **Multi-User Project Isolation:** To ensure hardware-level security and clear departmental boundaries, each distinct project managed by JBot MUST be handled by a dedicated Linux user account via NixOS/Home Manager. 
+2. **Reproducibility:** All agent environments must be defined declaratively in Nix.
+3. **Sandboxing:** agents must always run within a `bubblewrap` container, even when running under a dedicated user.
+ & Responsibilities
 
 ### Technical Founder (CEO)
 - **Vision:** Sets the high-level product vision and long-term goals.
