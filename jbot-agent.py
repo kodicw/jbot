@@ -159,8 +159,16 @@ def main():
     # Messages
     messages = "No recent messages."
     msgs_dir = ".jbot/messages"
+    human_input = "No direct human feedback for this cycle."
     if os.path.exists(msgs_dir):
-        msg_files = sorted(os.listdir(msgs_dir))
+        # Check for direct human feedback
+        human_file = os.path.join(msgs_dir, "human.txt")
+        if os.path.exists(human_file):
+            with open(human_file, "r") as f:
+                human_input = f"--- HUMAN FEEDBACK/DIRECTIVE ---\n{f.read()}\n--- END HUMAN FEEDBACK ---"
+            log(f"({agent_name}): Injected human feedback from human.txt")
+
+        msg_files = sorted([f for f in os.listdir(msgs_dir) if f != "human.txt"])
         if msg_files:
             msg_list = []
             for mf in msg_files[-5:]: # Last 5 messages
@@ -220,7 +228,8 @@ def main():
         "{TASK_BOARD}": task_board,
         "{TEAM_REGISTRY}": team_registry,
         "{MESSAGES}": messages,
-        "{DIRECTIVES}": directives
+        "{DIRECTIVES}": directives,
+        "{HUMAN_INPUT}": human_input
     }
 
     for k, v in replacements.items():

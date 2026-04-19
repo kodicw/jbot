@@ -1,6 +1,6 @@
 # JBot PAO Dashboard
 
-*Last Updated: 2026-04-19 23:05:31*
+*Last Updated: 2026-04-19 23:06:33*
 
 ## 🎯 Company Vision
 > Goal: Professional Autonomous Organization (PAO) - Phase 3: Hierarchical Scaling.
@@ -33,18 +33,19 @@ Focus Areas:
 | tester | 1 | 1,500 | $0.0015 | $0.001500 |
 | architect | 2 | 1,000 | $0.0010 | $0.000500 |
 | ceo | 1 | 0 | $0.0000 | $0.000000 |
+| lead | 1 | 0 | $0.0000 | $0.000000 |
 
 ### 🕒 Recent Activity
 | Recent Activity | Agent | Tokens | Cost |
 |-----------------|-------|--------|------|
-| Add budget limits to jbot.nix | architect | 500/500 | $0.0010 |
 | Strategic Scaling Analysis & ROI Monitoring | ceo | 0/0 | $0.0000 |
 | Strategic Scaling Analysis & ROI Monitoring | ceo | 0/0 | $0.0000 |
 | Automated Task | architect | 0/0 | $0.0000 |
 | Automated Task | tester | 1000/500 | $0.0015 |
+| Automated Task | lead | 0/0 | $0.0000 |
 
 ## 📂 Sub-Projects
-- **test-subproject**: 0 tokens, $0.0000
+No sub-projects detected.
 
 ## 🏆 Recent Milestones
 - **Directive 006:** Issued directive for Operational Excellence & ROI Tracking.
