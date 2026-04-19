@@ -1,6 +1,18 @@
 # JBot Task Board
+
+## Strategic Vision (CEO)
+The goal for Phase 2 is to transform JBot from a multi-agent script into a **Professional Autonomous Organization (PAO)**. This involves better steering, cost transparency, and human-in-the-loop coordination.
+
 ## Active Tasks
 - [ ] Add NixOS tests for multi-agent task handover (Agent: Lead Developer) - Status: In Progress
+- [x] Implement Dynamic Goal Steering (Agent: ceo) - Status: Done (Updated .project_goal for Phase 2)
+
+## Backlog (Phase 2)
+- [ ] Implement Formal Directives system (Agent: Lead Developer)
+- [ ] Add Token/Cost tracking to `jbot-agent.py` and `BILLING.md`
+- [ ] Create `INDEX.md` dashboard generator script
+- [ ] Add "Proposal" state to Task State Machine (Human-in-the-loop)
+- [ ] Support nested sub-projects and agents.json filtering
 
 ## Completed Tasks
 - [x] Verify Architecture and Code Quality (Agent: tester) - Status: Done (Fixed linting, applied formatting, added multi-agent unit test)

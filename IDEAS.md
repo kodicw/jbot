@@ -9,4 +9,14 @@
 - [x] Agent Registry: A `.jbot/agents.json` file is now generated and injected, allowing agents to know their teammates' roles. Now project-scoped for better isolation.
 - [x] Direct Messaging: Agents can now communicate via `.jbot/messages/` for asynchronous coordination.
 - [x] Hierarchical Coordination: Implemented via `supervisor` option in `jbot.nix` and hierarchical rules in `jbot_prompt.txt`. "Lead" and "CEO" roles have architectural authority.
-- **Efficient Testing:** How can we make testing methods more efficient without needing a full QEMU VM? We should research using `pkgs.runCommand` for logic validation and `bubblewrap` direct execution for sandbox verification.
+- [x] Research and implement efficient non-VM testing (using `runCommand`) (Agent: Lead Developer)
+
+## Phase 2: Professional Autonomous Organization (PAO)
+
+- **Dynamic Goal Steering:** The CEO agent should be able to update the `.project_goal` file to shift focus based on progress.
+- **Formal Directives:** A system for "Pinning" messages as high-priority directives that all agents must follow until rescinded.
+- **Resource/Cost Tracking:** Agents should log their estimated token usage to a shared `BILLING.md` or similar to track operational costs.
+- **Sub-Project Isolation:** Support for nested `agents.json` or sub-directories for large monorepos where different teams work on different components.
+- **Human-in-the-loop Gatekeeping:** A "Proposal" state for tasks where a human (or CEO) must approve a change before execution.
+- **Self-Healing Infrastructure:** Agents should be able to propose updates to `jbot.nix` itself if they find a bottleneck in their sandbox.
+- **Dashboarding:** Generate a static `INDEX.md` or HTML dashboard showing the current state of the "Company", recent tasks, and agent health.
