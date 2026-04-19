@@ -15,13 +15,24 @@
         interval = "daily";
       };
 
-      # The Lead Developer manages the infrastructure and architecture.
+      # The Lead Developer manages the infrastructure.
       lead = {
         enable = true;
         role = "Lead Developer";
-        description = "Core architect and lead developer. Implements foundational infrastructure.";
+        description = "Core lead developer. Implements foundational infrastructure.";
         projectDir = "/home/youruser/yourproject";
         interval = "hourly";
+        supervisor = "ceo"; # Reports to the CEO
+        dependsOn = [ "ceo" ];
+      };
+
+      # The Principal Architect reviews architectural decisions and maintains standards.
+      architect = {
+        enable = true;
+        role = "Principal Architect";
+        description = "Critiques architectural decisions, advocates for simplicity, and maintains engineering standards.";
+        projectDir = "/home/youruser/yourproject";
+        interval = "daily";
         supervisor = "ceo"; # Reports to the CEO
         dependsOn = [ "ceo" ];
       };
