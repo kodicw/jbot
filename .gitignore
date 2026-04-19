@@ -12,10 +12,8 @@ result
 *~
 .history/
 
-# General build artifacts
-bin/
-obj/
-dist/
-out/
-target/
-build/
+# JBot Memory files
+.memory.log
+.memory_queue.json
+.project_goal
+.test_prompt
