@@ -58,11 +58,19 @@ let
         };
       };
     };
-  agentsJson = pkgs.writeText "agents.json" (builtins.toJSON (
-    lib.mapAttrs (name: agent: {
-      inherit (agent) role description interval projectDir supervisor;
-    }) cfg.agents
-  ));
+  agentsJson = pkgs.writeText "agents.json" (
+    builtins.toJSON (
+      lib.mapAttrs (name: agent: {
+        inherit (agent)
+          role
+          description
+          interval
+          projectDir
+          supervisor
+          ;
+      }) cfg.agents
+    )
+  );
 in
 {
   options.programs.jbot = {
@@ -125,7 +133,7 @@ in
 
               PROJECT_DIR="${agent.projectDir}"
               mkdir -p "$PROJECT_DIR/.jbot"
-              
+
               # Filter global agents.json for this specific project
               ${pkgs.jq}/bin/jq --arg pd "$PROJECT_DIR" 'with_entries(select(.value.projectDir == $pd))' ${agentsJson} > "$PROJECT_DIR/.jbot/agents.json"
 

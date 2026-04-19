@@ -23,49 +23,50 @@ let
   '';
 in
 pkgs.runCommand "jbot-unit-test"
-{
-  nativeBuildInputs = [
-    pkgs.python3
-    pkgs.coreutils
-    pkgs.findutils
-    pkgs.jq
-    mockGemini
-  ];
-} ''
-  export PROJECT_DIR=$TMPDIR/project
-  mkdir -p $PROJECT_DIR
-  cd $PROJECT_DIR
+  {
+    nativeBuildInputs = [
+      pkgs.python3
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.jq
+      mockGemini
+    ];
+  }
+  ''
+    export PROJECT_DIR=$TMPDIR/project
+    mkdir -p $PROJECT_DIR
+    cd $PROJECT_DIR
 
-  # Initial files
-  echo "Goal: Test the unit test" > .project_goal
-  echo "# Task Board" > TASKS.md
-  mkdir -p .jbot
-  echo '{"dev": {"role": "Lead", "description": "Lead Dev", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
+    # Initial files
+    echo "Goal: Test the unit test" > .project_goal
+    echo "# Task Board" > TASKS.md
+    mkdir -p .jbot
+    echo '{"dev": {"role": "Lead", "description": "Lead Dev", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
 
-  export AGENT_NAME="dev"
-  export AGENT_ROLE="Lead"
-  export AGENT_DESCRIPTION="Lead Dev"
-  export PROMPT_FILE="${jbot-prompt-txt}"
-  export GEMINI_PACKAGE="gemini"
-  export MEMORY_OUTPUT=".jbot/queues/dev.json"
+    export AGENT_NAME="dev"
+    export AGENT_ROLE="Lead"
+    export AGENT_DESCRIPTION="Lead Dev"
+    export PROMPT_FILE="${jbot-prompt-txt}"
+    export GEMINI_PACKAGE="gemini"
+    export MEMORY_OUTPUT=".jbot/queues/dev.json"
 
-  python3 ${jbot-agent-py}
+    python3 ${jbot-agent-py}
 
-  # Verifications
-  if ! grep -q "You are dev, acting as Lead" .prompt_received; then
-    echo "Error: Prompt did not contain agent identity"
-    exit 1
-  fi
+    # Verifications
+    if ! grep -q "You are dev, acting as Lead" .prompt_received; then
+      echo "Error: Prompt did not contain agent identity"
+      exit 1
+    fi
 
-  if ! grep -q "Goal: Test the unit test" .prompt_received; then
-    echo "Error: Prompt did not contain project goal"
-    exit 1
-  fi
+    if ! grep -q "Goal: Test the unit test" .prompt_received; then
+      echo "Error: Prompt did not contain project goal"
+      exit 1
+    fi
 
-  if [ ! -f .jbot/queues/dev.json ]; then
-    echo "Error: Memory output not created"
-    exit 1
-  fi
+    if [ ! -f .jbot/queues/dev.json ]; then
+      echo "Error: Memory output not created"
+      exit 1
+    fi
 
-  touch $out
-''
+    touch $out
+  ''

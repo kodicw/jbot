@@ -39,45 +39,49 @@ pkgs.testers.nixosTest {
         home = "/home/testuser";
       };
 
-      home-manager.useGlobalPkgs = true;
-      home-manager.useUserPackages = true;
-      home-manager.users.testuser =
-        { ... }:
-        {
-          imports = [ jbot-module ];
-          programs.jbot = {
-            enable = true;
-            agents.ceo = {
+      home-manager = {
+        useGlobalPkgs = true;
+        useUserPackages = true;
+        users.testuser =
+          { ... }:
+          {
+            imports = [ jbot-module ];
+            programs.jbot = {
               enable = true;
-              role = "CEO";
-              description = "Oversee project goals and coordinate other agents.";
-              projectDir = "/home/testuser/project";
-              interval = "*-*-* *:*:*";
-              geminiPackage = mockGemini;
+              agents = {
+                ceo = {
+                  enable = true;
+                  role = "CEO";
+                  description = "Oversee project goals and coordinate other agents.";
+                  projectDir = "/home/testuser/project";
+                  interval = "*-*-* *:*:*";
+                  geminiPackage = mockGemini;
+                };
+                dev = {
+                  enable = true;
+                  role = "Lead Developer";
+                  description = "Implement core features.";
+                  projectDir = "/home/testuser/project";
+                  interval = "*-*-* *:*:*";
+                  geminiPackage = mockGemini;
+                  supervisor = "ceo";
+                  dependsOn = [ "ceo" ];
+                };
+                qa = {
+                  enable = true;
+                  role = "QA Engineer";
+                  description = "Test everything and report bugs.";
+                  projectDir = "/home/testuser/project";
+                  interval = "*-*-* *:*:*";
+                  geminiPackage = mockGemini;
+                  supervisor = "ceo";
+                  dependsOn = [ "dev" ];
+                };
+              };
             };
-            agents.dev = {
-              enable = true;
-              role = "Lead Developer";
-              description = "Implement core features.";
-              projectDir = "/home/testuser/project";
-              interval = "*-*-* *:*:*";
-              geminiPackage = mockGemini;
-              supervisor = "ceo";
-              dependsOn = [ "ceo" ];
-            };
-            agents.qa = {
-              enable = true;
-              role = "QA Engineer";
-              description = "Test everything and report bugs.";
-              projectDir = "/home/testuser/project";
-              interval = "*-*-* *:*:*";
-              geminiPackage = mockGemini;
-              supervisor = "ceo";
-              dependsOn = [ "dev" ];
-            };
+            home.stateVersion = "23.11";
           };
-          home.stateVersion = "23.11";
-        };
+      };
     };
 
   testScript = ''
@@ -85,7 +89,7 @@ pkgs.testers.nixosTest {
     machine.wait_until_succeeds("systemctl --user -M testuser status jbot-agent-ceo.timer")
     machine.wait_until_succeeds("systemctl --user -M testuser status jbot-agent-dev.timer")
     machine.wait_until_succeeds("systemctl --user -M testuser status jbot-agent-qa.timer")
-    
+
     # Check if the service file contains the expected sandboxing
     machine.succeed("systemctl --user -M testuser cat jbot-agent-dev.service | grep ProtectSystem=strict")
 

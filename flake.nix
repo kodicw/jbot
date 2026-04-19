@@ -39,14 +39,20 @@
             jbot-agent-py = ./jbot-agent.py;
             jbot-prompt-txt = ./jbot_prompt.txt;
           };
-        } // lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {
+          multi-agent-unit-test = pkgs.callPackage ./tests/multi-agent-unit-test.nix {
+            jbot-agent-py = ./jbot-agent.py;
+            jbot-prompt-txt = ./jbot_prompt.txt;
+          };
+        }
+        // lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {
           nixos-test = pkgs.callPackage ./tests/nixos-test.nix {
-            home-manager = self.inputs.home-manager;
+            inherit (self.inputs) home-manager;
             jbot-module = self.homeManagerModules.default;
           };
         };
       }
-    ) // {
+    )
+    // {
       homeManagerModules.default = import ./jbot.nix;
     };
 }
