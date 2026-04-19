@@ -1,10 +1,8 @@
 # JBot Task Board
 
 ## Active Tasks
-- [ ] Create a "CEO" agent to oversee project goals (Agent: Lead Developer) - Status: Backlog
-
-## Backlog
-- [ ] Add NixOS tests for multi-agent task handover
+- [x] Create a "CEO" agent to oversee project goals (Agent: Lead Developer) - Status: Done (Verified in NixOS tests and added `jbot.example.nix`)
+- [ ] Add NixOS tests for multi-agent task handover (Agent: Lead Developer) - Status: In Progress
 
 ## Completed Tasks
 - [x] Multi-agent community architecture (Agent: Lead Developer) - Status: Done

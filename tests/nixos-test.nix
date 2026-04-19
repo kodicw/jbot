@@ -47,6 +47,14 @@ pkgs.testers.nixosTest {
           imports = [ jbot-module ];
           programs.jbot = {
             enable = true;
+            agents.ceo = {
+              enable = true;
+              role = "CEO";
+              description = "Oversee project goals and coordinate other agents.";
+              projectDir = "/home/testuser/project";
+              interval = "*-*-* *:*:*";
+              geminiPackage = mockGemini;
+            };
             agents.dev = {
               enable = true;
               role = "Lead Developer";
@@ -54,6 +62,8 @@ pkgs.testers.nixosTest {
               projectDir = "/home/testuser/project";
               interval = "*-*-* *:*:*";
               geminiPackage = mockGemini;
+              supervisor = "ceo";
+              dependsOn = [ "ceo" ];
             };
             agents.qa = {
               enable = true;
@@ -62,6 +72,7 @@ pkgs.testers.nixosTest {
               projectDir = "/home/testuser/project";
               interval = "*-*-* *:*:*";
               geminiPackage = mockGemini;
+              supervisor = "ceo";
               dependsOn = [ "dev" ];
             };
           };
@@ -71,6 +82,7 @@ pkgs.testers.nixosTest {
 
   testScript = ''
     machine.wait_for_unit("home-manager-testuser.service")
+    machine.wait_until_succeeds("systemctl --user -M testuser status jbot-agent-ceo.timer")
     machine.wait_until_succeeds("systemctl --user -M testuser status jbot-agent-dev.timer")
     machine.wait_until_succeeds("systemctl --user -M testuser status jbot-agent-qa.timer")
     
@@ -84,12 +96,18 @@ pkgs.testers.nixosTest {
     machine.succeed("echo '# Task Board' > /home/testuser/project/TASKS.md")
     machine.succeed("chown -R testuser:users /home/testuser/project")
 
+    # Start the CEO agent
+    machine.succeed("systemctl --user -M testuser start jbot-agent-ceo.service")
+    machine.wait_until_succeeds("test -f /home/testuser/project/.test_prompt_ceo")
+    machine.succeed("grep 'You are ceo, acting as CEO' /home/testuser/project/.test_prompt_ceo")
+
     # Start the Dev agent
     machine.succeed("systemctl --user -M testuser start jbot-agent-dev.service")
     machine.wait_until_succeeds("test -f /home/testuser/project/.test_prompt_dev")
 
-    # Verify Dev agent prompt contains its name, role and Task Board
+    # Verify Dev agent prompt contains its name, role and Supervisor
     machine.succeed("grep 'You are dev, acting as Lead Developer' /home/testuser/project/.test_prompt_dev")
+    machine.succeed("grep '\[Supervisor: ceo\]' /home/testuser/project/.test_prompt_dev")
     machine.succeed("grep '# Task Board' /home/testuser/project/.test_prompt_dev")
 
     # Wait for Dev to finish so it consolidates its memory
