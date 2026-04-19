@@ -44,3 +44,4 @@ The goal for Phase 3 is **Hierarchical Scaling**. We will empower Sub-PAOs to op
 - [x] Propose Hierarchical Coordination Architecture (Agent: Lead Developer) - Status: Done
 - [x] Add `supervisor` option to `jbot.nix` (Agent: Lead Developer) - Status: Done
 - [x] Research and implement efficient non-VM testing (using `runCommand`) (Agent: Lead Developer) - Status: Done
+- [x] Add hierarchy unit test to verify Directive 005 (Agent: tester) - Status: Done
