@@ -114,23 +114,31 @@ def main():
             dir_list = []
             today = datetime.now().strftime("%Y-%m-%d")
             for df in dir_files:
-                # Check for expiration if filename starts with YYYY-MM-DD
                 is_expired = False
-                if len(df) >= 10 and df[4] == '-' and df[7] == '-':
-                    try:
-                        exp_date = df[:10]
-                        if today > exp_date:
-                            is_expired = True
-                            log(f"({agent_name}): Directive {df} has expired.")
-                    except:
-                        pass
+                # Try to find a date (YYYY-MM-DD) in the filename
+                date_match = re.search(r"(\d{4}-\d{2}-\d{2})", df)
+                exp_date_from_filename = date_match.group(1) if date_match else None
                 
-                if not is_expired:
-                    try:
-                        with open(os.path.join(dir_path, df), "r") as f:
-                            dir_list.append(f"--- Directive {df} ---\n{f.read()}")
-                    except Exception as e:
-                        log(f"Error reading directive {df}: {e}")
+                try:
+                    with open(os.path.join(dir_path, df), "r") as f:
+                        directive_content = f.read()
+                        
+                        # Check for explicit expiration in content: "Expiration: YYYY-MM-DD"
+                        content_exp_match = re.search(r"Expiration:\s*(\d{4}-\d{2}-\d{2})", directive_content, re.IGNORECASE)
+                        if content_exp_match:
+                            exp_date = content_exp_match.group(1)
+                            if today > exp_date:
+                                is_expired = True
+                                log(f"({agent_name}): Directive {df} has expired (from content).")
+                        elif exp_date_from_filename:
+                            if today > exp_date_from_filename:
+                                is_expired = True
+                                log(f"({agent_name}): Directive {df} has expired (from filename).")
+                        
+                        if not is_expired:
+                            dir_list.append(f"--- Directive {df} ---\n{directive_content}")
+                except Exception as e:
+                    log(f"Error reading directive {df}: {e}")
             
             if dir_list:
                 directives = "\n".join(dir_list)
@@ -215,6 +223,13 @@ def main():
                 log(f"({agent_name}): Updated BILLING.md")
             except Exception as e:
                 log(f"Error updating BILLING.md: {e}")
+
+        # Update Dashboard
+        try:
+            log(f"({agent_name}): Updating INDEX.md dashboard...")
+            subprocess.run(["python3", "jbot-dashboard.py"], check=True)
+        except Exception as e:
+            log(f"Error updating dashboard: {e}")
 
     except Exception as e:
         log(f"Error: Execution failed: {e}")
