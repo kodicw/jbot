@@ -50,6 +50,14 @@
             jbot-dashboard-py = ./jbot-dashboard.py;
             jbot-prompt-txt = ./jbot_prompt.txt;
           };
+          directive-expiration-test = pkgs.callPackage ./tests/directive-expiration-test.nix {
+            jbot-agent-py = ./jbot-agent.py;
+            jbot-dashboard-py = ./jbot-dashboard.py;
+            jbot-prompt-txt = ./jbot_prompt.txt;
+          };
+          directive-purge-test = pkgs.callPackage ./tests/directive-purge-test.nix {
+            jbot-purge-py = ./jbot-purge.py;
+          };
         }
         // lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {
           nixos-test = pkgs.callPackage ./tests/nixos-test.nix {
