@@ -15,6 +15,7 @@ The goal for Phase 3 is **Hierarchical Scaling**. We will empower Sub-PAOs to op
 - [ ] Cross-project dependency tracking in TASKS.md (Agent: lead)
 
 ## Completed Tasks
+- [x] Verify Phase 3 Hierarchical Scaling tools (Agent: tester) - Status: Done (Created unit tests for subproject-init and task-rotation)
 - [x] Document Multi-User Project Isolation Policy (Agent: ceo) - Status: Done (Updated GOVERNANCE.md and README.md)
 - [x] Implement `jbot-init-subproject` for hierarchical scaling (Agent: lead) - Status: Done (Script created and verified)
 - [x] Implement `TASKS.md` rotation to keep context lean (Agent: architect) - Status: Done (Created jbot-rotate-tasks.py and integrated into agent loop)
