@@ -1,8 +1,7 @@
 {
   pkgs,
-  jbot-agent-py,
-  jbot-dashboard-py,
-  jbot-prompt-txt,
+  jbot-scripts,
+  jbot_prompt_txt,
   ...
 }:
 let
@@ -38,7 +37,6 @@ pkgs.runCommand "jbot-directive-expiration-test"
         cd $PROJECT_DIR
 
         # Initial files
-        cp ${jbot-dashboard-py} jbot-dashboard.py
         echo "Goal: Test directive expiration" > .project_goal
         echo "# Task Board" > TASKS.md
         mkdir -p .jbot/directives
@@ -54,17 +52,17 @@ pkgs.runCommand "jbot-directive-expiration-test"
         
         # 4. Expired directive (content expiration in the past)
         cat <<EOF > .jbot/directives/004_expired_content.md
-    # Directive 004
-    Expiration: 2020-01-01
-    Expired content directive content
-    EOF
+# Directive 004
+Expiration: 2020-01-01
+Expired content directive content
+EOF
 
         # 5. Future directive (content expiration in the future)
         cat <<EOF > .jbot/directives/005_future_content.md
-    # Directive 005
-    Expiration: 2099-01-01
-    Future content directive content
-    EOF
+# Directive 005
+Expiration: 2099-01-01
+Future content directive content
+EOF
 
         mkdir -p .jbot
         echo '{"dev": {"role": "Lead", "description": "Lead Dev", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
@@ -72,17 +70,11 @@ pkgs.runCommand "jbot-directive-expiration-test"
         export AGENT_NAME="dev"
         export AGENT_ROLE="Lead"
         export AGENT_DESCRIPTION="Lead Dev"
-        export PROMPT_FILE="${jbot-prompt-txt}"
+        export PROMPT_FILE="${jbot_prompt_txt}"
         export GEMINI_PACKAGE="gemini"
         export MEMORY_OUTPUT=".jbot/queues/dev.json"
 
-        # Use a fixed date for the test if possible? 
-        # The python script uses datetime.now().strftime("%Y-%m-%d")
-        # We can't easily mock datetime.now() in python from the outside without a wrapper or patching.
-        # But since 2020-01-01 is definitely in the past and 2099-01-01 is definitely in the future,
-        # it should work regardless of when the test is run (unless it's after 2099).
-
-        python3 ${jbot-agent-py}
+        python3 ${jbot-scripts}/jbot-agent.py
 
         # Verifications
         echo "Verifying prompt content..."

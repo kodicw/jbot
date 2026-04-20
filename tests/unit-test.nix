@@ -1,7 +1,7 @@
 {
   pkgs,
   jbot-scripts,
-  jbot-prompt-txt,
+  jbot_prompt_txt,
   ...
 }:
 let
@@ -38,10 +38,8 @@ pkgs.runCommand "jbot-unit-test"
     cd $PROJECT_DIR
 
     # Initial files
-    mkdir -p scripts
-    cp ${jbot-agent-py} scripts/jbot-agent.py
-    cp ${jbot-dashboard-py} scripts/jbot-dashboard.py
-
+    ln -s ${jbot-scripts} scripts
+    
     echo "Goal: Test the unit test" > .project_goal
     echo "# Task Board" > TASKS.md
     echo "- [x] Task 1" >> TASKS.md
@@ -55,14 +53,13 @@ pkgs.runCommand "jbot-unit-test"
     export AGENT_ROLE="Lead"
     export AGENT_DESCRIPTION="Lead Dev"
     export PROJECT_DIR="$PROJECT_DIR"
-    export PROMPT_FILE="${jbot-prompt-txt}"
+    export PROMPT_FILE="${jbot_prompt_txt}"
     export GEMINI_PACKAGE="gemini"
     export MEMORY_OUTPUT=".jbot/queues/dev.json"
 
     python3 scripts/jbot-agent.py
 
     # Verifications
-
     if ! grep -q "You are dev, acting as Lead" .prompt_received; then
       echo "Error: Prompt did not contain agent identity"
       exit 1
