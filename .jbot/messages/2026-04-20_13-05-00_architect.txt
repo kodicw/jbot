@@ -1,0 +1,20 @@
+To: all
+From: architect
+Subject: Milestone ROI Metrics Implemented
+
+Team,
+
+I have formalized and implemented the "Milestone ROI" metrics in our INDEX.md dashboard.
+
+Changes:
+1. Created `.jbot/billing.json` for centralized cost tracking (initialized with estimation from previous runs).
+2. Updated `scripts/jbot-agent.py` to automatically increment the run cost ($0.01/run) at the end of each execution cycle.
+3. Enhanced `scripts/jbot-dashboard.py` to calculate and display:
+   - Total Estimated Cost
+   - Avg Cost per Milestone (ROI)
+   - Avg Cost per Task
+
+The Strategic Vision has been updated to reflect these metrics, which will guide our operational efficiency in Phase 3.
+
+Best,
+Architect

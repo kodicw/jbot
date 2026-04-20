@@ -57,6 +57,20 @@ def parse_changelog_file(changelog_path):
     return count
 
 
+def parse_billing_file(billing_path):
+    """Parses a billing.json file and returns the total cost."""
+    data = {"total_cost": 0.0, "currency": "USD"}
+    if not os.path.exists(billing_path):
+        return data
+
+    try:
+        with open(billing_path, "r") as f:
+            data = json.load(f)
+    except Exception:
+        pass
+    return data
+
+
 def generate_dashboard(output_file="INDEX.md", project_dir="."):
     os.chdir(project_dir)
     dashboard_content = "# JBot PAO Dashboard\n\n"
@@ -68,6 +82,7 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
     goal_path = find_file_upwards(".project_goal", project_dir)
     tasks_path = find_file_upwards("TASKS.md", project_dir)
     changelog_path = find_file_upwards("CHANGELOG.md", project_dir)
+    billing_path = os.path.join(project_dir, ".jbot/billing.json")
 
     # 1. Company Vision
     dashboard_content += "## 🎯 Company Vision\n"
@@ -108,9 +123,32 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
     # 4. Status & Progress
     dashboard_content += "## 📈 Status & Progress\n"
     main_milestone_count = parse_changelog_file(changelog_path) if changelog_path else 0
+    billing_data = parse_billing_file(billing_path)
+    total_cost = billing_data.get("total_cost", 0.0)
+    currency = billing_data.get("currency", "USD")
 
     dashboard_content += f"- **Tasks Completed:** {main_tasks['done_count']}\n"
-    dashboard_content += f"- **Milestones Achieved:** {main_milestone_count}\n\n"
+    dashboard_content += f"- **Milestones Achieved:** {main_milestone_count}\n"
+
+    # ROI Metrics
+    if total_cost > 0:
+        avg_cost_milestone = (
+            total_cost / main_milestone_count if main_milestone_count > 0 else 0
+        )
+        avg_cost_task = (
+            total_cost / main_tasks["done_count"] if main_tasks["done_count"] > 0 else 0
+        )
+        dashboard_content += (
+            f"- **Total Estimated Cost:** {total_cost:.2f} {currency}\n"
+        )
+        dashboard_content += (
+            f"- **Avg Cost per Milestone (ROI):** {avg_cost_milestone:.3f} {currency}\n"
+        )
+        dashboard_content += (
+            f"- **Avg Cost per Task:** {avg_cost_task:.3f} {currency}\n"
+        )
+
+    dashboard_content += "\n"
 
     # 5. Recent Milestones
     dashboard_content += "## 🏆 Recent Milestones\n"

@@ -3,10 +3,9 @@
 ## Strategic Vision (CEO)
 - Goal: Professional Autonomous Organization (PAO) - Flat Organizational Excellence.
 - Focus: Internal Cohesion and External Isolation via separate Linux users.
-- Metric: Milestone ROI (Cost per Milestone) to be implemented.
+- Metric: Milestone ROI (Cost per Milestone) implemented.
 
 ## Active Tasks
-- [ ] **Establish and implement Milestone ROI metrics in INDEX.md dashboard** (Agent: architect)
 - [ ] **Verify jbot CLI in nixos-test environment** (Agent: tester)
 
 ## Backlog
@@ -14,6 +13,7 @@
 - [ ] Docker-based test runner for faster verification cycles (Agent: tester)
 
 ## Completed Tasks
+- [x] Establish and implement Milestone ROI metrics in INDEX.md dashboard (Agent: architect)
 - [x] Implement `jbot add-task` command for CLI (Agent: lead)
 - [x] Optimize context density for flat organization (prune redundant history) (Agent: lead)
 - [x] Automated memory rotation integration and locking (Agent: lead)

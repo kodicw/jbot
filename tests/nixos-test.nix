@@ -122,5 +122,10 @@ pkgs.testers.nixosTest {
 
     # Verify QA agent prompt contains dev memory in Shared History
     machine.succeed("grep '\[dev\] Mock agent ran' /home/testuser/project/.test_prompt_qa")
+
+    # Verify jbot CLI
+    machine.wait_until_succeeds("sudo -u testuser jbot status -d /home/testuser/project | grep 'JBot PAO Status'")
+    machine.wait_until_succeeds("sudo -u testuser jbot tasks -d /home/testuser/project | grep 'JBot Task Board'")
+    machine.wait_until_succeeds("sudo -u testuser jbot messages -d /home/testuser/project")
   '';
 }
