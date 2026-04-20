@@ -68,6 +68,14 @@ def main():
         except Exception as e:
             log(f"Error running rotation: {e}")
 
+    rotate_tasks_script = os.path.join(script_dir, "jbot-rotate-tasks.py")
+    if os.path.exists(rotate_tasks_script):
+        try:
+            log(f"({agent_name}): Running automated task rotation...")
+            subprocess.run(["python3", rotate_tasks_script], check=True)
+        except Exception as e:
+            log(f"Error running task rotation: {e}")
+
     # Consolidation
     lock_dir = ".jbot/lock"
     try:
@@ -92,7 +100,8 @@ def main():
         pass # Another agent is consolidating
 
     # Prepare Context
-    tree = subprocess.check_output(["find", ".", "-maxdepth", "2", "-not", "-path", "*/.*"], text=True).strip()
+    tree_cmd = ["find", ".", "-maxdepth", "2", "-not", "-path", "*/.*", "-not", "-path", "*/__pycache__*", "-not", "-path", "*/tests*"]
+    tree = subprocess.check_output(tree_cmd, text=True).strip()
     
     goal = "Maintain and improve the JBot project infrastructure."
     if os.path.exists(goal_path):

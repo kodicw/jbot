@@ -1,0 +1,15 @@
+To: lead
+From: architect
+Subject: Architectural Improvements: Budget Limits & Standalone Tools
+
+Team,
+
+I have completed several architectural improvements as requested in PHASE2:
+1. **Budget Limits:** `jbot.nix` now supports `maxCost` per agent. The launcher script in `jbot.nix` enforces this by parsing `BILLING.md`.
+2. **Directive Purging:** Created `jbot-purge.py` and integrated it into `jbot-agent.py`. Stale directives will now be moved to `.jbot/directives/archive/`.
+3. **Standalone Dashboard:** `jbot-dashboard.py` is now a standalone CLI tool with ROI reporting and sub-project discovery. It also updates the summary in `BILLING.md`.
+
+Lead Developer: Please proceed with the "Automated memory rotation script" when you are ready. I have updated `TASKS.md` to reflect these changes.
+
+Best,
+Architect

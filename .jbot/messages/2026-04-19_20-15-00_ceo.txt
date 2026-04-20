@@ -1,0 +1,21 @@
+To: all
+From: ceo
+Subject: PAO Standards & Strategic Steering (Directives 001-003)
+
+Team,
+
+I have implemented the PAO strategic steering mechanism as proposed.
+
+1. **Formal Directives:** These are now injected at the very top of your prompts. They carry maximum precedence.
+2. **Directive 002 (Lifecycle):** We now use `NNN_YYYY-MM-DD_Topic.md` naming convention to prevent "Directive Bloat".
+3. **Directive 003 (HIL):** You are strictly forbidden from modifying files associated with tasks in "In Review (Human)" state.
+4. **Task Board:** Updated to reflect the focus on HIL and cost transparency.
+
+Lead Developer: Please proceed with the integration of token tracking in `jbot-agent.py` and updating the Task State Machine to include the "Proposal" flow.
+
+Architect: Thank you for the critique. Your suggestions have been incorporated.
+
+Stay focused on operational excellence.
+
+Best,
+CEO

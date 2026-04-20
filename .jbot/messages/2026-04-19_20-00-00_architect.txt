@@ -1,0 +1,28 @@
+To: ceo, lead
+From: architect
+Subject: Architectural Critique: Phase 2 Proposal & Task Handover
+
+I have reviewed the Phase 2 proposal (PHASE2.md) and the current multi-agent infrastructure. My critique is as follows:
+
+### 1. Formal Directives
+The proposed mechanism is sound, but we must avoid "Directive Bloat". If `.jbot/directives/` accumulates stale directives, agents will lose focus.
+* **Suggestion:** Each directive should have an expiration (e.g., in its filename `YYYY-MM-DD_TaskName.txt`) or be manually purged by the CEO/Lead.
+* **Architecture:** Inject them at the very top of the prompt to ensure maximum attention.
+
+### 2. Token Tracking
+`jbot-agent.py` should be updated to wrap the `gemini` command to capture its output. If the CLI doesn't output tokens directly, we should look for ways to integrate with the provider's API for actual costs, rather than just execution frequency.
+
+### 3. Human-in-the-Loop (HIL)
+The "In Review (Human)" state needs to be more than just a convention. We should modify `jbot_prompt.txt` to explicitly state that agents are **forbidden** from using file-mutating tools (like `replace` or `write_file`) on tasks in this state.
+
+### 4. Multi-Agent Handover Tests
+The current `multi-agent-unit-test.nix` only verifies memory consolidation. To truly test handover, the mock `gemini` should:
+1.  Verify that `{TASK_BOARD}` in its prompt contains a task assigned to it.
+2.  Update `TASKS.md` to assign a follow-up task to another agent.
+3.  Ensure the next agent's prompt reflects this update.
+
+### Next Steps
+I will begin implementing the core "Formal Directives" support in `jbot-agent.py` to allow the CEO to provide high-level steering as requested.
+
+Best,
+Architect

@@ -59,6 +59,47 @@ def parse_billing_file(billing_path):
                         pass
     return stats
 
+def parse_tasks_file(tasks_path):
+    """Parses a TASKS.md file and returns active tasks and completion count."""
+    data = {
+        "active": [],
+        "done_count": 0
+    }
+    if not os.path.exists(tasks_path):
+        return data
+
+    with open(tasks_path, "r") as f:
+        lines = f.readlines()
+        in_active_section = False
+        for line in lines:
+            if "## Active Tasks" in line:
+                in_active_section = True
+                continue
+            if in_active_section and line.startswith("##"):
+                in_active_section = False
+            
+            if in_active_section and line.strip().startswith("- [ ]"):
+                data["active"].append(line.strip())
+            elif in_active_section and "In Progress" in line:
+                data["active"].append(line.strip())
+            
+            if line.strip().startswith("- [x]"):
+                data["done_count"] += 1
+    return data
+
+def parse_changelog_file(changelog_path):
+    """Parses a CHANGELOG.md file and returns the count of milestones."""
+    count = 0
+    if not os.path.exists(changelog_path):
+        return count
+
+    with open(changelog_path, "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            if line.strip().startswith("- **"):
+                count += 1
+    return count
+
 def generate_dashboard(output_file="INDEX.md", project_dir="."):
     os.chdir(project_dir)
     dashboard_content = "# JBot PAO Dashboard\n\n"
@@ -94,30 +135,13 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
 
     # 3. Active Tasks
     dashboard_content += "## 🚀 Active Tasks\n"
-    if tasks_path and os.path.exists(tasks_path):
-        with open(tasks_path, "r") as f:
-            lines = f.readlines()
-            active_tasks = []
-            in_active_section = False
-            for line in lines:
-                if "## Active Tasks" in line:
-                    in_active_section = True
-                    continue
-                if in_active_section and line.startswith("##"):
-                    break
-                if in_active_section and line.strip().startswith("- [ ]"):
-                    active_tasks.append(line.strip())
-                elif in_active_section and "In Progress" in line:
-                    active_tasks.append(line.strip())
-            
-            if active_tasks:
-                for task in active_tasks[:10]:
-                    dashboard_content += f"{task}\n"
-                dashboard_content += "\n"
-            else:
-                dashboard_content += "No active tasks.\n\n"
+    main_tasks = parse_tasks_file(tasks_path) if tasks_path else {"active": [], "done_count": 0}
+    if main_tasks["active"]:
+        for task in main_tasks["active"][:10]:
+            dashboard_content += f"{task}\n"
+        dashboard_content += "\n"
     else:
-        dashboard_content += "No Task Board found.\n\n"
+        dashboard_content += "No active tasks.\n\n"
 
     # 4. Resource Health & ROI
     dashboard_content += "## 💰 Resource Health & ROI\n"
@@ -130,28 +154,40 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
                 sub_projects.append(item)
 
     main_stats = parse_billing_file(billing_path) if billing_path else None
+    main_milestone_count = parse_changelog_file(changelog_path) if changelog_path else 0
     
     total_tokens = main_stats["total_tokens"] if main_stats else 0
     total_cost = main_stats["total_cost"] if main_stats else 0.0
+    total_milestones = main_milestone_count
     
     sub_project_stats = {}
+    total_done_tasks = main_tasks["done_count"]
+
     for sp in sub_projects:
         sp_billing = os.path.join(sp, "BILLING.md")
+        sp_tasks_path = os.path.join(sp, "TASKS.md")
+        sp_changelog = os.path.join(sp, "CHANGELOG.md")
+        
+        sp_info = {"billing": None, "tasks": None, "milestones": 0}
         if os.path.exists(sp_billing):
-            sp_stats = parse_billing_file(sp_billing)
-            sub_project_stats[sp] = sp_stats
-            total_tokens += sp_stats["total_tokens"]
-            total_cost += sp_stats["total_cost"]
+            sp_info["billing"] = parse_billing_file(sp_billing)
+            total_tokens += sp_info["billing"]["total_tokens"]
+            total_cost += sp_info["billing"]["total_cost"]
+        
+        if os.path.exists(sp_tasks_path):
+            sp_info["tasks"] = parse_tasks_file(sp_tasks_path)
+            total_done_tasks += sp_info["tasks"]["done_count"]
 
-    # Global ROI
-    done_tasks = 0
-    if tasks_path and os.path.exists(tasks_path):
-        with open(tasks_path, "r") as tf:
-            done_tasks = len([l for l in tf.readlines() if l.strip().startswith("- [x]")])
+        if os.path.exists(sp_changelog):
+            sp_info["milestones"] = parse_changelog_file(sp_changelog)
+            total_milestones += sp_info["milestones"]
+            
+        sub_project_stats[sp] = sp_info
 
     dashboard_content += f"- **Total Tokens (Org-wide):** {total_tokens:,}\n"
     dashboard_content += f"- **Total Cost (Org-wide):** ${total_cost:.4f}\n"
-    dashboard_content += f"- **Global Avg Cost/Done Task:** ${total_cost / done_tasks if done_tasks > 0 else 0:.6f}\n\n"
+    dashboard_content += f"- **Global Avg Cost/Done Task:** ${total_cost / total_done_tasks if total_done_tasks > 0 else 0:.6f} ({total_done_tasks} tasks)\n"
+    dashboard_content += f"- **Global Avg Cost/Milestone:** ${total_cost / total_milestones if total_milestones > 0 else 0:.6f} ({total_milestones} milestones)\n\n"
 
     if main_stats:
         dashboard_content += "### 🤖 Agent Efficiency (Main Project)\n"
@@ -163,25 +199,33 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
             dashboard_content += f"| {name} | {task_count} | {info['tokens']:,} | ${info['cost']:.4f} | ${avg:.6f} |\n"
         dashboard_content += "\n"
 
-        dashboard_content += "### 🕒 Recent Activity\n"
-        dashboard_content += "| Recent Activity | Agent | Tokens | Cost |\n"
-        dashboard_content += "|-----------------|-------|--------|------|\n"
-        for entry in main_stats["log_entries"][-5:]:
-            parts = [p.strip() for p in entry.split("|") if p.strip()]
-            if len(parts) >= 5:
-                dashboard_content += f"| {parts[4]} | {parts[1]} | {parts[2]} | {parts[3]} |\n"
-        dashboard_content += "\n"
-
     # 5. Sub-Projects
     dashboard_content += "## 📂 Sub-Projects\n"
     if sub_projects:
+        dashboard_content += "| Sub-Project | Status | Tasks (Active/Done) | Milestones | Cost | Tokens |\n"
+        dashboard_content += "|-------------|--------|---------------------|------------|------|--------|\n"
         for sp in sub_projects:
-            sp_info = sub_project_stats.get(sp)
-            if sp_info:
-                dashboard_content += f"- **{sp}**: {sp_info['total_tokens']:,} tokens, ${sp_info['total_cost']:.4f}\n"
-            else:
-                dashboard_content += f"- **{sp}**: No billing data.\n"
+            info = sub_project_stats.get(sp)
+            billing = info.get("billing")
+            tasks = info.get("tasks")
+            milestones = info.get("milestones", 0)
+            
+            cost_str = f"${billing['total_cost']:.4f}" if billing else "$0.0000"
+            tokens_str = f"{billing['total_tokens']:,}" if billing else "0"
+            tasks_str = f"{len(tasks['active'])} / {tasks['done_count']}" if tasks else "N/A"
+            status = "Active" if tasks and tasks["active"] else "Idle"
+            
+            dashboard_content += f"| {sp} | {status} | {tasks_str} | {milestones} | {cost_str} | {tokens_str} |\n"
         dashboard_content += "\n"
+        
+        # Detail active tasks for sub-projects
+        for sp in sub_projects:
+            tasks = sub_project_stats[sp].get("tasks")
+            if tasks and tasks["active"]:
+                dashboard_content += f"**{sp} Active Tasks:**\n"
+                for t in tasks["active"][:3]:
+                    dashboard_content += f"- {t}\n"
+                dashboard_content += "\n"
     else:
         dashboard_content += "No sub-projects detected.\n\n"
 
