@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime
 import jbot_utils as utils
 
+
 def generate_dashboard(output_file="INDEX.md", project_dir="."):
     os.chdir(project_dir)
     dashboard_content = "# JBot PAO Dashboard\n\n"
@@ -14,7 +15,6 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
     goal_path = utils.find_file_upwards(".project_goal", project_dir)
     tasks_path = utils.find_file_upwards("TASKS.md", project_dir)
     changelog_path = utils.find_file_upwards("CHANGELOG.md", project_dir)
-    billing_data = utils.get_billing_data(project_dir)
 
     # 1. Company Vision
     dashboard_content += "## 🎯 Company Vision\n"
@@ -40,7 +40,9 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
 
     # 3. Active Tasks
     dashboard_content += "## 🚀 Active Tasks\n"
-    tasks_data = utils.parse_tasks(tasks_path) if tasks_path else {"active": [], "done_count": 0}
+    tasks_data = (
+        utils.parse_tasks(tasks_path) if tasks_path else {"active": [], "done_count": 0}
+    )
     if tasks_data["active"]:
         for task in tasks_data["active"][:10]:
             dashboard_content += f"{task}\n"
@@ -50,7 +52,7 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
 
     # 4. Status & Progress
     dashboard_content += "## 📈 Status & Progress\n"
-    
+
     # Milestone count from changelog
     milestone_count = 0
     if changelog_path and os.path.exists(changelog_path):
@@ -58,39 +60,18 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
             for line in f:
                 if line.strip().startswith("- **"):
                     milestone_count += 1
-    
-    total_cost = billing_data.get("total_cost", 0.0)
-    currency = billing_data.get("currency", "USD")
 
     dashboard_content += f"- **Tasks Completed:** {tasks_data['done_count']}\n"
-    dashboard_content += f"- **Milestones Achieved:** {milestone_count}\n"
-
-    # ROI Metrics
-    if total_cost > 0:
-        avg_cost_milestone = (
-            total_cost / milestone_count if milestone_count > 0 else 0
-        )
-        avg_cost_task = (
-            total_cost / tasks_data["done_count"] if tasks_data["done_count"] > 0 else 0
-        )
-        dashboard_content += (
-            f"- **Total Estimated Cost:** {total_cost:.2f} {currency}\n"
-        )
-        dashboard_content += (
-            f"- **Avg Cost per Milestone (ROI):** {avg_cost_milestone:.3f} {currency}\n"
-        )
-        dashboard_content += (
-            f"- **Avg Cost per Task:** {avg_cost_task:.3f} {currency}\n"
-        )
-
-    dashboard_content += "\n"
+    dashboard_content += f"- **Milestones Achieved:** {milestone_count}\n\n"
 
     # 5. Recent Milestones
     dashboard_content += "## 🏆 Recent Milestones\n"
     if changelog_path and os.path.exists(changelog_path):
         with open(changelog_path, "r") as f:
             lines = f.readlines()
-            milestones = [l.strip() for l in lines if l.strip().startswith("- **")]
+            milestones = [
+                line.strip() for line in lines if line.strip().startswith("- **")
+            ]
             for m in milestones[:5]:
                 dashboard_content += f"{m}\n"
             dashboard_content += "\n"

@@ -1,13 +1,14 @@
 import os
 import json
 import re
-import subprocess
 from datetime import datetime
+
 
 # --- Logging ---
 def log(msg, component="JBot"):
     """Standardized logging format for all JBot scripts."""
     print(f"[{datetime.now()}] {component}: {msg}")
+
 
 # --- Paths & Files ---
 def find_file_upwards(filename, start_dir="."):
@@ -23,12 +24,14 @@ def find_file_upwards(filename, start_dir="."):
         current = parent
     return None
 
+
 def get_project_root(start_dir="."):
     """Find the project root by looking for .project_goal."""
     goal_path = find_file_upwards(".project_goal", start_dir)
     if goal_path:
         return os.path.dirname(goal_path)
     return os.path.abspath(start_dir)
+
 
 def load_json(file_path, default=None):
     """Safely load a JSON file."""
@@ -41,6 +44,7 @@ def load_json(file_path, default=None):
         log(f"Error loading JSON from {file_path}: {e}", "Utils")
         return default if default is not None else {}
 
+
 def save_json(file_path, data):
     """Safely save a JSON file, ensuring the directory exists."""
     try:
@@ -49,6 +53,7 @@ def save_json(file_path, data):
             json.dump(data, f, indent=2)
     except Exception as e:
         log(f"Error saving JSON to {file_path}: {e}", "Utils")
+
 
 def read_file(file_path, default=""):
     """Safely read a file's content."""
@@ -61,6 +66,7 @@ def read_file(file_path, default=""):
         log(f"Error reading file {file_path}: {e}", "Utils")
         return default
 
+
 def write_file(file_path, content):
     """Safely write content to a file, ensuring the directory exists."""
     try:
@@ -72,27 +78,51 @@ def write_file(file_path, content):
         log(f"Error writing to file {file_path}: {e}", "Utils")
         return False
 
-# --- Billing & ROI ---
-def get_billing_data(project_dir="."):
-    """Retrieve billing data from .jbot/billing.json."""
-    billing_path = os.path.join(project_dir, ".jbot/billing.json")
-    return load_json(billing_path, default={"total_cost": 0.0, "currency": "USD"})
 
-def update_billing_data(project_dir=".", run_cost=0.01):
-    """Increment the total cost in .jbot/billing.json."""
-    billing_path = os.path.join(project_dir, ".jbot/billing.json")
-    data = get_billing_data(project_dir)
-    data["total_cost"] = data.get("total_cost", 0.0) + run_cost
-    save_json(billing_path, data)
-    return data
+# --- Versioning ---
+def get_version(project_dir="."):
+    """Retrieve the current version from the VERSION file."""
+    version_path = os.path.join(project_dir, "VERSION")
+    return read_file(version_path, default="0.0.0")
+
+
+def bump_version(project_dir=".", part="patch"):
+    """Increment the version (major, minor, patch)."""
+    current_version = get_version(project_dir)
+    try:
+        parts = list(map(int, current_version.split(".")))
+        if len(parts) != 3:
+            log(f"Invalid version format: {current_version}", "Utils")
+            return None
+
+        if part == "major":
+            parts[0] += 1
+            parts[1] = 0
+            parts[2] = 0
+        elif part == "minor":
+            parts[1] += 1
+            parts[2] = 0
+        elif part == "patch":
+            parts[2] += 1
+        else:
+            log(f"Invalid version part: {part}", "Utils")
+            return None
+
+        new_version = ".".join(map(str, parts))
+        if write_file(os.path.join(project_dir, "VERSION"), new_version):
+            return new_version
+    except Exception as e:
+        log(f"Error bumping version: {e}", "Utils")
+    return None
+
 
 # --- Tasks ---
 def parse_tasks(tasks_path):
     """Parses TASKS.md into sections and extracted data."""
     data = {
-        "active": [], 
-        "done_count": 0, 
-        "backlog": [], 
+        "active": [],
+        "done_count": 0,
+        "backlog": [],
         "vision": "",
         "sections": {
             "header": [],
@@ -100,7 +130,7 @@ def parse_tasks(tasks_path):
             "active": [],
             "backlog": [],
             "completed": [],
-        }
+        },
     }
     if not os.path.exists(tasks_path):
         return data
@@ -117,7 +147,7 @@ def parse_tasks(tasks_path):
                 current_section = "backlog"
             elif "## Completed Tasks" in line:
                 current_section = "completed"
-            
+
             data["sections"][current_section].append(line)
 
             if current_section == "vision" and not line.startswith("##"):
@@ -126,12 +156,13 @@ def parse_tasks(tasks_path):
                 data["active"].append(line.strip())
             elif current_section == "backlog" and line.strip().startswith("- [ ]"):
                 data["backlog"].append(line.strip())
-            
+
             if line.strip().startswith("- [x]"):
                 data["done_count"] += 1
-    
+
     data["vision"] = data["vision"].strip()
     return data
+
 
 def add_task(tasks_path, task_text, agent=None):
     """Adds a new task to the Active Tasks section of TASKS.md."""
@@ -163,23 +194,29 @@ def add_task(tasks_path, task_text, agent=None):
         f.writelines(new_lines)
     return True
 
+
 # --- Team & Registry ---
 def get_team_registry(project_dir="."):
     """Load the team registry from .jbot/agents.json."""
     agents_path = os.path.join(project_dir, ".jbot/agents.json")
     return load_json(agents_path, default={})
 
+
 # --- Messages ---
 def get_recent_messages(msgs_dir, count=5, include_human=False):
     """Retrieve the most recent messages from the messages directory."""
     if not os.path.exists(msgs_dir):
         return []
-    
-    msg_files = sorted([
-        f for f in os.listdir(msgs_dir) 
-        if os.path.isfile(os.path.join(msgs_dir, f)) and (include_human or f != "human.txt")
-    ])
-    
+
+    msg_files = sorted(
+        [
+            f
+            for f in os.listdir(msgs_dir)
+            if os.path.isfile(os.path.join(msgs_dir, f))
+            and (include_human or f != "human.txt")
+        ]
+    )
+
     results = []
     for mf in msg_files[-count:]:
         try:
@@ -189,12 +226,13 @@ def get_recent_messages(msgs_dir, count=5, include_human=False):
             pass
     return results
 
+
 # --- Memory & Logs ---
 def get_recent_logs(log_path, count=10):
     """Retrieve recent entries from the memory log."""
     if not os.path.exists(log_path):
         return []
-    
+
     entries = []
     try:
         with open(log_path, "r") as f:
@@ -210,37 +248,43 @@ def get_recent_logs(log_path, count=10):
         pass
     return entries
 
+
 # --- Directives ---
 def parse_directives(dir_path):
     """Parse directives and filter out expired ones."""
     if not os.path.exists(dir_path):
         return []
-    
-    dir_files = sorted([
-        f for f in os.listdir(dir_path) 
-        if f.endswith((".txt", ".md")) and f != "README.md"
-    ])
-    
+
+    dir_files = sorted(
+        [
+            f
+            for f in os.listdir(dir_path)
+            if f.endswith((".txt", ".md")) and f != "README.md"
+        ]
+    )
+
     valid_directives = []
     today = datetime.now().strftime("%Y-%m-%d")
-    
+
     for df in dir_files:
         try:
             with open(os.path.join(dir_path, df), "r") as f:
                 content = f.read()
-                
+
                 # Check expiration in content or filename
                 is_expired = False
-                content_exp_match = re.search(r"Expiration:\s*(\d{4}-\d{2}-\d{2})", content, re.IGNORECASE)
+                content_exp_match = re.search(
+                    r"Expiration:\s*(\d{4}-\d{2}-\d{2})", content, re.IGNORECASE
+                )
                 filename_exp_match = re.search(r"(\d{4}-\d{2}-\d{2})", df)
-                
+
                 if content_exp_match:
                     if today > content_exp_match.group(1):
                         is_expired = True
                 elif filename_exp_match:
                     if today > filename_exp_match.group(1):
                         is_expired = True
-                
+
                 if not is_expired:
                     valid_directives.append({"filename": df, "content": content})
         except Exception:

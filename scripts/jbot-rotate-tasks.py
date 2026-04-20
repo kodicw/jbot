@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime
 import jbot_utils as utils
 
+
 def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=20):
     if not os.path.exists(tasks_file):
         utils.log(f"Tasks file {tasks_file} not found.", "Task Rotate")
@@ -58,15 +59,20 @@ def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=2
         if len(all_completed) > limit:
             to_keep = all_completed[-limit:]
             to_archive = all_completed[:-limit]
-            utils.log(f"Archiving {len(to_archive)} tasks from Completed Tasks.", "Task Rotate")
+            utils.log(
+                f"Archiving {len(to_archive)} tasks from Completed Tasks.",
+                "Task Rotate",
+            )
 
         # 3. Write Archive
         if to_archive:
             if not os.path.exists(archive_file) or os.path.getsize(archive_file) == 0:
                 utils.write_file(archive_file, "# JBot Task Archive\n\n")
-            
+
             with open(archive_file, "a") as f:
-                f.write(f"## Archived on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(
+                    f"## Archived on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                )
                 f.writelines(to_archive)
                 f.write("\n")
 
@@ -90,11 +96,15 @@ def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=2
             f.writelines(sections["completed"][:1])  # Write completed header
             f.writelines(to_keep)
 
-        utils.log(f"Successfully rotated tasks. TASKS.md now has {len(to_keep)} completed tasks.", "Task Rotate")
+        utils.log(
+            f"Successfully rotated tasks. TASKS.md now has {len(to_keep)} completed tasks.",
+            "Task Rotate",
+        )
 
     except Exception as e:
         utils.log(f"Error rotating tasks: {e}", "Task Rotate")
         import traceback
+
         traceback.print_exc()
 
 
@@ -105,7 +115,7 @@ def main():
         "-a", "--archive", default="TASKS.archive.md", help="Archive tasks file"
     )
     parser.add_argument(
-        "-l",
+        "-line",
         "--limit",
         type=int,
         default=10,

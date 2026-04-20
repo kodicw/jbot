@@ -65,10 +65,19 @@ let
   jbot-cli = pkgs.writeShellScriptBin "jbot" ''
     ${pkgs.python3}/bin/python3 ${./scripts}/jbot-cli.py "$@"
   '';
+
+  # Pick a representative project directory for maintenance if multiple exist
+  firstAgent = lib.head (lib.attrValues cfg.agents ++ [ { projectDir = "/dev/null"; } ]);
+  maintenanceProjectDir = firstAgent.projectDir;
 in
 {
   options.programs.jbot = {
     enable = lib.mkEnableOption "JBot AI Agent Scheduler";
+    maintenanceInterval = lib.mkOption {
+      type = lib.types.str;
+      default = "hourly";
+      description = "Systemd calendar interval for the JBot maintenance service.";
+    };
     agents = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule agentModule);
       default = { };
@@ -79,115 +88,149 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = [ jbot-cli ];
 
-    systemd.user.services = lib.mapAttrs' (
-      name: agent:
-      lib.nameValuePair "jbot-agent-${name}" (
-        lib.mkIf agent.enable {
+    systemd.user.services =
+      (lib.mapAttrs' (
+        name: agent:
+        lib.nameValuePair "jbot-agent-${name}" (
+          lib.mkIf agent.enable {
+            Unit = {
+              Description = "Scheduled JBot AI Developer: ${agent.role}";
+              After = map (n: "jbot-agent-${n}.service") agent.dependsOn;
+              Wants = map (n: "jbot-agent-${n}.service") agent.dependsOn;
+            };
+            Service = {
+              Environment = [
+                "PATH=${
+                  lib.makeBinPath (
+                    [
+                      pkgs.coreutils
+                      pkgs.bash
+                      pkgs.procps
+                      pkgs.nix
+                      pkgs.bubblewrap
+                      pkgs.git
+                      pkgs.gh
+                      pkgs.curl
+                      pkgs.findutils
+                      pkgs.gnused
+                      pkgs.gawk
+                      pkgs.bc
+                      pkgs.jq
+                      pkgs.nixfmt-rfc-style
+                      pkgs.statix
+                      pkgs.ruff
+                      agent.geminiPackage
+                      pkgs.python3
+                    ]
+                    ++ agent.extraPackages
+                  )
+                }"
+                "SKIP_VM_TESTS=1"
+              ];
+              # Systemd sandboxing for extra security
+              ProtectSystem = "strict";
+              ProtectHome = "read-only";
+              BindPaths = [
+                agent.projectDir
+                "${config.home.homeDirectory}/.gemini"
+                "${config.home.homeDirectory}/.config/gh"
+              ];
+
+              ExecStart = "${pkgs.writeShellScript "jbot-launcher-${name}" ''
+                set -euo pipefail
+
+                PROJECT_DIR="${agent.projectDir}"
+                mkdir -p "$PROJECT_DIR/.jbot"
+
+                # Provide the agent registry to the project directory
+                cp ${agentsJson} "$PROJECT_DIR/.jbot/agents.json"
+
+                # Calculate home manager profile path for Nix commands inside sandbox
+                HM_PROFILE="${config.home.homeDirectory}/.nix-profile"
+                USER_ID=$(id -u)
+
+                export AGENT_NAME="${name}"
+                export AGENT_ROLE="${agent.role}"
+                export AGENT_DESCRIPTION="${agent.description}"
+                export PROJECT_DIR="$PROJECT_DIR"
+                export PROMPT_FILE="${agent.promptFile}"
+                export GEMINI_PACKAGE="${agent.geminiPackage}/bin/gemini"
+
+                echo "[$(date)] JBot (${name}): Launching agent runner in sandbox..."
+
+                timeout 30m bwrap \
+                  --ro-bind /nix/store /nix/store \
+                  --ro-bind /etc/resolv.conf /etc/resolv.conf \
+                  --ro-bind /etc/hosts /etc/hosts \
+                  --ro-bind /etc/ssl/certs /etc/ssl/certs \
+                  --ro-bind-try /etc/static/charsets /etc/static/charsets \
+                  --dev /dev \
+                  --proc /proc \
+                  --tmpfs /tmp \
+                  --tmpfs /home \
+                  --bind "$PROJECT_DIR" "$PROJECT_DIR" \
+                  --bind "${config.home.homeDirectory}/.gemini" "${config.home.homeDirectory}/.gemini" \
+                  --bind-try "${config.home.homeDirectory}/.config/gh" "${config.home.homeDirectory}/.config/gh" \
+                  --ro-bind-try "${config.home.homeDirectory}/.gitconfig" "${config.home.homeDirectory}/.gitconfig" \
+                  --ro-bind-try "$HM_PROFILE" "$HM_PROFILE" \
+                  --ro-bind "/run/user/$USER_ID/bus" "/run/user/$USER_ID/bus" \
+                  --setenv HOME "${config.home.homeDirectory}" \
+                  --setenv PATH "$PATH" \
+                  --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=/run/user/$USER_ID/bus" \
+                  --chdir "$PROJECT_DIR" \
+                  --unshare-all \
+                  --share-net \
+                  --die-with-parent \
+                  ${pkgs.python3}/bin/python3 ${./scripts}/jbot-agent.py
+              ''}";
+
+              WorkingDirectory = agent.projectDir;
+            };
+          }
+        )
+      ) cfg.agents)
+      // {
+        jbot-maintenance = {
           Unit = {
-            Description = "Scheduled JBot AI Developer: ${agent.role}";
-            After = map (n: "jbot-agent-${n}.service") agent.dependsOn;
-            Wants = map (n: "jbot-agent-${n}.service") agent.dependsOn;
+            Description = "JBot Infrastructure Maintenance Service";
           };
           Service = {
             Environment = [
               "PATH=${
-                lib.makeBinPath (
-                  [
-                    pkgs.coreutils
-                    pkgs.bash
-                    pkgs.procps
-                    pkgs.nix
-                    pkgs.bubblewrap
-                    pkgs.git
-                    pkgs.gh
-                    pkgs.curl
-                    pkgs.findutils
-                    pkgs.gnused
-                    pkgs.gawk
-                    pkgs.bc
-                    pkgs.jq
-                    pkgs.nixfmt-rfc-style
-                    pkgs.statix
-                    pkgs.ruff
-                    agent.geminiPackage
-                    pkgs.python3
-                  ]
-                  ++ agent.extraPackages
-                )
+                lib.makeBinPath [
+                  pkgs.coreutils
+                  pkgs.bash
+                  pkgs.git
+                  pkgs.python3
+                  pkgs.findutils
+                  pkgs.gnused
+                  pkgs.gawk
+                ]
               }"
-              "SKIP_VM_TESTS=1"
+              "PROJECT_DIR=${maintenanceProjectDir}"
             ];
-            # Systemd sandboxing for extra security
-            ProtectSystem = "strict";
-            ProtectHome = "read-only";
-            BindPaths = [
-              agent.projectDir
-              "${config.home.homeDirectory}/.gemini"
-              "${config.home.homeDirectory}/.config/gh"
-            ];
-
-            ExecStart = "${pkgs.writeShellScript "jbot-launcher-${name}" ''
-              set -euo pipefail
-
-              PROJECT_DIR="${agent.projectDir}"
-              mkdir -p "$PROJECT_DIR/.jbot"
-
-              # Provide the agent registry to the project directory
-              cp ${agentsJson} "$PROJECT_DIR/.jbot/agents.json"
-
-              # Calculate home manager profile path for Nix commands inside sandbox
-              HM_PROFILE="${config.home.homeDirectory}/.nix-profile"
-              USER_ID=$(id -u)
-
-              export AGENT_NAME="${name}"
-              export AGENT_ROLE="${agent.role}"
-              export AGENT_DESCRIPTION="${agent.description}"
-              export PROJECT_DIR="$PROJECT_DIR"
-              export PROMPT_FILE="${agent.promptFile}"
-              export GEMINI_PACKAGE="${agent.geminiPackage}/bin/gemini"
-
-              echo "[$(date)] JBot (${name}): Launching agent runner in sandbox..."
-
-              timeout 30m bwrap \
-                --ro-bind /nix/store /nix/store \
-                --ro-bind /etc/resolv.conf /etc/resolv.conf \
-                --ro-bind /etc/hosts /etc/hosts \
-                --ro-bind /etc/ssl/certs /etc/ssl/certs \
-                --ro-bind-try /etc/static/charsets /etc/static/charsets \
-                --dev /dev \
-                --proc /proc \
-                --tmpfs /tmp \
-                --tmpfs /home \
-                --bind "$PROJECT_DIR" "$PROJECT_DIR" \
-                --bind "${config.home.homeDirectory}/.gemini" "${config.home.homeDirectory}/.gemini" \
-                --bind-try "${config.home.homeDirectory}/.config/gh" "${config.home.homeDirectory}/.config/gh" \
-                --ro-bind-try "${config.home.homeDirectory}/.gitconfig" "${config.home.homeDirectory}/.gitconfig" \
-                --ro-bind-try "$HM_PROFILE" "$HM_PROFILE" \
-                --ro-bind "/run/user/$USER_ID/bus" "/run/user/$USER_ID/bus" \
-                --setenv HOME "${config.home.homeDirectory}" \
-                --setenv PATH "$PATH" \
-                --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=/run/user/$USER_ID/bus" \
-                --chdir "$PROJECT_DIR" \
-                --unshare-all \
-                --share-net \
-                --die-with-parent \
-                ${pkgs.python3}/bin/python3 ${./scripts}/jbot-agent.py
-            ''}";
-
-            WorkingDirectory = agent.projectDir;
+            ExecStart = "${pkgs.python3}/bin/python3 ${./scripts}/jbot-maintenance.py";
+            WorkingDirectory = maintenanceProjectDir;
           };
-        }
-      )
-    ) cfg.agents;
+        };
+      };
 
-    systemd.user.timers = lib.mapAttrs' (
-      name: agent:
-      lib.nameValuePair "jbot-agent-${name}" (
-        lib.mkIf agent.enable {
-          Timer.OnCalendar = agent.interval;
+    systemd.user.timers =
+      (lib.mapAttrs' (
+        name: agent:
+        lib.nameValuePair "jbot-agent-${name}" (
+          lib.mkIf agent.enable {
+            Timer.OnCalendar = agent.interval;
+            Install.WantedBy = [ "timers.target" ];
+          }
+        )
+      ) cfg.agents)
+      // {
+        jbot-maintenance = {
+          Timer.OnCalendar = cfg.maintenanceInterval;
           Install.WantedBy = [ "timers.target" ];
-        }
-      )
-    ) cfg.agents;
+        };
+      };
+
   };
 }

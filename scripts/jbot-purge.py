@@ -5,6 +5,7 @@ import argparse
 from datetime import datetime
 import jbot_utils as utils
 
+
 def purge_directives(
     dir_path=".jbot/directives", archive_path=".jbot/directives/archive"
 ):
@@ -49,11 +50,17 @@ def purge_directives(
                 exp_date = content_exp_match.group(1)
                 if today > exp_date:
                     is_expired = True
-                    utils.log(f"Directive {df} has expired (from content: {exp_date}).", "Purge")
+                    utils.log(
+                        f"Directive {df} has expired (from content: {exp_date}).",
+                        "Purge",
+                    )
             elif exp_date_from_filename:
                 if today > exp_date_from_filename:
                     is_expired = True
-                    utils.log(f"Directive {df} has expired (from filename: {exp_date_from_filename}).", "Purge")
+                    utils.log(
+                        f"Directive {df} has expired (from filename: {exp_date_from_filename}).",
+                        "Purge",
+                    )
 
             if is_expired:
                 dest_path = os.path.join(archive_path, df)
@@ -63,7 +70,10 @@ def purge_directives(
                     dest_path = os.path.join(archive_path, f"{name}_{timestamp}{ext}")
 
                 shutil.move(df_path, dest_path)
-                utils.log(f"Archived expired directive: {df} -> {os.path.basename(dest_path)}", "Purge")
+                utils.log(
+                    f"Archived expired directive: {df} -> {os.path.basename(dest_path)}",
+                    "Purge",
+                )
                 purged_count += 1
 
         except Exception as e:

@@ -12,3 +12,6 @@
 - [x] Set up pre-commit verification for agent runs (Agent: lead) - Status: Done
 - [x] Automated memory rotation (Agent: lead) - Status: Done (Created jbot-rotate-messages.py and integrated into agent loop)
 
+## Archived on 2026-04-20 15:18:33
+- [x] **Design agent-to-agent task negotiation protocol** (Agent: architect)
+

@@ -59,7 +59,7 @@ pkgs.runCommand "jbot-unit-test"
 
     python3 scripts/jbot-agent.py
 
-    # Verifications
+    # Verifications for Stateless Agent
     if ! grep -q "You are dev, acting as Lead" .prompt_received; then
       echo "Error: Prompt did not contain agent identity"
       exit 1
@@ -70,18 +70,37 @@ pkgs.runCommand "jbot-unit-test"
       exit 1
     fi
 
-    if ! grep -q "This is a test directive" .prompt_received; then
-      echo "Error: Prompt did not contain formal directive"
+    if [ ! -f .jbot/queues/dev.json ]; then
+      echo "Error: Memory output not created in queue"
       exit 1
     fi
 
-    if [ ! -f .jbot/queues/dev.json ]; then
-      echo "Error: Memory output not created"
+    if [ -f INDEX.md ]; then
+      echo "Error: INDEX.md was created by agent (not stateless!)"
+      exit 1
+    fi
+
+    # Run Maintenance
+    python3 scripts/jbot-maintenance.py
+
+    # Verifications for Maintenance
+    if [ ! -f .jbot/memory.log ]; then
+      echo "Error: memory.log not created by maintenance"
+      exit 1
+    fi
+
+    if ! grep -q "Mock unit test success" .jbot/memory.log; then
+      echo "Error: Memory not consolidated into memory.log"
+      exit 1
+    fi
+
+    if [ -f .jbot/queues/dev.json ]; then
+      echo "Error: Queue file not removed after consolidation"
       exit 1
     fi
 
     if [ ! -f INDEX.md ]; then
-      echo "Error: INDEX.md not created"
+      echo "Error: INDEX.md not created by maintenance"
       exit 1
     fi
 

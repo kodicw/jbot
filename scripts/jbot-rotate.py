@@ -55,7 +55,11 @@ def main():
         "-a", "--archive", default=".jbot/memory.log.archive", help="Archive log file"
     )
     parser.add_argument(
-        "-l", "--limit", type=int, default=100, help="Max entries to keep in memory.log"
+        "-line",
+        "--limit",
+        type=int,
+        default=100,
+        help="Max entries to keep in memory.log",
     )
     args = parser.parse_args()
 

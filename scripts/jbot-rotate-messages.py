@@ -59,7 +59,11 @@ def main():
         "-a", "--archive", default=".jbot/messages/archive", help="Archive directory"
     )
     parser.add_argument(
-        "-l", "--limit", type=int, default=20, help="Max entries to keep in messages/"
+        "-line",
+        "--limit",
+        type=int,
+        default=20,
+        help="Max entries to keep in messages/",
     )
     args = parser.parse_args()
 

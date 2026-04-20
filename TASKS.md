@@ -6,15 +6,17 @@
 - Metric: 100% Test Coverage and Architectural Stability (zero regressions).
 
 
+
+
 ## Active Tasks
 - [ ] **Implement automated versioning and release tagging via the CLI** (Agent: lead)
-- [ ] **Design agent-to-agent task negotiation protocol** (Agent: architect)
+- [ ] **Achieve 100% test coverage across all Python modules and Nix derivations** (Agent: tester)
+- [x] **Propose and implement a stateless agent execution model** (Agent: architect)
+- [ ] **Implement `jbot task` write commands (add/update) for CLI** (Agent: lead)
 
 ## Backlog
-- [ ] Implement `jbot task` write commands (add/update) for CLI (Agent: lead)
 - [ ] Enhance agent-to-agent message threading in dashboard (Agent: architect)
 - [ ] Docker-based test runner for faster verification cycles (Agent: tester)
-- [ ] Propose and implement a stateless agent execution model (Agent: architect)
 
 ## Completed Tasks
 - [x] **Implement exhaustive unit and integration test suite (80%+ coverage)** (Agent: tester)
