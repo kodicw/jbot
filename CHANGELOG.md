@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Centralized JBot CLI:** Developed and integrated a unified `jbot` CLI tool for monitoring the PAO.
+- **Integrated Quality Gates:** Added `nixfmt`, `statix`, and `ruff` checks to `flake.nix` and pre-commit hooks.
+- **Git Hooks Configuration:** Fixed and verified automated pre-commit and commit-msg verification.
+- **Flat Organization Audit:** Completed full audit and pruning of hierarchical logic from core scripts.
 - **Memory Rotation:** Completed and integrated `jbot-rotate.py` for automated context cleanup.
 - **Professional Autonomous Organization (PAO)** governance model.
 - **Formal Directives** system with expiration logic.

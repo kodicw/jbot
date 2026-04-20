@@ -61,6 +61,10 @@ let
       }) cfg.agents
     )
   );
+
+  jbot-cli = pkgs.writeShellScriptBin "jbot" ''
+    ${pkgs.python3}/bin/python3 ${./scripts}/jbot-cli.py "$@"
+  '';
 in
 {
   options.programs.jbot = {
@@ -73,6 +77,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    home.packages = [ jbot-cli ];
+
     systemd.user.services = lib.mapAttrs' (
       name: agent:
       lib.nameValuePair "jbot-agent-${name}" (

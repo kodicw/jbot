@@ -50,43 +50,52 @@ def main():
     tasks_path = find_file_upwards("TASKS.md", project_dir) or "TASKS.md"
     goal_path = find_file_upwards(".project_goal", project_dir) or ".project_goal"
 
-    # Automated Purging & Rotation
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    purge_script = os.path.join(script_dir, "jbot-purge.py")
-    if os.path.exists(purge_script):
-        try:
-            log(f"({agent_name}): Running automated directive purging...")
-            subprocess.run(["python3", purge_script], check=True)
-        except Exception as e:
-            log(f"Error running purging: {e}")
-
-    rotate_script = os.path.join(script_dir, "jbot-rotate.py")
-    if os.path.exists(rotate_script):
-        try:
-            log(f"({agent_name}): Running automated memory rotation...")
-            subprocess.run(["python3", rotate_script], check=True)
-        except Exception as e:
-            log(f"Error running rotation: {e}")
-
-    rotate_tasks_script = os.path.join(script_dir, "jbot-rotate-tasks.py")
-    if os.path.exists(rotate_tasks_script):
-        try:
-            log(f"({agent_name}): Running automated task rotation...")
-            subprocess.run(["python3", rotate_tasks_script], check=True)
-        except Exception as e:
-            log(f"Error running task rotation: {e}")
-
-    rotate_messages_script = os.path.join(script_dir, "jbot-rotate-messages.py")
-    if os.path.exists(rotate_messages_script):
-        try:
-            log(f"({agent_name}): Running automated message rotation...")
-            subprocess.run(["python3", rotate_messages_script], check=True)
-        except Exception as e:
-            log(f"Error running message rotation: {e}")
-
-    # Consolidation
+    # Consolidation & Rotation Locking
     lock_dir = ".jbot/lock"
+    rotation_lock = ".jbot/rotation.lock"
+
+    # 1. Automated Purging & Rotation (with locking)
+    try:
+        os.mkdir(rotation_lock)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+
+        purge_script = os.path.join(script_dir, "jbot-purge.py")
+        if os.path.exists(purge_script):
+            try:
+                log(f"({agent_name}): Running automated directive purging...")
+                subprocess.run(["python3", purge_script], check=True)
+            except Exception as e:
+                log(f"Error running purging: {e}")
+
+        rotate_script = os.path.join(script_dir, "jbot-rotate.py")
+        if os.path.exists(rotate_script):
+            try:
+                log(f"({agent_name}): Running automated memory rotation...")
+                subprocess.run(["python3", rotate_script], check=True)
+            except Exception as e:
+                log(f"Error running rotation: {e}")
+
+        rotate_tasks_script = os.path.join(script_dir, "jbot-rotate-tasks.py")
+        if os.path.exists(rotate_tasks_script):
+            try:
+                log(f"({agent_name}): Running automated task rotation...")
+                subprocess.run(["python3", rotate_tasks_script], check=True)
+            except Exception as e:
+                log(f"Error running task rotation: {e}")
+
+        rotate_messages_script = os.path.join(script_dir, "jbot-rotate-messages.py")
+        if os.path.exists(rotate_messages_script):
+            try:
+                log(f"({agent_name}): Running automated message rotation...")
+                subprocess.run(["python3", rotate_messages_script], check=True)
+            except Exception as e:
+                log(f"Error running message rotation: {e}")
+
+        os.rmdir(rotation_lock)
+    except FileExistsError:
+        log(f"({agent_name}): Rotation lock active. Skipping rotation for this run.")
+
+    # 2. Consolidation
     try:
         os.mkdir(lock_dir)
         queues_dir = ".jbot/queues"
@@ -101,7 +110,13 @@ def main():
                         content = json.load(f)
                     with open(memory_log, "a") as f:
                         f.write(
-                            json.dumps({"agent": other_agent, "content": content})
+                            json.dumps(
+                                {
+                                    "agent": other_agent,
+                                    "content": content,
+                                    "timestamp": datetime.now().isoformat(),
+                                }
+                            )
                             + "\n"
                         )
                     os.remove(q_path)
@@ -112,42 +127,60 @@ def main():
         pass  # Another agent is consolidating
 
     # Prepare Context
-    tree_cmd = [
-        "find",
-        ".",
-        "-maxdepth",
-        "2",
-        "-not",
-        "-path",
-        "*/.*",
-        "-not",
-        "-path",
-        "*/__pycache__*",
-        "-not",
-        "-path",
-        "*/tests*",
-    ]
-    tree = subprocess.check_output(tree_cmd, text=True).strip()
+    # Optimize: Use git ls-files for cleaner tree if in a git repo
+    if os.path.exists(".git"):
+        try:
+            tree = subprocess.check_output(["git", "ls-files"], text=True).strip()
+            # Still limit depth or items if too large
+            lines = tree.split("\n")
+            if len(lines) > 50:
+                tree = "\n".join(lines[:50]) + "\n... (truncated)"
+        except Exception:
+            tree = "Error running git ls-files"
+    else:
+        tree_cmd = [
+            "find",
+            ".",
+            "-maxdepth",
+            "2",
+            "-not",
+            "-path",
+            "*/.*",
+            "-not",
+            "-path",
+            "*/__pycache__*",
+            "-not",
+            "-path",
+            "*/tests*",
+        ]
+        tree = subprocess.check_output(tree_cmd, text=True).strip()
 
     goal = "Maintain and improve the JBot project infrastructure."
     if os.path.exists(goal_path):
         with open(goal_path, "r") as f:
             goal = f.read().strip()
 
+    # Optimize: Deduplicate RAG results
     rag_formatted = "No previous memory found."
     if os.path.exists(".jbot/memory.log"):
         with open(".jbot/memory.log", "r") as f:
             lines = f.readlines()
             rag_entries = []
-            for line in lines[-20:]:
+            seen_summaries = set()
+            for line in reversed(lines):
+                if len(rag_entries) >= 10:
+                    break
                 try:
                     data = json.loads(line)
-                    rag_entries.append(
-                        f"[{data.get('agent')}] {data.get('content', {}).get('summary')}"
-                    )
+                    agent = data.get("agent")
+                    summary = data.get("content", {}).get("summary", "").strip()
+                    if summary and summary not in seen_summaries:
+                        rag_entries.append(f"[{agent}] {summary}")
+                        seen_summaries.add(summary)
                 except Exception:
-                    rag_entries.append(line.strip())
-            rag_formatted = "\n".join(rag_entries[-10:])
+                    pass
+            rag_entries.reverse()
+            rag_formatted = "\n".join(rag_entries)
 
     task_board = f"No Task Board found at {tasks_path}. Please initialize it if needed."
     if os.path.exists(tasks_path):
@@ -301,6 +334,31 @@ def main():
         if process.returncode != 0:
             log(f"Error: Gemini CLI failed with exit code {process.returncode}")
             sys.exit(process.returncode)
+
+        # Update Billing
+        billing_path = ".jbot/billing.json"
+        run_cost = 0.01  # Default cost per run if tokens not parsed
+
+        # Placeholder for token parsing (future improvement)
+        # for line in full_output:
+        #     if "Tokens used:" in line:
+        #         # run_cost = ...
+        #         pass
+
+        if os.path.exists(billing_path):
+            try:
+                with open(billing_path, "r") as f:
+                    billing_data = json.load(f)
+                billing_data["total_cost"] = (
+                    billing_data.get("total_cost", 0.0) + run_cost
+                )
+                with open(billing_path, "w") as f:
+                    json.dump(billing_data, f, indent=2)
+                log(
+                    f"({agent_name}): Updated billing. Total Cost: {billing_data['total_cost']:.2f}"
+                )
+            except Exception as e:
+                log(f"Error updating billing: {e}")
 
         # Check for TASKS.md bloat
         if os.path.exists(tasks_path):
