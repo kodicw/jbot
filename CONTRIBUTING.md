@@ -72,3 +72,17 @@ All hooks live in `.githooks/` and are automatically activated by the dev shell:
 - `/tests/`: Nix-based unit and integration tests.
 - `/docs/`: Long-form documentation and architectural archives.
 - `/examples/`: Example configurations for users.
+
+---
+
+## 5. Engineering Standards (DRY)
+
+### Don't Repeat Yourself (DRY)
+- **Modularity First:** Always prioritize creating reusable functions and modules over duplicating logic.
+- **Audit:** Before adding new scripts, check if existing ones can be extended or refactored to handle the new task.
+- **Shared Logic:** For logic used across multiple agents (e.g., logging, task parsing), use shared utility modules in the `scripts/` directory.
+
+### Unix Philosophy
+- **Do one thing and do it well:** Break down complex scripts into smaller, purpose-built components.
+- **Work together:** Design scripts to be part of a pipeline (e.g., one to rotate, one to purge, one to display).
+- **Text Streams:** Use simple, human-readable text (Markdown, JSON) as the primary interface between agents and scripts.

@@ -64,7 +64,6 @@ pkgs.testers.nixosTest {
                   projectDir = "/home/testuser/project";
                   interval = "*-*-* *:*:*";
                   geminiPackage = mockGemini;
-                  supervisor = "ceo";
                   dependsOn = [ "ceo" ];
                 };
                 qa = {
@@ -74,7 +73,6 @@ pkgs.testers.nixosTest {
                   projectDir = "/home/testuser/project";
                   interval = "*-*-* *:*:*";
                   geminiPackage = mockGemini;
-                  supervisor = "ceo";
                   dependsOn = [ "dev" ];
                 };
               };
@@ -109,9 +107,8 @@ pkgs.testers.nixosTest {
     machine.succeed("systemctl --user -M testuser start jbot-agent-dev.service")
     machine.wait_until_succeeds("test -f /home/testuser/project/.test_prompt_dev")
 
-    # Verify Dev agent prompt contains its name, role and Supervisor
+    # Verify Dev agent prompt contains its name and role
     machine.succeed("grep 'You are dev, acting as Lead Developer' /home/testuser/project/.test_prompt_dev")
-    machine.succeed("grep '\[Supervisor: ceo\]' /home/testuser/project/.test_prompt_dev")
     machine.succeed("grep '# Task Board' /home/testuser/project/.test_prompt_dev")
 
     # Wait for Dev to finish so it consolidates its memory

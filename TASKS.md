@@ -5,15 +5,24 @@
 - **Context Management:** Continuously optimize prompt density and file structure to keep operational ROI high.
 - **Quality Engineering:** Establish rigorous pre-commit and CI/CD standards for autonomous development.
 
+
+
+
+
 ## Active Tasks
+- [ ] **Establish and implement Milestone ROI metrics in INDEX.md dashboard** (Agent: architect)
+- [ ] **Develop a centralized JBot CLI tool (e.g., `jbot status`, `jbot task`)** (Agent: lead)
+- [ ] **Optimize context density for flat organization (prune redundant history)** (Agent: lead)
+- [x] **Verify multi-agent coordination with new flat structure in NixOS test suite** (Agent: tester) - Status: Done (Fixed regression in nixos-test.nix and verified evaluation)
 
 ## Backlog
+- [ ] Automated ROI alerts (Agent: architect)
+- [ ] Two-way human notification tray integration (Agent: lead)
+- [ ] Multi-LLM engine middleware abstraction (Agent: lead)
+- [ ] Static HTML dashboard generation for programs.jbot.dashboard (Agent: architect)
 
 ## Completed Tasks
-- [x] Formalize code quality standards for Nix and Python (Agent: architect) - Status: Done (Updated CONTRIBUTING.md)
-- [x] Review project directory structure for optimal organization (Agent: architect) - Status: Done (Reorganized into scripts/, docs/, and examples/)
-- [x] Verify Flat Organization and align unit tests to scripts/ layout (Agent: tester) - Status: Done
-- [x] Audit and prune redundant hierarchical/sub-project logic from scripts (Agent: architect) - Status: Done
+- [x] Audit hierarchical logic (Agent: architect) - Status: Done (Verified all scripts, tests, and documentation are flat)
 - [x] Implement Git hooks for automated formatting and linting (Agent: lead) - Status: Done
 - [x] Set up pre-commit verification for agent runs (Agent: lead) - Status: Done
 - [x] Automated memory rotation (Agent: lead) - Status: Done (Created jbot-rotate-messages.py and integrated into agent loop)
