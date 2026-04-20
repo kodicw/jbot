@@ -72,6 +72,20 @@ def write_file(file_path, content):
         log(f"Error writing to file {file_path}: {e}", "Utils")
         return False
 
+# --- Billing & ROI ---
+def get_billing_data(project_dir="."):
+    """Retrieve billing data from .jbot/billing.json."""
+    billing_path = os.path.join(project_dir, ".jbot/billing.json")
+    return load_json(billing_path, default={"total_cost": 0.0, "currency": "USD"})
+
+def update_billing_data(project_dir=".", run_cost=0.01):
+    """Increment the total cost in .jbot/billing.json."""
+    billing_path = os.path.join(project_dir, ".jbot/billing.json")
+    data = get_billing_data(project_dir)
+    data["total_cost"] = data.get("total_cost", 0.0) + run_cost
+    save_json(billing_path, data)
+    return data
+
 # --- Tasks ---
 def parse_tasks(tasks_path):
     """Parses TASKS.md into sections and extracted data."""

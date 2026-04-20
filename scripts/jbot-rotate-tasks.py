@@ -1,42 +1,16 @@
 import os
 import argparse
 from datetime import datetime
-
-
-def log(msg):
-    print(f"[{datetime.now()}] JBot Task Rotate: {msg}")
-
+import jbot_utils as utils
 
 def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=20):
     if not os.path.exists(tasks_file):
-        log(f"Tasks file {tasks_file} not found.")
+        utils.log(f"Tasks file {tasks_file} not found.", "Task Rotate")
         return
 
     try:
-        with open(tasks_file, "r") as f:
-            lines = f.readlines()
-
-        sections = {
-            "header": [],
-            "vision": [],
-            "active": [],
-            "backlog": [],
-            "completed": [],
-        }
-
-        current_section = "header"
-
-        for line in lines:
-            if line.startswith("## Strategic Vision"):
-                current_section = "vision"
-            elif line.startswith("## Active Tasks"):
-                current_section = "active"
-            elif line.startswith("## Backlog"):
-                current_section = "backlog"
-            elif line.startswith("## Completed Tasks"):
-                current_section = "completed"
-
-            sections[current_section].append(line)
+        tasks_data = utils.parse_tasks(tasks_file)
+        sections = tasks_data["sections"]
 
         # Ensure headers exist even if section was missing
         if not sections["vision"]:
@@ -84,19 +58,15 @@ def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=2
         if len(all_completed) > limit:
             to_keep = all_completed[-limit:]
             to_archive = all_completed[:-limit]
-            log(f"Archiving {len(to_archive)} tasks from Completed Tasks.")
+            utils.log(f"Archiving {len(to_archive)} tasks from Completed Tasks.", "Task Rotate")
 
         # 3. Write Archive
         if to_archive:
+            if not os.path.exists(archive_file) or os.path.getsize(archive_file) == 0:
+                utils.write_file(archive_file, "# JBot Task Archive\n\n")
+            
             with open(archive_file, "a") as f:
-                if (
-                    not os.path.exists(archive_file)
-                    or os.path.getsize(archive_file) == 0
-                ):
-                    f.write("# JBot Task Archive\n\n")
-                f.write(
-                    f"## Archived on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                )
+                f.write(f"## Archived on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 f.writelines(to_archive)
                 f.write("\n")
 
@@ -120,18 +90,15 @@ def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=2
             f.writelines(sections["completed"][:1])  # Write completed header
             f.writelines(to_keep)
 
-        log(
-            f"Successfully rotated tasks. TASKS.md now has {len(to_keep)} completed tasks."
-        )
+        utils.log(f"Successfully rotated tasks. TASKS.md now has {len(to_keep)} completed tasks.", "Task Rotate")
 
     except Exception as e:
-        log(f"Error rotating tasks: {e}")
+        utils.log(f"Error rotating tasks: {e}", "Task Rotate")
         import traceback
-
         traceback.print_exc()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="JBot Task Rotation Tool")
     parser.add_argument("-t", "--tasks", default="TASKS.md", help="Tasks file")
     parser.add_argument(
@@ -147,3 +114,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     rotate_tasks(tasks_file=args.tasks, archive_file=args.archive, limit=args.limit)
+
+
+if __name__ == "__main__":
+    main()

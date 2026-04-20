@@ -46,7 +46,7 @@ def rotate_memory(
         log(f"Error rotating memory log: {e}")
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="JBot Memory Rotation Tool")
     parser.add_argument(
         "-m", "--memory", default=".jbot/memory.log", help="Memory log file"
@@ -60,3 +60,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     rotate_memory(memory_log=args.memory, archive_log=args.archive, limit=args.limit)
+
+
+if __name__ == "__main__":
+    main()

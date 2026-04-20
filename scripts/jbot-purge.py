@@ -3,17 +3,13 @@ import re
 import shutil
 import argparse
 from datetime import datetime
-
-
-def log(msg):
-    print(f"[{datetime.now()}] JBot Purge: {msg}")
-
+import jbot_utils as utils
 
 def purge_directives(
     dir_path=".jbot/directives", archive_path=".jbot/directives/archive"
 ):
     if not os.path.exists(dir_path):
-        log(f"Error: Directive directory {dir_path} not found.")
+        utils.log(f"Error: Directive directory {dir_path} not found.", "Purge")
         return
 
     os.makedirs(archive_path, exist_ok=True)
@@ -31,7 +27,6 @@ def purge_directives(
         is_expired = False
         df_path = os.path.join(dir_path, df)
 
-        # Skip if it's a directory
         if os.path.isdir(df_path):
             continue
 
@@ -40,55 +35,47 @@ def purge_directives(
         exp_date_from_filename = date_match.group(1) if date_match else None
 
         try:
-            with open(df_path, "r") as f:
-                directive_content = f.read()
+            directive_content = utils.read_file(df_path)
+            if not directive_content:
+                continue
 
-                # Check for explicit expiration in content: "Expiration: YYYY-MM-DD"
-                content_exp_match = re.search(
-                    r"Expiration:\s*(\d{4}-\d{2}-\d{2})",
-                    directive_content,
-                    re.IGNORECASE,
-                )
-                if content_exp_match:
-                    exp_date = content_exp_match.group(1)
-                    if today > exp_date:
-                        is_expired = True
-                        log(f"Directive {df} has expired (from content: {exp_date}).")
-                elif exp_date_from_filename:
-                    # If only date in filename, we treat it as an expiration date by default
-                    # as per current jbot-agent.py logic.
-                    if today > exp_date_from_filename:
-                        is_expired = True
-                        log(
-                            f"Directive {df} has expired (from filename: {exp_date_from_filename})."
-                        )
+            # Check for explicit expiration in content: "Expiration: YYYY-MM-DD"
+            content_exp_match = re.search(
+                r"Expiration:\s*(\d{4}-\d{2}-\d{2})",
+                directive_content,
+                re.IGNORECASE,
+            )
+            if content_exp_match:
+                exp_date = content_exp_match.group(1)
+                if today > exp_date:
+                    is_expired = True
+                    utils.log(f"Directive {df} has expired (from content: {exp_date}).", "Purge")
+            elif exp_date_from_filename:
+                if today > exp_date_from_filename:
+                    is_expired = True
+                    utils.log(f"Directive {df} has expired (from filename: {exp_date_from_filename}).", "Purge")
 
-                if is_expired:
-                    dest_path = os.path.join(archive_path, df)
-                    # Handle filename collision in archive
-                    if os.path.exists(dest_path):
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        name, ext = os.path.splitext(df)
-                        dest_path = os.path.join(
-                            archive_path, f"{name}_{timestamp}{ext}"
-                        )
+            if is_expired:
+                dest_path = os.path.join(archive_path, df)
+                if os.path.exists(dest_path):
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    name, ext = os.path.splitext(df)
+                    dest_path = os.path.join(archive_path, f"{name}_{timestamp}{ext}")
 
-                    shutil.move(df_path, dest_path)
-                    log(
-                        f"Archived expired directive: {df} -> {os.path.basename(dest_path)}"
-                    )
-                    purged_count += 1
+                shutil.move(df_path, dest_path)
+                utils.log(f"Archived expired directive: {df} -> {os.path.basename(dest_path)}", "Purge")
+                purged_count += 1
 
         except Exception as e:
-            log(f"Error processing directive {df}: {e}")
+            utils.log(f"Error processing directive {df}: {e}", "Purge")
 
     if purged_count > 0:
-        log(f"Successfully purged {purged_count} expired directives.")
+        utils.log(f"Successfully purged {purged_count} expired directives.", "Purge")
     else:
-        log("No expired directives found.")
+        utils.log("No expired directives found.", "Purge")
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="JBot Directive Purging Tool")
     parser.add_argument(
         "-d", "--dir", default=".jbot/directives", help="Directives directory"
@@ -99,3 +86,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     purge_directives(dir_path=args.dir, archive_path=args.archive)
+
+
+if __name__ == "__main__":
+    main()

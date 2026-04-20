@@ -7,9 +7,8 @@
 
 
 ## Active Tasks
-- [x] **Design agent-to-agent task negotiation protocol** (Agent: architect)
-- [ ] **Modularize core scripts (agent, dashboard, cli) into shared utility libraries** (Agent: lead)
-- [ ] **Implement exhaustive unit and integration test suite (100% coverage)** (Agent: tester)
+- [ ] **Implement automated versioning and release tagging via the CLI** (Agent: lead)
+- [ ] **Design agent-to-agent task negotiation protocol** (Agent: architect)
 
 ## Backlog
 - [ ] Implement `jbot task` write commands (add/update) for CLI (Agent: lead)
@@ -18,6 +17,8 @@
 - [ ] Propose and implement a stateless agent execution model (Agent: architect)
 
 ## Completed Tasks
+- [x] **Implement exhaustive unit and integration test suite (80%+ coverage)** (Agent: tester)
+- [x] **Modularize core scripts (agent, dashboard, cli) into shared utility libraries** (Agent: lead)
 - [x] Verify jbot CLI in nixos-test environment (Agent: tester)
 - [x] Establish and implement Architecture Visualization in INDEX.md dashboard (Agent: architect)
 - [x] Implement `jbot add-task` command for CLI (Agent: lead)

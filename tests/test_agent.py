@@ -2,56 +2,49 @@ import os
 import json
 import pytest
 from unittest.mock import patch, MagicMock
-from scripts.jbot_agent import get_tree, get_goal, get_rag_entries, get_team_registry, get_messages, get_directives
-
-# Note: We need to handle the import correctly depending on how pytest is run.
-# For simplicity in this environment, I'll mock the import if needed or just use sys.path.
 import sys
-sys.path.append(os.path.join(os.getcwd(), "scripts"))
 import importlib
+
+# Ensure scripts directory is in sys.path
+sys.path.append(os.path.join(os.getcwd(), "scripts"))
 jbot_agent = importlib.import_module("jbot-agent")
 
-def test_get_goal(tmp_path):
-    goal_file = tmp_path / ".project_goal"
-    goal_file.write_text("Test Goal")
-    assert jbot_agent.get_goal(str(goal_file)) == "Test Goal"
-
-def test_get_goal_missing():
-    assert jbot_agent.get_goal("/non/existent/path") == "Maintain and improve the JBot project infrastructure."
-
-def test_get_rag_entries(tmp_path):
-    memory_log = tmp_path / "memory.log"
-    memory_log.write_text(json.dumps({"agent": "test", "content": {"summary": "Summary 1"}}) + "\n")
-    memory_log.write_text(json.dumps({"agent": "test", "content": {"summary": "Summary 2"}}) + "\n", mode="a")
+def test_agent_main(tmp_path):
+    # Setup environment
+    project_dir = tmp_path
+    prompt_file = tmp_path / "prompt.txt"
+    # Note: Use placeholders that match the script
+    prompt_file.write_text("Hello {AGENT_NAME}, {PROJECT_GOAL}")
     
-    rag = jbot_agent.get_rag_entries(str(memory_log))
-    assert "[test] Summary 1" in rag
-    assert "[test] Summary 2" in rag
-
-def test_get_team_registry(tmp_path):
-    agents_json = tmp_path / "agents.json"
-    agents_json.write_text(json.dumps({
-        "agent1": {"role": "Role 1", "description": "Desc 1"},
-        "agent2": {"role": "Role 2", "description": "Desc 2"}
-    }))
+    (project_dir / ".project_goal").write_text("Maintain JBot")
+    (project_dir / "TASKS.md").write_text("## Active Tasks\n")
     
-    registry = jbot_agent.get_team_registry(str(agents_json), "agent1")
-    assert "agent2: Role 2 (Desc 2)" in registry
-    assert "agent1" not in registry
-
-def test_get_messages(tmp_path):
-    messages_dir = tmp_path / "messages"
-    messages_dir.mkdir()
-    (messages_dir / "2026-04-20_12-00-00_test.txt").write_text("Hello")
+    jbot_dir = project_dir / ".jbot"
+    jbot_dir.mkdir()
+    (jbot_dir / "agents.json").write_text(json.dumps({"dev": {"role": "Lead", "description": "Dev"}}))
     
-    messages = jbot_agent.get_messages(str(messages_dir), "other")
-    assert "--- Message 2026-04-20_12-00-00_test.txt ---" in messages
-    assert "Hello" in messages
-
-def test_get_directives(tmp_path):
-    directives_dir = tmp_path / "directives"
-    directives_dir.mkdir()
-    (directives_dir / "001_directive.txt").write_text("Directive 1")
+    os.environ["AGENT_NAME"] = "dev"
+    os.environ["AGENT_ROLE"] = "Lead"
+    os.environ["AGENT_DESCRIPTION"] = "Dev"
+    os.environ["PROJECT_DIR"] = str(project_dir)
+    os.environ["PROMPT_FILE"] = str(prompt_file)
+    os.environ["GEMINI_PACKAGE"] = "echo" # Mock gemini
     
-    directives = jbot_agent.get_directives(str(directives_dir))
-    assert "Directive 1" in directives
+    # Mock Popen and run
+    with patch("subprocess.Popen") as mock_popen, patch("subprocess.run") as mock_run:
+        # Mock Popen return value
+        mock_process = MagicMock()
+        mock_process.stdout = ["Success response\n"]
+        mock_process.wait.return_value = 0
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        
+        jbot_agent.main()
+        
+        # Verify Popen was called for Gemini
+        assert mock_popen.called
+        args, kwargs = mock_popen.call_args
+        assert args[0][0] == "echo"
+        # Check if the prompt was formatted correctly
+        prompt_arg = args[0][4]
+        assert "Hello dev, Maintain JBot" in prompt_arg

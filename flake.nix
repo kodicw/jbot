@@ -31,6 +31,9 @@
             pkgs.ruff
             pkgs.gemini-cli
             pkgs.python3
+            pkgs.python3Packages.pytest
+            pkgs.python3Packages.pytest-cov
+            pkgs.python3Packages.pytest-mock
             pkgs.jq
           ];
 
@@ -53,6 +56,24 @@
           ruff-check = pkgs.runCommand "ruff-check" { nativeBuildInputs = [ pkgs.ruff ]; } ''
             ruff check ${./.}
             ruff format --check ${./.}
+            touch $out
+          '';
+
+          python-tests = pkgs.runCommand "python-tests" { 
+            nativeBuildInputs = [ 
+              pkgs.python3 
+              pkgs.python3Packages.pytest 
+              pkgs.python3Packages.pytest-cov 
+              pkgs.python3Packages.pytest-mock
+              pkgs.git
+            ]; 
+          } ''
+            mkdir -p scripts tests
+            cp ${./scripts}/*.py scripts/
+            cp ${./tests}/*.py tests/
+            export PYTHONPATH=$PYTHONPATH:$(pwd)/scripts
+            # Run pytest on all python tests with coverage for the scripts directory
+            pytest --cov=scripts --cov-report=term-missing tests/
             touch $out
           '';
 

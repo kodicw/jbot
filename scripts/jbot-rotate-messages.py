@@ -50,7 +50,7 @@ def rotate_messages(
     log(f"Successfully archived old messages to {archive_dir}")
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="JBot Message Rotation Tool")
     parser.add_argument(
         "-m", "--messages", default=".jbot/messages", help="Messages directory"
@@ -64,3 +64,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     rotate_messages(msgs_dir=args.messages, archive_dir=args.archive, limit=args.limit)
+
+
+if __name__ == "__main__":
+    main()

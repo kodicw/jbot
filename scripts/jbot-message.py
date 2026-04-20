@@ -28,7 +28,7 @@ def send_message(to_dir, agent_name, body, subject="No Subject"):
     return True
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="JBot Agent Messaging Tool")
     parser.add_argument(
         "-d",
@@ -53,3 +53,7 @@ if __name__ == "__main__":
         body=args.message,
         subject=args.subject,
     )
+
+
+if __name__ == "__main__":
+    main()
