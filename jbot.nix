@@ -56,9 +56,7 @@ let
   agentsJson = pkgs.writeText "agents.json" (
     builtins.toJSON (
       lib.mapAttrs (name: agent: {
-        role = agent.role;
-        description = agent.description;
-        interval = agent.interval;
+        inherit (agent) role description interval;
         projectDir = toString agent.projectDir;
       }) cfg.agents
     )
@@ -167,7 +165,7 @@ in
                 --unshare-all \
                 --share-net \
                 --die-with-parent \
-                ${pkgs.python3}/bin/python3 ${./.}/jbot-agent.py
+                ${pkgs.python3}/bin/python3 ${./scripts}/jbot-agent.py
             ''}";
 
             WorkingDirectory = agent.projectDir;

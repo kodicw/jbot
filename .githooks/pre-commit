@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[pre-commit] Running checks..."
+
+# 1. Nix formatting
+echo "  -> nixfmt --check"
+find . -name "*.nix" -not -path "*/.*" -exec nixfmt --check {} +
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "  FAIL: Nix formatting issues found."
+  echo "  Run 'nixfmt *.nix' to fix, then re-stage."
+  exit 1
+fi
+
+# 2. statix lint
+echo "  -> statix check"
+statix check .
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "  FAIL: statix found Nix anti-patterns."
+  echo "  Run 'statix fix .' to auto-fix where possible."
+  exit 1
+fi
+
+# 3. Python formatting
+echo "  -> ruff format --check"
+ruff format --check .
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "  FAIL: Python formatting issues found."
+  echo "  Run 'ruff format .' to fix, then re-stage."
+  exit 1
+fi
+
+# 4. Ruff linting
+echo "  -> ruff check"
+ruff check .
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "  FAIL: Ruff found linting errors."
+  echo "  Run 'ruff check --fix .' to auto-fix where possible."
+  exit 1
+fi
+
+echo ""
+echo "[pre-commit] All checks passed."

@@ -6,8 +6,10 @@ import tempfile
 import re
 from datetime import datetime
 
+
 def log(msg):
     print(f"[{datetime.now()}] JBot: {msg}")
+
 
 def find_file_upwards(filename, start_dir):
     current = os.path.abspath(start_dir)
@@ -21,6 +23,7 @@ def find_file_upwards(filename, start_dir):
         current = parent
     return None
 
+
 def main():
     agent_name = os.environ.get("AGENT_NAME")
     agent_role = os.environ.get("AGENT_ROLE")
@@ -28,13 +31,13 @@ def main():
     project_dir = os.environ.get("PROJECT_DIR")
     prompt_file = os.environ.get("PROMPT_FILE")
     gemini_pkg = os.environ.get("GEMINI_PACKAGE", "gemini")
-    
+
     if not all([agent_name, agent_role, project_dir, prompt_file]):
         print("Error: Missing required environment variables.")
         sys.exit(1)
 
     os.chdir(project_dir)
-    
+
     # Setup directories
     os.makedirs(".jbot/queues", exist_ok=True)
     os.makedirs(".jbot/memory", exist_ok=True)
@@ -46,11 +49,10 @@ def main():
     # Find core files upwards
     tasks_path = find_file_upwards("TASKS.md", project_dir) or "TASKS.md"
     goal_path = find_file_upwards(".project_goal", project_dir) or ".project_goal"
-    changelog_path = find_file_upwards("CHANGELOG.md", project_dir) or "CHANGELOG.md"
 
     # Automated Purging & Rotation
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    
+
     purge_script = os.path.join(script_dir, "jbot-purge.py")
     if os.path.exists(purge_script):
         try:
@@ -58,7 +60,7 @@ def main():
             subprocess.run(["python3", purge_script], check=True)
         except Exception as e:
             log(f"Error running purging: {e}")
-            
+
     rotate_script = os.path.join(script_dir, "jbot-rotate.py")
     if os.path.exists(rotate_script):
         try:
@@ -98,18 +100,35 @@ def main():
                     with open(q_path, "r") as f:
                         content = json.load(f)
                     with open(memory_log, "a") as f:
-                        f.write(json.dumps({"agent": other_agent, "content": content}) + "\n")
+                        f.write(
+                            json.dumps({"agent": other_agent, "content": content})
+                            + "\n"
+                        )
                     os.remove(q_path)
                 except Exception as e:
                     log(f"Error consolidating {q_path}: {e}")
         os.rmdir(lock_dir)
     except FileExistsError:
-        pass # Another agent is consolidating
+        pass  # Another agent is consolidating
 
     # Prepare Context
-    tree_cmd = ["find", ".", "-maxdepth", "2", "-not", "-path", "*/.*", "-not", "-path", "*/__pycache__*", "-not", "-path", "*/tests*"]
+    tree_cmd = [
+        "find",
+        ".",
+        "-maxdepth",
+        "2",
+        "-not",
+        "-path",
+        "*/.*",
+        "-not",
+        "-path",
+        "*/__pycache__*",
+        "-not",
+        "-path",
+        "*/tests*",
+    ]
     tree = subprocess.check_output(tree_cmd, text=True).strip()
-    
+
     goal = "Maintain and improve the JBot project infrastructure."
     if os.path.exists(goal_path):
         with open(goal_path, "r") as f:
@@ -123,8 +142,10 @@ def main():
             for line in lines[-20:]:
                 try:
                     data = json.loads(line)
-                    rag_entries.append(f"[{data.get('agent')}] {data.get('content', {}).get('summary')}")
-                except:
+                    rag_entries.append(
+                        f"[{data.get('agent')}] {data.get('content', {}).get('summary')}"
+                    )
+                except Exception:
                     rag_entries.append(line.strip())
             rag_formatted = "\n".join(rag_entries[-10:])
 
@@ -140,10 +161,17 @@ def main():
             agents = json.load(f)
             registry_lines = []
             for name, info in agents.items():
-                if name == agent_name: continue
-                registry_lines.append(f"- {name}: {info.get('role')} ({info.get('description')})")
-            
-            team_registry = "\n".join(registry_lines) if registry_lines else "No other agents in visibility."
+                if name == agent_name:
+                    continue
+                registry_lines.append(
+                    f"- {name}: {info.get('role')} ({info.get('description')})"
+                )
+
+            team_registry = (
+                "\n".join(registry_lines)
+                if registry_lines
+                else "No other agents in visibility."
+            )
 
     # Messages
     messages = "No recent messages."
@@ -157,10 +185,16 @@ def main():
                 human_input = f"--- HUMAN FEEDBACK/DIRECTIVE ---\n{f.read()}\n--- END HUMAN FEEDBACK ---"
             log(f"({agent_name}): Injected human feedback from human.txt")
 
-        msg_files = sorted([f for f in os.listdir(msgs_dir) if f != "human.txt" and os.path.isfile(os.path.join(msgs_dir, f))])
+        msg_files = sorted(
+            [
+                f
+                for f in os.listdir(msgs_dir)
+                if f != "human.txt" and os.path.isfile(os.path.join(msgs_dir, f))
+            ]
+        )
         if msg_files:
             msg_list = []
-            for mf in msg_files[-5:]: # Last 5 messages
+            for mf in msg_files[-5:]:  # Last 5 messages
                 with open(os.path.join(msgs_dir, mf), "r") as f:
                     msg_list.append(f"--- Message {mf} ---\n{f.read()}")
             messages = "\n".join(msg_list)
@@ -169,7 +203,13 @@ def main():
     directives = "No formal directives."
     dir_path = ".jbot/directives"
     if os.path.exists(dir_path):
-        dir_files = sorted([f for f in os.listdir(dir_path) if f.endswith((".txt", ".md")) and f != "README.md"])
+        dir_files = sorted(
+            [
+                f
+                for f in os.listdir(dir_path)
+                if f.endswith((".txt", ".md")) and f != "README.md"
+            ]
+        )
         if dir_files:
             dir_list = []
             today = datetime.now().strftime("%Y-%m-%d")
@@ -178,28 +218,38 @@ def main():
                 # Try to find a date (YYYY-MM-DD) in the filename
                 date_match = re.search(r"(\d{4}-\d{2}-\d{2})", df)
                 exp_date_from_filename = date_match.group(1) if date_match else None
-                
+
                 try:
                     with open(os.path.join(dir_path, df), "r") as f:
                         directive_content = f.read()
-                        
+
                         # Check for explicit expiration in content: "Expiration: YYYY-MM-DD"
-                        content_exp_match = re.search(r"Expiration:\s*(\d{4}-\d{2}-\d{2})", directive_content, re.IGNORECASE)
+                        content_exp_match = re.search(
+                            r"Expiration:\s*(\d{4}-\d{2}-\d{2})",
+                            directive_content,
+                            re.IGNORECASE,
+                        )
                         if content_exp_match:
                             exp_date = content_exp_match.group(1)
                             if today > exp_date:
                                 is_expired = True
-                                log(f"({agent_name}): Directive {df} has expired (from content).")
+                                log(
+                                    f"({agent_name}): Directive {df} has expired (from content)."
+                                )
                         elif exp_date_from_filename:
                             if today > exp_date_from_filename:
                                 is_expired = True
-                                log(f"({agent_name}): Directive {df} has expired (from filename).")
-                        
+                                log(
+                                    f"({agent_name}): Directive {df} has expired (from filename)."
+                                )
+
                         if not is_expired:
-                            dir_list.append(f"--- Directive {df} ---\n{directive_content}")
+                            dir_list.append(
+                                f"--- Directive {df} ---\n{directive_content}"
+                            )
                 except Exception as e:
                     log(f"Error reading directive {df}: {e}")
-            
+
             if dir_list:
                 directives = "\n".join(dir_list)
 
@@ -218,7 +268,7 @@ def main():
         "{TEAM_REGISTRY}": team_registry,
         "{MESSAGES}": messages,
         "{DIRECTIVES}": directives,
-        "{HUMAN_INPUT}": human_input
+        "{HUMAN_INPUT}": human_input,
     }
 
     for k, v in replacements.items():
@@ -232,17 +282,21 @@ def main():
     os.environ["MEMORY_OUTPUT"] = f".jbot/queues/{agent_name}.json"
 
     log(f"({agent_name}): Invoking Gemini CLI...")
-    
+
     # Capture output for token tracking while still showing real-time logs
     full_output = []
     try:
-        process = subprocess.Popen([gemini_pkg, "-y", "-d", "-p", prompt_content], 
-                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        
+        process = subprocess.Popen(
+            [gemini_pkg, "-y", "-d", "-p", prompt_content],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
         for line in process.stdout:
             print(line, end="", flush=True)
             full_output.append(line)
-        
+
         process.wait()
         if process.returncode != 0:
             log(f"Error: Gemini CLI failed with exit code {process.returncode}")
@@ -253,7 +307,9 @@ def main():
             with open(tasks_path, "r") as f:
                 task_lines = f.readlines()
                 if len(task_lines) > 200:
-                    log(f"WARNING ({agent_name}): {tasks_path} is getting large ({len(task_lines)} lines). Consider archiving completed tasks.")
+                    log(
+                        f"WARNING ({agent_name}): {tasks_path} is getting large ({len(task_lines)} lines). Consider archiving completed tasks."
+                    )
 
         # Update Dashboard
         dashboard_script = os.path.join(script_dir, "jbot-dashboard.py")
@@ -264,6 +320,15 @@ def main():
             except Exception as e:
                 log(f"Error updating dashboard: {e}")
 
+        # Final Verification
+        pre_commit_script = os.path.join(project_dir, ".githooks/pre-commit")
+        if os.path.exists(pre_commit_script):
+            try:
+                log(f"({agent_name}): Running final pre-commit verification...")
+                subprocess.run(["bash", pre_commit_script], check=True)
+            except Exception as e:
+                log(f"WARNING ({agent_name}): Pre-commit verification failed: {e}")
+
     except Exception as e:
         log(f"Error: Execution failed: {e}")
         sys.exit(1)
@@ -272,6 +337,7 @@ def main():
             os.remove(prepared_prompt_path)
 
     log(f"({agent_name}): Execution loop finished.")
+
 
 if __name__ == "__main__":
     main()

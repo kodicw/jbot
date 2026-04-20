@@ -1,7 +1,6 @@
 {
   pkgs,
-  jbot-agent-py,
-  jbot-dashboard-py,
+  jbot-scripts,
   jbot-prompt-txt,
   ...
 }:
@@ -39,19 +38,13 @@ pkgs.runCommand "jbot-unit-test"
     cd $PROJECT_DIR
 
     # Initial files
-    cp ${jbot-dashboard-py} jbot-dashboard.py
+    mkdir -p scripts
+    cp ${jbot-agent-py} scripts/jbot-agent.py
+    cp ${jbot-dashboard-py} scripts/jbot-dashboard.py
+
     echo "Goal: Test the unit test" > .project_goal
     echo "# Task Board" > TASKS.md
     echo "- [x] Task 1" >> TASKS.md
-    echo "# Billing & Token Tracking" > BILLING.md
-    echo "| Date | Agent | Tokens | Cost | Task |" >> BILLING.md
-    echo "|------|-------|--------|------|------|" >> BILLING.md
-    echo "| 2026-04-19 | dev | 100/200 | $0.0003 | Task 1 |" >> BILLING.md
-    echo "" >> BILLING.md
-    echo "## Summary" >> BILLING.md
-    echo "- **Total Estimated Cost:** $0.0000" >> BILLING.md
-    echo "- **Total Tokens:** 0" >> BILLING.md
-    echo "- **Last Updated:** 2026-04-19" >> BILLING.md
 
     mkdir -p .jbot/directives
     echo "This is a test directive" > .jbot/directives/001_test.txt
@@ -61,13 +54,15 @@ pkgs.runCommand "jbot-unit-test"
     export AGENT_NAME="dev"
     export AGENT_ROLE="Lead"
     export AGENT_DESCRIPTION="Lead Dev"
+    export PROJECT_DIR="$PROJECT_DIR"
     export PROMPT_FILE="${jbot-prompt-txt}"
     export GEMINI_PACKAGE="gemini"
     export MEMORY_OUTPUT=".jbot/queues/dev.json"
 
-    python3 ${jbot-agent-py}
+    python3 scripts/jbot-agent.py
 
     # Verifications
+
     if ! grep -q "You are dev, acting as Lead" .prompt_received; then
       echo "Error: Prompt did not contain agent identity"
       exit 1
@@ -95,12 +90,6 @@ pkgs.runCommand "jbot-unit-test"
 
     if ! grep -q "JBot PAO Dashboard" INDEX.md; then
       echo "Error: INDEX.md content incorrect"
-      exit 1
-    fi
-
-    # Check for ROI/Cost metrics
-    if ! grep -q "Resource Health & ROI" INDEX.md; then
-      echo "Error: ROI section missing in INDEX.md"
       exit 1
     fi
 

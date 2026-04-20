@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+COMMIT_MSG_FILE="$1"
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Allow merge commits and fixup commits through unchanged
+if echo "$COMMIT_MSG" | grep -qE "^(Merge|Revert|fixup!|squash!)"; then
+  exit 0
+fi
+
+# Conventional Commits pattern:
+# type(scope)!: subject   — breaking change with scope
+# type!: subject          — breaking change without scope
+# type(scope): subject    — with scope
+# type: subject           — without scope
+PATTERN="^(feat|fix|refactor|test|chore|docs|perf|ci|revert)(\([a-z0-9/-]+\))?(!)?: .{1,72}$"
+
+FIRST_LINE=$(echo "$COMMIT_MSG" | head -n 1)
+
+if ! echo "$FIRST_LINE" | grep -qE "$PATTERN"; then
+  echo ""
+  echo "  FAIL: Commit message does not follow Conventional Commits format."
+  echo ""
+  echo "  Expected:  <type>(<scope>): <subject>"
+  echo "  Got:       $FIRST_LINE"
+  echo ""
+  echo "  Valid types: feat fix refactor test chore docs perf ci revert"
+  echo "  Valid scopes: nix prompt docs hm cli"
+  echo ""
+  echo "  Examples:"
+  echo "    feat(cli): add python template support"
+  echo "    fix(nix): fix agent launcher script"
+  echo "    chore(docs): update contributing guide"
+  echo ""
+  exit 1
+fi
+
+# Subject must not start with a capital letter
+SUBJECT=$(echo "$FIRST_LINE" | sed 's/^[^:]*: //')
+FIRST_CHAR=$(echo "$SUBJECT" | cut -c1)
+if echo "$FIRST_CHAR" | grep -qE "[A-Z]"; then
+  echo ""
+  echo "  FAIL: Commit subject must start with a lowercase letter."
+  echo "  Got: '$SUBJECT'"
+  echo ""
+  exit 1
+fi
+
+# Subject must not end with a period
+if echo "$FIRST_LINE" | grep -qE "\.$"; then
+  echo ""
+  echo "  FAIL: Commit subject must not end with a period."
+  echo ""
+  exit 1
+fi
+
+exit 0

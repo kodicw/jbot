@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[pre-push] Running nix flake check..."
+echo "           To skip in an emergency: git push --no-verify"
+echo ""
+
+nix flake check --no-build
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "  FAIL: nix flake check failed."
+  echo "  Checks must pass before pushing to remote."
+  exit 1
+fi
+
+echo ""
+echo "[pre-push] All checks passed. Pushing."

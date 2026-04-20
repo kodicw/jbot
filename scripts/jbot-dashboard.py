@@ -1,8 +1,8 @@
 import os
 import json
-import re
 import argparse
 from datetime import datetime
+
 
 def find_file_upwards(filename, start_dir):
     current = os.path.abspath(start_dir)
@@ -16,12 +16,10 @@ def find_file_upwards(filename, start_dir):
         current = parent
     return None
 
+
 def parse_tasks_file(tasks_path):
     """Parses a TASKS.md file and returns active tasks and completion count."""
-    data = {
-        "active": [],
-        "done_count": 0
-    }
+    data = {"active": [], "done_count": 0}
     if not os.path.exists(tasks_path):
         return data
 
@@ -34,15 +32,16 @@ def parse_tasks_file(tasks_path):
                 continue
             if in_active_section and line.startswith("##"):
                 in_active_section = False
-            
+
             if in_active_section and line.strip().startswith("- [ ]"):
                 data["active"].append(line.strip())
             elif in_active_section and "In Progress" in line:
                 data["active"].append(line.strip())
-            
+
             if line.strip().startswith("- [x]"):
                 data["done_count"] += 1
     return data
+
 
 def parse_changelog_file(changelog_path):
     """Parses a CHANGELOG.md file and returns the count of milestones."""
@@ -57,10 +56,13 @@ def parse_changelog_file(changelog_path):
                 count += 1
     return count
 
+
 def generate_dashboard(output_file="INDEX.md", project_dir="."):
     os.chdir(project_dir)
     dashboard_content = "# JBot PAO Dashboard\n\n"
-    dashboard_content += f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
+    dashboard_content += (
+        f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
+    )
 
     # Find core files upwards
     goal_path = find_file_upwards(".project_goal", project_dir)
@@ -84,14 +86,18 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
             dashboard_content += "| Agent | Role | Description |\n"
             dashboard_content += "|-------|------|-------------|\n"
             for name, info in agents.items():
-                dashboard_content += f"| {name} | {info.get('role')} | {info.get('description')} |\n"
+                dashboard_content += (
+                    f"| {name} | {info.get('role')} | {info.get('description')} |\n"
+                )
             dashboard_content += "\n"
     else:
         dashboard_content += "No team registry found.\n\n"
 
     # 3. Active Tasks
     dashboard_content += "## 🚀 Active Tasks\n"
-    main_tasks = parse_tasks_file(tasks_path) if tasks_path else {"active": [], "done_count": 0}
+    main_tasks = (
+        parse_tasks_file(tasks_path) if tasks_path else {"active": [], "done_count": 0}
+    )
     if main_tasks["active"]:
         for task in main_tasks["active"][:10]:
             dashboard_content += f"{task}\n"
@@ -102,7 +108,7 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
     # 4. Status & Progress
     dashboard_content += "## 📈 Status & Progress\n"
     main_milestone_count = parse_changelog_file(changelog_path) if changelog_path else 0
-    
+
     dashboard_content += f"- **Tasks Completed:** {main_tasks['done_count']}\n"
     dashboard_content += f"- **Milestones Achieved:** {main_milestone_count}\n\n"
 
@@ -115,7 +121,7 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
             for line in lines:
                 if line.startswith("- **"):
                     milestones.append(line.strip())
-            
+
             for m in milestones[:5]:
                 dashboard_content += f"{m}\n"
             dashboard_content += "\n"
@@ -124,13 +130,18 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
 
     with open(output_file, "w") as f:
         f.write(dashboard_content)
-    
+
     print(f"Dashboard generated successfully: {output_file}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="JBot PAO Dashboard Generator")
-    parser.add_argument("-o", "--output", default="INDEX.md", help="Output file (default: INDEX.md)")
-    parser.add_argument("-d", "--dir", default=".", help="Project directory (default: .)")
+    parser.add_argument(
+        "-o", "--output", default="INDEX.md", help="Output file (default: INDEX.md)"
+    )
+    parser.add_argument(
+        "-d", "--dir", default=".", help="Project directory (default: .)"
+    )
     args = parser.parse_args()
-    
+
     generate_dashboard(output_file=args.output, project_dir=args.dir)
