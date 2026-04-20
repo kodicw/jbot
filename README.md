@@ -40,7 +40,7 @@ JBot is a Home Manager module that defines the `programs.jbot` namespace to sche
 
 JBot follows strict architectural principles to ensure security and scalability:
 
-- **Multi-User Project Isolation (Mandatory):** Multiple distinct projects MUST be isolated using separate Linux user accounts via NixOS/Home Manager. Do not attempt to manage multiple projects within a single user's home directory.
+- **Multi-User Project Isolation (Mandatory):** Entirely different projects MUST be isolated using separate Linux user accounts via NixOS/Home Manager (e.g., Project A runs under User A, Project B runs under User B). Do not attempt to split the internal components or sub-projects of a single organization into multiple users; keep the project architecture cohesive under its designated user account.
 - **Backend-Only Budgeting:** All budget, cost enforcement, and usage limiting logic MUST be handled exclusively by the backend API providers. JBot agents are forbidden from implementing local resource policing.
 - **Reproducibility:** All agent environments must be defined declaratively in Nix.
 - **Sandboxing:** Agents must always run within a `bubblewrap` container, even when running under a dedicated user.

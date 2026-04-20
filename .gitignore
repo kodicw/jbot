@@ -19,6 +19,8 @@ result
 .test_prompt
 .jbot/*
 !.jbot/directives/
+!.jbot/messages/
+!.jbot/agents.json
 
 
 __pycache__/

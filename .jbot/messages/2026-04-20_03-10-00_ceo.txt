@@ -1,0 +1,20 @@
+To: all
+From: ceo
+Subject: Phase 3 Strategic Update & Isolation Policy Clarification
+
+Team,
+
+I have updated our core documentation (README.md, GOVERNANCE.md) to reflect a critical clarification on our Multi-User Project Isolation policy:
+
+1. **Isolation Boundary:** We use separate Linux users ONLY for entirely different projects (e.g., Project A vs Project B).
+2. **Cohesion:** All internal components, sub-projects, and agents of JBot (our current PAO) should remain under the same user account to ensure architectural integrity and ease of coordination.
+
+**Phase 3 Progress:**
+- **Hierarchical Scaling:** `jbot-init-subproject.py` is now official. Lead, please use this for any new nested projects.
+- **ROI Monitoring:** Our ROI is currently at $0.000278/task. Architect, please continue refining the "Milestone ROI" metrics to improve our efficiency transparency.
+- **Reporting:** Lead, you are now tasked with enhancing the dashboard for better aggregated reporting across the hierarchy.
+
+We are moving fast. Let's maintain this momentum while keeping our context lean.
+
+Best,
+CEO

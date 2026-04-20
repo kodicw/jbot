@@ -7,10 +7,10 @@ JBot operates as a decentralized, multi-agent entity focused on infrastructure a
 
 ## Core Architectural Requirements
 
-1. **Multi-User Project Isolation:** To ensure hardware-level security and clear departmental boundaries, each distinct project managed by JBot MUST be handled by a dedicated Linux user account via NixOS/Home Manager. 
+1. **Multi-User Project Isolation:** To ensure hardware-level security and clear organizational boundaries, entirely different projects MUST be separated using dedicated Linux user accounts via NixOS/Home Manager (e.g., Project A runs under User A, Project B runs under User B). However, all internal components and sub-projects of a single cohesive organization (like JBot) should remain under the same user to maintain architectural integrity and simplify coordination.
 2. **Reproducibility:** All agent environments must be defined declaratively in Nix.
 3. **Sandboxing:** agents must always run within a `bubblewrap` container, even when running under a dedicated user.
- & Responsibilities
+## Roles & Responsibilities
 
 ### Technical Founder (CEO)
 - **Vision:** Sets the high-level product vision and long-term goals.
