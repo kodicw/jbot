@@ -41,6 +41,21 @@
         };
 
         checks = {
+          # Format & Lint Checks
+          nixfmt-check = pkgs.runCommand "nixfmt-check" { nativeBuildInputs = [ pkgs.nixfmt-rfc-style ]; } ''
+            find ${./.} -name "*.nix" -not -path "*/.*" -exec nixfmt --check {} +
+            touch $out
+          '';
+          statix-check = pkgs.runCommand "statix-check" { nativeBuildInputs = [ pkgs.statix ]; } ''
+            statix check ${./.}
+            touch $out
+          '';
+          ruff-check = pkgs.runCommand "ruff-check" { nativeBuildInputs = [ pkgs.ruff ]; } ''
+            ruff check ${./.}
+            ruff format --check ${./.}
+            touch $out
+          '';
+
           unit-test = pkgs.callPackage ./tests/unit-test.nix {
             jbot-scripts = ./scripts;
             jbot_prompt_txt = ./jbot_prompt.txt;
