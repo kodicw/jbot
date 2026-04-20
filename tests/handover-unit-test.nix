@@ -37,7 +37,7 @@ pkgs.runCommand "jbot-handover-unit-test"
     cd $PROJECT_DIR
 
     echo "Goal: Test handover" > .project_goal
-    
+
     # Setup a stateful task simulation
     cat <<EOF > TASKS.md
     # JBot Task Board
@@ -45,7 +45,7 @@ pkgs.runCommand "jbot-handover-unit-test"
     - [ ] Implement new feature (Agent: lead) - Status: Done
     - [ ] Verify new feature (Agent: tester) - Status: To Do
     EOF
-    
+
     mkdir -p .jbot
     echo '{"tester": {"role": "QA", "description": "QA Tester", "projectDir": "'$PROJECT_DIR'"}, "lead": {"role": "Lead", "description": "Lead Dev", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
 

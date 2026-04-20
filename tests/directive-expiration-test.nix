@@ -32,78 +32,78 @@ pkgs.runCommand "jbot-directive-expiration-test"
     ];
   }
   ''
-        export PROJECT_DIR=$TMPDIR/project
-        mkdir -p $PROJECT_DIR
-        cd $PROJECT_DIR
+            export PROJECT_DIR=$TMPDIR/project
+            mkdir -p $PROJECT_DIR
+            cd $PROJECT_DIR
 
-        # Initial files
-        echo "Goal: Test directive expiration" > .project_goal
-        echo "# Task Board" > TASKS.md
-        mkdir -p .jbot/directives
-        
-        # 1. Active directive (no date)
-        echo "Active directive content" > .jbot/directives/001_active.txt
-        
-        # 2. Expired directive (filename date in the past)
-        echo "Expired filename directive content" > .jbot/directives/002_2020-01-01_expired.md
-        
-        # 3. Future directive (filename date in the future)
-        echo "Future filename directive content" > .jbot/directives/003_2099-01-01_future.md
-        
-        # 4. Expired directive (content expiration in the past)
-        cat <<EOF > .jbot/directives/004_expired_content.md
-# Directive 004
-Expiration: 2020-01-01
-Expired content directive content
-EOF
+            # Initial files
+            echo "Goal: Test directive expiration" > .project_goal
+            echo "# Task Board" > TASKS.md
+            mkdir -p .jbot/directives
+            
+            # 1. Active directive (no date)
+            echo "Active directive content" > .jbot/directives/001_active.txt
+            
+            # 2. Expired directive (filename date in the past)
+            echo "Expired filename directive content" > .jbot/directives/002_2020-01-01_expired.md
+            
+            # 3. Future directive (filename date in the future)
+            echo "Future filename directive content" > .jbot/directives/003_2099-01-01_future.md
+            
+            # 4. Expired directive (content expiration in the past)
+            cat <<EOF > .jbot/directives/004_expired_content.md
+    # Directive 004
+    Expiration: 2020-01-01
+    Expired content directive content
+    EOF
 
-        # 5. Future directive (content expiration in the future)
-        cat <<EOF > .jbot/directives/005_future_content.md
-# Directive 005
-Expiration: 2099-01-01
-Future content directive content
-EOF
+            # 5. Future directive (content expiration in the future)
+            cat <<EOF > .jbot/directives/005_future_content.md
+    # Directive 005
+    Expiration: 2099-01-01
+    Future content directive content
+    EOF
 
-        mkdir -p .jbot
-        echo '{"dev": {"role": "Lead", "description": "Lead Dev", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
+            mkdir -p .jbot
+            echo '{"dev": {"role": "Lead", "description": "Lead Dev", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
 
-        export AGENT_NAME="dev"
-        export AGENT_ROLE="Lead"
-        export AGENT_DESCRIPTION="Lead Dev"
-        export PROMPT_FILE="${jbot_prompt_txt}"
-        export GEMINI_PACKAGE="gemini"
-        export MEMORY_OUTPUT=".jbot/queues/dev.json"
+            export AGENT_NAME="dev"
+            export AGENT_ROLE="Lead"
+            export AGENT_DESCRIPTION="Lead Dev"
+            export PROMPT_FILE="${jbot_prompt_txt}"
+            export GEMINI_PACKAGE="gemini"
+            export MEMORY_OUTPUT=".jbot/queues/dev.json"
 
-        python3 ${jbot-scripts}/jbot-agent.py
+            python3 ${jbot-scripts}/jbot-agent.py
 
-        # Verifications
-        echo "Verifying prompt content..."
-        
-        if ! grep -q "Active directive content" .prompt_received; then
-          echo "Error: Active directive not found in prompt"
-          exit 1
-        fi
+            # Verifications
+            echo "Verifying prompt content..."
+            
+            if ! grep -q "Active directive content" .prompt_received; then
+              echo "Error: Active directive not found in prompt"
+              exit 1
+            fi
 
-        if grep -q "Expired filename directive content" .prompt_received; then
-          echo "Error: Expired filename directive FOUND in prompt"
-          exit 1
-        fi
+            if grep -q "Expired filename directive content" .prompt_received; then
+              echo "Error: Expired filename directive FOUND in prompt"
+              exit 1
+            fi
 
-        if ! grep -q "Future filename directive content" .prompt_received; then
-          echo "Error: Future filename directive not found in prompt"
-          exit 1
-        fi
+            if ! grep -q "Future filename directive content" .prompt_received; then
+              echo "Error: Future filename directive not found in prompt"
+              exit 1
+            fi
 
-        if grep -q "Expired content directive content" .prompt_received; then
-          echo "Error: Expired content directive FOUND in prompt"
-          exit 1
-        fi
+            if grep -q "Expired content directive content" .prompt_received; then
+              echo "Error: Expired content directive FOUND in prompt"
+              exit 1
+            fi
 
-        if ! grep -q "Future content directive content" .prompt_received; then
-          echo "Error: Future content directive not found in prompt"
-          exit 1
-        fi
+            if ! grep -q "Future content directive content" .prompt_received; then
+              echo "Error: Future content directive not found in prompt"
+              exit 1
+            fi
 
-        echo "All directive expiration checks passed!"
-        touch $out
+            echo "All directive expiration checks passed!"
+            touch $out
   ''

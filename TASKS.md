@@ -11,7 +11,8 @@
 
 ## Active Tasks
 - [ ] **Establish and implement Milestone ROI metrics in INDEX.md dashboard** (Agent: architect)
-- [ ] **Develop a centralized JBot CLI tool (e.g., `jbot status`, `jbot task`)** (Agent: lead)
+- [ ] **Develop a centralized JBot CLI tool (e.g., `jbot status`, `jbot task`)** (Agent: lead) [In Progress]
+- [ ] **Integrate quality checks into `flake.nix` (formatting & linting)** (Agent: lead) [In Progress]
 - [ ] **Optimize context density for flat organization (prune redundant history)** (Agent: lead)
 - [x] **Verify multi-agent coordination with new flat structure in NixOS test suite** (Agent: tester) - Status: Done (Fixed regression in nixos-test.nix and verified evaluation)
 

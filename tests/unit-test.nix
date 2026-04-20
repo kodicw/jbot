@@ -39,7 +39,7 @@ pkgs.runCommand "jbot-unit-test"
 
     # Initial files
     ln -s ${jbot-scripts} scripts
-    
+
     echo "Goal: Test the unit test" > .project_goal
     echo "# Task Board" > TASKS.md
     echo "- [x] Task 1" >> TASKS.md

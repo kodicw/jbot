@@ -39,10 +39,10 @@ pkgs.runCommand "jbot-multi-agent-unit-test"
     echo "Goal: Test multi-agent" > .project_goal
     echo "# Task Board" > TASKS.md
     mkdir -p .jbot/queues
-    
+
     # Simulate another agent's memory
     echo '{"summary": "Task 1 completed"}' > .jbot/queues/lead.json
-    
+
     mkdir -p .jbot
     echo '{"tester": {"role": "QA", "description": "QA Tester", "projectDir": "'$PROJECT_DIR'"}, "lead": {"role": "Lead", "description": "Lead Dev", "projectDir": "'$PROJECT_DIR'"}}' > .jbot/agents.json
 
