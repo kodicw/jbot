@@ -1,7 +1,7 @@
 {
   pkgs,
   jbot-scripts,
-  jbot-prompt-txt,
+  jbot_prompt_txt,
   ...
 }:
 let
@@ -49,7 +49,7 @@ pkgs.runCommand "jbot-multi-agent-unit-test"
     export AGENT_NAME="tester"
     export AGENT_ROLE="QA"
     export AGENT_DESCRIPTION="QA Tester"
-    export PROMPT_FILE="${jbot-prompt-txt}"
+    export PROMPT_FILE="${jbot_prompt_txt}"
     export GEMINI_PACKAGE="gemini"
     export MEMORY_OUTPUT=".jbot/queues/tester.json"
 

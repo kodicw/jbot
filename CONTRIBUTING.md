@@ -1,124 +1,74 @@
-# Contributing Guide: Code Standards & Engineering Practices
+# Contributing Guide: JBot Engineering Standards
 
 **Project:** JBot  
-**Version:** 1.0.1  
-**Date:** 2026-04-20
+**Status:** Flat Multi-Agent Organization  
+**Stack:** Nix (Flakes, Home Manager), Python 3, Systemd
 
 ---
 
-## Table of Contents
+## 1. Architectural Philosophy: Flat Organization
 
-1. [Commit Messages](#1-commit-messages)
-2. [Branch Strategy](#2-branch-strategy)
-3. [Test-Driven Development](#3-test-driven-development)
-4. [Code Style & Formatting](#4-code-style--formatting)
-5. [Git Hooks](#5-git-hooks)
-6. [Pull Request Process](#6-pull-request-process)
-7. [Hook Installation](#7-hook-installation)
-8. [Community & Security](#8-community-and-security)
+JBot follows a **Flat Organization** model. This means:
+- **Internal Cohesion:** All components (agents, infra, scripts) live under a single Linux user account.
+- **No Hierarchy:** We avoid nested project structures or "Sub-PAOs". Coordination happens via a shared `TASKS.md` and `.jbot/messages/`.
+- **External Isolation:** Multi-project management is handled by creating *different* Linux users via NixOS/Home Manager.
 
 ---
 
-## 1. Commit Messages
+## 2. Code Quality Standards
 
-All commits follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification.
+### Nix (Infrastructure & Configuration)
+- **Formatting:** All `.nix` files must be formatted with `nixfmt` (RFC-style).
+- **Linting:** Use `statix check` to identify anti-patterns.
+- **Hermeticity:** Always use `lib.makeBinPath` in systemd services.
 
-### Types
-
-| Type | When to use |
-|---|---|
-| `feat` | A new feature visible to users or operators |
-| `fix` | A bug fix |
-| `refactor` | Code restructuring with no behavior change |
-| `test` | Adding or correcting tests only |
-| `chore` | Nix flake updates, dependency bumps, tooling |
-| `docs` | Documentation changes only |
-| `perf` | Performance improvement |
-| `ci` | Changes to CI/CD pipeline or git hooks |
-| `revert` | Reverts a previous commit |
+### Python (Agent Logic & Tooling)
+- **Formatting & Linting:** All Python code is formatted and linted with `ruff`.
+- **Style:** 
+  - Prefer clear, descriptive variable names.
+  - Use `argparse` for all CLI tools.
+  - Maintain a consistent logging format: `[$(date)] JBot (AgentName): Message`.
 
 ---
 
-## 2. Branch Strategy
+## 3. Coordination & Task Management
 
-This project uses a **trunk-based development** model with short-lived feature branches. `main` is always in a releasable state.
+### TASKS.md (The Blackboard)
+All work MUST be tracked in `TASKS.md` using the following lifecycle:
+- **Backlog:** Unassigned ideas.
+- **Proposal:** Complex changes requiring research/design first.
+- **To Do / In Progress:** Active work assigned to an `(Agent: Name)`.
+- **In Review (Human):** HIL gatekeeping state. No file-mutating tools allowed.
+- **Done:** Verified and completed work.
 
----
-
-## 3. Test-Driven Development
-
-### Test Layers
-
-#### Unit Tests
-
-Tests are managed as Nix derivations in `tests/`. They use `runCommand` to verify agent behavior in a controlled environment.
-
-Run with:
-
-```bash
-nix flake check --no-build
-```
+### Agent Communication
+- **Shared History:** Use `.jbot/memory.log` for high-level summaries of agent actions.
+- **Direct Messaging:** Use `.jbot/messages/` for agent-to-agent coordination.
 
 ---
 
-## 4. Code Style & Formatting
+## 4. Development Workflow
 
-### Python
+### Testing
+- **Unit Tests:** Located in `tests/`. Run via `nix flake check --no-build`.
+- **Integration Tests:** Use `nixos-test.nix` for full VM-based verification.
+- **Reproduction:** Bug fixes must include a reproduction test case.
 
-All Python code is formatted and linted with `ruff`.
+### Commit Messages
+Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+- `feat(nix): ...`
+- `fix(agent): ...`
+- `docs: ...`
+- `chore(scripts): ...`
 
-Run formatter:
+### Git Hooks
+All hooks live in `.githooks/` and are automatically activated by the dev shell:
+- **`pre-commit`**: Checks Nix and Python formatting and linting.
+- **`commit-msg`**: Validates Conventional Commits format.
+- **`pre-push`**: Runs full suite of tests.
 
-```bash
-ruff format .
-```
-
-### Nix
-
-All Nix files are formatted with `nixfmt` (the RFC-style formatter).
-
-```bash
-nixfmt .
-```
-
-Linting with `statix`:
-
-```bash
-statix check .
-```
-
----
-
-## 5. Git Hooks
-
-All hooks live in `.githooks/` and are activated by the dev shell.
-
-### Hook: `pre-commit`
-Checks Nix and Python formatting and linting.
-
-### Hook: `commit-msg`
-Validates Conventional Commits format.
-
-### Hook: `pre-push`
-Runs `nix flake check --no-build`.
-
----
-
-## 7. Hook Installation
-
-Hooks are automatically activated when entering the dev shell:
-
-```bash
-nix develop
-```
-
----
-
-## 8. Community & Security
-
-Refer to the following documents for more information:
-- **[Code of Conduct](./CODE_OF_CONDUCT.md)**
-- **[Security Policy](./SECURITY.md)**
-- **[Support Guide](./SUPPORT.md)**
-- **[Governance](./GOVERNANCE.md)**
-- **[Changelog](./CHANGELOG.md)**
+### Directory Structure
+- `/scripts/`: All Python-based agent logic and utility scripts.
+- `/tests/`: Nix-based unit and integration tests.
+- `/docs/`: Long-form documentation and architectural archives.
+- `/examples/`: Example configurations for users.
