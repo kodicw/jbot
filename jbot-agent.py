@@ -157,7 +157,7 @@ def main():
                 human_input = f"--- HUMAN FEEDBACK/DIRECTIVE ---\n{f.read()}\n--- END HUMAN FEEDBACK ---"
             log(f"({agent_name}): Injected human feedback from human.txt")
 
-        msg_files = sorted([f for f in os.listdir(msgs_dir) if f != "human.txt"])
+        msg_files = sorted([f for f in os.listdir(msgs_dir) if f != "human.txt" and os.path.isfile(os.path.join(msgs_dir, f))])
         if msg_files:
             msg_list = []
             for mf in msg_files[-5:]: # Last 5 messages

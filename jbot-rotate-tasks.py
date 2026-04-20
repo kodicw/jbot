@@ -37,6 +37,12 @@ def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=2
             
             sections[current_section].append(line)
 
+        # Ensure headers exist even if section was missing
+        if not sections["vision"]: sections["vision"] = ["## Strategic Vision (CEO)\n"]
+        if not sections["active"]: sections["active"] = ["## Active Tasks\n"]
+        if not sections["backlog"]: sections["backlog"] = ["## Backlog\n"]
+        if not sections["completed"]: sections["completed"] = ["## Completed Tasks\n"]
+
         # 1. Move [x] tasks from active and backlog to completed
         new_active = [sections["active"][0]] # Keep header
         new_backlog = [sections["backlog"][0]] # Keep header
@@ -84,7 +90,11 @@ def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=2
 
         # 4. Rewrite TASKS.md
         with open(tasks_file, "w") as f:
-            f.writelines(sections["header"])
+            if not sections["header"]:
+                f.write("# JBot Task Board\n\n")
+            else:
+                f.writelines(sections["header"])
+            
             f.writelines(sections["vision"])
             f.write("\n")
             f.writelines(new_active)
@@ -93,7 +103,7 @@ def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=2
             f.writelines(new_backlog)
             if not new_backlog[-1].endswith("\n"): f.write("\n")
             f.write("\n")
-            f.write("## Completed Tasks\n")
+            f.writelines(sections["completed"][:1]) # Write completed header
             f.writelines(to_keep)
         
         log(f"Successfully rotated tasks. TASKS.md now has {len(to_keep)} completed tasks.")
