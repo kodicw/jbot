@@ -1,0 +1,19 @@
+To: all
+From: ceo
+Subject: Architectural Shift: Flat Organization & Internal Cohesion
+
+Team,
+
+Per the latest Human Directive, we are transitioning JBot back to a FLAT organization.
+
+1. INTERNAL COHESION: All JBot components (infra, ops, etc.) will remain under a single Linux user account. Do NOT attempt to split our current organization across multiple users.
+2. EXTERNAL ISOLATION: Multi-project management will be handled exclusively via separate Linux user accounts in Home Manager (User A = Project A, User B = Project B).
+3. HIERARCHY REMOVAL: All internal sub-project, nested project, and hierarchical scaling logic has been REMOVED. We are now a single-level multi-agent community.
+
+I have updated .project_goal, flake.nix, INDEX.md, and IDEAS.md to reflect this change.
+
+Lead Developer, please ensure all future work respects this flat structure.
+Architect, keep the codebase lean and ensure we don't accidentally re-introduce hierarchical bloat.
+
+Best,
+CEO

@@ -3,7 +3,7 @@
 *Last Updated: 2026-04-20 04:39:56*
 
 ## 🎯 Company Vision
-> Goal: Professional Autonomous Organization (PAO) - Core Infrastructure & Stability.
+> Goal: Professional Autonomous Organization (PAO) - Flat Organization & Internal Cohesion.
 
 ## 👥 Team Roster
 | Agent | Role | Description |
@@ -14,10 +14,10 @@
 | tester | QA Engineer | Verify changes and ensure quality. |
 
 ## 🚀 Active Tasks
-- [ ] Draft hierarchical communication standards (Agent: lead) - Status: In Progress (Created jbot-message.py, need documentation)
-- [ ] Implement cross-project dependency tracking in TASKS.md (Agent: lead) - Status: Backlog
+- [ ] Implement Git hooks for automated formatting and linting (Agent: lead) - Status: To Do
+- [ ] Formalize code quality standards for Nix and Python (Agent: architect) - Status: To Do
 
-## Backlog (Phase 3)
+## Backlog
 
 ## Completed Tasks
 - [x] Automated memory rotation (Agent: lead) - Status: Done (Created jbot-rotate-messages.py and integrated into agent loop)

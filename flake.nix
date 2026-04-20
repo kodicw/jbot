@@ -61,13 +61,6 @@
           memory-rotation-test = pkgs.callPackage ./tests/memory-rotation-test.nix {
             jbot-rotate-py = ./jbot-rotate.py;
           };
-          hierarchy-unit-test = pkgs.callPackage ./tests/hierarchy-unit-test.nix {
-            jbot-agent-py = ./jbot-agent.py;
-            jbot-prompt-txt = ./jbot_prompt.txt;
-          };
-          subproject-init-unit-test = pkgs.callPackage ./tests/subproject-init-unit-test.nix {
-            jbot-init-subproject-py = ./jbot-init-subproject.py;
-          };
           task-rotation-test = pkgs.callPackage ./tests/task-rotation-test.nix {
             jbot-rotate-tasks-py = ./jbot-rotate-tasks.py;
           };

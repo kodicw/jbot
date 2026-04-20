@@ -17,7 +17,7 @@ A "Company" needs a central place to track work.
 - **Developer**: Can pick up tasks and update status to "In Progress" or "Done".
 - **QA**: Can verify tasks and move them to "Closed" or "Reopened".
 
-## 4. Hierarchy & Dependencies
+## 4. Agent Dependencies
 Some agents should run after others.
 **Proposed Change:** Add a `dependsOn` option to `programs.jbot.agents`. This will map to systemd `After=` and `Wants=` dependencies.
 

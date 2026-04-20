@@ -22,7 +22,6 @@
         description = "Core lead developer. Implements foundational infrastructure.";
         projectDir = "/home/youruser/yourproject";
         interval = "hourly";
-        supervisor = "ceo"; # Reports to the CEO
         dependsOn = [ "ceo" ];
       };
 
@@ -33,7 +32,6 @@
         description = "Critiques architectural decisions, advocates for simplicity, and maintains engineering standards.";
         projectDir = "/home/youruser/yourproject";
         interval = "daily";
-        supervisor = "ceo"; # Reports to the CEO
         dependsOn = [ "ceo" ];
       };
 
@@ -44,7 +42,6 @@
         description = "Quality Assurance. Verifies features and reports regressions.";
         projectDir = "/home/youruser/yourproject";
         interval = "hourly";
-        supervisor = "ceo"; # Reports to the CEO
         dependsOn = [ "lead" ]; # Waits for lead developer to finish changes
       };
     };

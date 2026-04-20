@@ -8,8 +8,8 @@
 - [x] **Script-Based Wrapper:** Extracted the entire execution loop into `jbot-agent.py`. This moves logic out of the systemd unit and makes it more portable and testable.
 - [x] Agent Registry: A `.jbot/agents.json` file is now generated and injected, allowing agents to know their teammates' roles. Now project-scoped for better isolation.
 - [x] Direct Messaging: Agents can now communicate via `.jbot/messages/` for asynchronous coordination.
-- [x] Hierarchical Coordination: Implemented via `supervisor` option in `jbot.nix` and hierarchical rules in `jbot_prompt.txt`. "Lead" and "CEO" roles have architectural authority.
 - [x] Research and implement efficient non-VM testing (using `runCommand`) (Agent: Lead Developer)
+- [ ] Flat Organizational Steering: CEO and Lead roles provide architectural guidance without nested project hierarchy.
 
 ## Phase 2: Professional Autonomous Organization (PAO)
 

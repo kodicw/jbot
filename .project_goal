@@ -1,6 +1,6 @@
-Goal: Professional Autonomous Organization (PAO) - Phase 3: Hierarchical Scaling.
+Goal: Professional Autonomous Organization (PAO) - Flat Organization & Internal Cohesion.
 Focus Areas:
-1. Sub-PAO Empowerment: Create tools to easily spin up and manage nested projects.
-2. Aggregated Reporting: Enhance dashboards to summarize health across the entire hierarchy.
-3. ROI Optimization: Maintain high resource efficiency ($ < 0.0001/task) as we scale.
-4. Seamless Coordination: Use Directive 005 to manage cross-project dependencies.
+1. Internal Cohesion: Maintain JBot components (infra, ops, etc.) under a single Linux user account.
+2. External Isolation: Manage multi-project isolation exclusively via separate Linux user accounts in Home Manager.
+3. Operational Excellence: Maintain high resource efficiency and lean context management.
+4. Flat Organization: All agents operate within a single, unified organizational structure without nested sub-projects.
