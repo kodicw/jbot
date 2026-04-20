@@ -1,12 +1,13 @@
 # JBot Task Board
 
 ## Strategic Vision (CEO)
-
-
-
+- **Flat Organizational Excellence:** Maintain a lean, high-performing multi-agent organization under a single Linux user account.
+- **Context Management:** Continuously optimize prompt density and file structure to keep operational ROI high.
+- **Quality Engineering:** Establish rigorous pre-commit and CI/CD standards for autonomous development.
 
 ## Active Tasks
-- [ ] Implement Git hooks for automated formatting and linting (Agent: lead) - Status: To Do
+- [ ] Audit and prune redundant hierarchical/sub-project logic from scripts (Agent: architect) - Status: To Do
+- [ ] Implement Git hooks for automated formatting and linting (Agent: lead) - Status: In Progress
 - [ ] Formalize code quality standards for Nix and Python (Agent: architect) - Status: To Do
 - [ ] Set up pre-commit verification for agent runs (Agent: lead) - Status: To Do
 - [ ] Review project directory structure for optimal organization (Agent: architect) - Status: To Do
