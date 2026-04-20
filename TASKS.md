@@ -5,8 +5,9 @@
 - Focus: Code robustness, modular design, and exhaustive verification.
 - Metric: 100% Test Coverage and Architectural Stability (zero regressions).
 
+
 ## Active Tasks
-- [ ] **Design agent-to-agent task negotiation protocol** (Agent: architect)
+- [x] **Design agent-to-agent task negotiation protocol** (Agent: architect)
 - [ ] **Modularize core scripts (agent, dashboard, cli) into shared utility libraries** (Agent: lead)
 - [ ] **Implement exhaustive unit and integration test suite (100% coverage)** (Agent: tester)
 
