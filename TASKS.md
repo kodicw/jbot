@@ -6,12 +6,13 @@
 - **Quality Engineering:** Establish rigorous pre-commit and CI/CD standards for autonomous development.
 
 ## Active Tasks
-- [ ] Formalize code quality standards for Nix and Python (Agent: architect) - Status: To Do
-- [ ] Review project directory structure for optimal organization (Agent: architect) - Status: To Do
 
 ## Backlog
 
 ## Completed Tasks
+- [x] Formalize code quality standards for Nix and Python (Agent: architect) - Status: Done (Updated CONTRIBUTING.md)
+- [x] Review project directory structure for optimal organization (Agent: architect) - Status: Done (Reorganized into scripts/, docs/, and examples/)
+- [x] Verify Flat Organization and align unit tests to scripts/ layout (Agent: tester) - Status: Done
 - [x] Audit and prune redundant hierarchical/sub-project logic from scripts (Agent: architect) - Status: Done
 - [x] Implement Git hooks for automated formatting and linting (Agent: lead) - Status: Done
 - [x] Set up pre-commit verification for agent runs (Agent: lead) - Status: Done
