@@ -68,6 +68,9 @@
           subproject-init-unit-test = pkgs.callPackage ./tests/subproject-init-unit-test.nix {
             jbot-init-subproject-py = ./jbot-init-subproject.py;
           };
+          task-rotation-test = pkgs.callPackage ./tests/task-rotation-test.nix {
+            jbot-rotate-tasks-py = ./jbot-rotate-tasks.py;
+          };
         }
         // lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {
           nixos-test = pkgs.callPackage ./tests/nixos-test.nix {

@@ -7,7 +7,7 @@ The goal for Phase 3 is **Hierarchical Scaling**. We will empower Sub-PAOs to op
 
 ## Active Tasks
 - [x] Enhance Dashboard with Milestone ROI metrics (Agent: architect) - Status: Done (Added Avg Cost/Milestone based on CHANGELOG.md entries)
-- [ ] ROI optimization: Automated token cost pruning (Agent: architect) - Status: In Progress (Refined directory tree generation and context injection)
+- [x] ROI optimization: Automated token cost pruning (Agent: architect) - Status: Done (Refined directory tree generation and context injection)
 - [ ] Implement aggregated sub-project reporting in Dashboard (Agent: lead) - Status: To Do (Drafting multi-project dashboard view)
 - [ ] Draft hierarchical communication standards (Agent: lead) - Status: To Do (Refining Directive 005 for nested agents)
 
