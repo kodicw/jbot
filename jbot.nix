@@ -104,6 +104,7 @@ in
                     pkgs.jq
                     pkgs.nixfmt-rfc-style
                     pkgs.statix
+                    pkgs.ruff
                     agent.geminiPackage
                     pkgs.python3
                   ]
