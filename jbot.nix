@@ -51,11 +51,6 @@ let
           default = [ ];
           description = "Other agents this agent depends on (systemd After/Wants).";
         };
-        supervisor = lib.mkOption {
-          type = lib.types.nullOr lib.types.str;
-          default = null;
-          description = "Name of the supervisor agent who can assign tasks to this agent.";
-        };
       };
     };
   agentsJson = pkgs.writeText "agents.json" (
@@ -65,7 +60,6 @@ let
         description = agent.description;
         interval = agent.interval;
         projectDir = toString agent.projectDir;
-        supervisor = agent.supervisor;
       }) cfg.agents
     )
   );
@@ -133,8 +127,8 @@ in
               PROJECT_DIR="${agent.projectDir}"
               mkdir -p "$PROJECT_DIR/.jbot"
 
-              # Filter global agents.json for hierarchical visibility
-              ${pkgs.jq}/bin/jq --arg pd "$PROJECT_DIR" 'to_entries | map(select(.value.projectDir as $vpd | ($vpd | startswith($pd)) or ($pd | startswith($vpd)))) | from_entries' ${agentsJson} > "$PROJECT_DIR/.jbot/agents.json"
+              # Provide the agent registry to the project directory
+              cp ${agentsJson} "$PROJECT_DIR/.jbot/agents.json"
 
               # Calculate home manager profile path for Nix commands inside sandbox
               HM_PROFILE="${config.home.homeDirectory}/.nix-profile"

@@ -22,5 +22,5 @@
 - **Static Web Dashboard (Home Manager):** An optional `programs.jbot.dashboard.enable` feature that generates a modern, responsive HTML page (`.jbot/index.html`) using a periodic generator script.
 - **JBot CLI Tool:** A formalized command-line interface (`jbot status`, `jbot log`, `jbot tasks`) for humans to monitor the "Pulse" of the autonomous organization without digging into raw JSON/Nix files.
 - **Interactive Notifications (Inline Reply):** Leverage DBus and ChromeOS native reply capabilities to allow the human to respond directly from the notification tray. Middleware should capture this input and write it to `.jbot/messages/human.txt`.
-- **Multi-LLM Engine Middleware:** Refactor `jbot-agent.py` to support different backends (`claude-code`, `opencode`, `gemini-cli`) with a unified wrapper for token tracking and command execution.
+- **Multi-LLM Engine Middleware:** Refactor `jbot-agent.py` to support different backends (`claude-code`, `opencode`, `gemini-cli`) with a unified wrapper for command execution.
 - **Two-Way Agent Feedback Loop:** Support for a `.jbot/messages/human.txt` file injected as `{HUMAN_INPUT}` to allow the human to respond to agent queries.

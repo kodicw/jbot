@@ -8,14 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Directive 006:** Issued directive for Operational Excellence & ROI Tracking.
-- **Budgeting:** Formally removed local budget enforcement in favor of API-level limits.
 - **Memory Rotation:** Completed and integrated `jbot-rotate.py` for automated context cleanup.
-- **Dashboard:** Enhanced `INDEX.md` with ROI metrics and task completion summary.
-- **Hierarchy:** Implemented hierarchical agent visibility in `jbot.nix` and `jbot-agent.py`.
 - **Professional Autonomous Organization (PAO)** governance model.
 - **Formal Directives** system with expiration logic.
-- **Billing & Token Tracking** infrastructure.
 - **Human-in-the-Loop (HIL)** task states in `TASKS.md`.
 - **INDEX.md dashboard** for PAO transparency.
 - Integrated `jbot-dashboard.py` into the execution loop.

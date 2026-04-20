@@ -45,7 +45,6 @@ def main():
 
     # Find core files upwards
     tasks_path = find_file_upwards("TASKS.md", project_dir) or "TASKS.md"
-    billing_path = find_file_upwards("BILLING.md", project_dir) or "BILLING.md"
     goal_path = find_file_upwards(".project_goal", project_dir) or ".project_goal"
     changelog_path = find_file_upwards("CHANGELOG.md", project_dir) or "CHANGELOG.md"
 
@@ -75,6 +74,14 @@ def main():
             subprocess.run(["python3", rotate_tasks_script], check=True)
         except Exception as e:
             log(f"Error running task rotation: {e}")
+
+    rotate_messages_script = os.path.join(script_dir, "jbot-rotate-messages.py")
+    if os.path.exists(rotate_messages_script):
+        try:
+            log(f"({agent_name}): Running automated message rotation...")
+            subprocess.run(["python3", rotate_messages_script], check=True)
+        except Exception as e:
+            log(f"Error running message rotation: {e}")
 
     # Consolidation
     lock_dir = ".jbot/lock"
@@ -126,42 +133,15 @@ def main():
         with open(tasks_path, "r") as f:
             task_board = f.read()
 
-    # Team Registry (Enhanced for hierarchy)
+    # Team Registry (Simplified: No hierarchy)
     team_registry = "No team registry found."
     if os.path.exists(".jbot/agents.json"):
         with open(".jbot/agents.json", "r") as f:
             agents = json.load(f)
-            registry_sections = {
-                "Teammates": [],
-                "Supervisors (Parent Projects)": [],
-                "Sub-projects (Nested Agents)": []
-            }
-            
-            curr_pd = os.path.abspath(project_dir)
-            
+            registry_lines = []
             for name, info in agents.items():
                 if name == agent_name: continue
-                
-                agent_pd = os.path.abspath(info.get('projectDir', curr_pd))
-                role_info = f"- {name}: {info.get('role')} ({info.get('description')})"
-                if info.get("supervisor"):
-                    role_info += f" [Supervisor: {info.get('supervisor')}]"
-                
-                if agent_pd == curr_pd:
-                    registry_sections["Teammates"].append(role_info)
-                elif curr_pd.startswith(agent_pd):
-                    registry_sections["Supervisors (Parent Projects)"].append(f"{role_info} [Dir: {agent_pd}]")
-                elif agent_pd.startswith(curr_pd):
-                    registry_sections["Sub-projects (Nested Agents)"].append(f"{role_info} [Dir: {agent_pd}]")
-                else:
-                    # Should not happen with current filter, but for safety:
-                    registry_sections["Teammates"].append(role_info)
-            
-            registry_lines = []
-            for section, lines in registry_sections.items():
-                if lines:
-                    registry_lines.append(f"### {section}")
-                    registry_lines.extend(lines)
+                registry_lines.append(f"- {name}: {info.get('role')} ({info.get('description')})")
             
             team_registry = "\n".join(registry_lines) if registry_lines else "No other agents in visibility."
 
@@ -268,59 +248,12 @@ def main():
             log(f"Error: Gemini CLI failed with exit code {process.returncode}")
             sys.exit(process.returncode)
 
-        # Parse tokens from output
-        output_text = "".join(full_output)
-        input_tokens = 0
-        output_tokens = 0
-        
-        # More robust regex for tokens
-        token_match = re.search(r"(\d+(?:,\d+)*)\s*input tokens,\s*(\d+(?:,\d+)*)\s*output tokens", output_text)
-        if not token_match:
-            # Try a simpler match if the first one fails
-            token_match = re.search(r"input tokens:\s*(\d+).*output tokens:\s*(\d+)", output_text, re.IGNORECASE | re.DOTALL)
-            
-        if token_match:
-            try:
-                input_tokens = int(token_match.group(1).replace(",", ""))
-                output_tokens = int(token_match.group(2).replace(",", ""))
-                log(f"({agent_name}): Captured usage - {input_tokens} in, {output_tokens} out.")
-            except (ValueError, IndexError):
-                log(f"({agent_name}): Failed to parse token counts from match.")
-
         # Check for TASKS.md bloat
         if os.path.exists(tasks_path):
             with open(tasks_path, "r") as f:
                 task_lines = f.readlines()
                 if len(task_lines) > 200:
                     log(f"WARNING ({agent_name}): {tasks_path} is getting large ({len(task_lines)} lines). Consider archiving completed tasks.")
-
-        # Update BILLING.md
-        if os.path.exists(billing_path) and os.access(billing_path, os.W_OK):
-            try:
-                task_name = "Automated Task"
-                if os.path.exists(tasks_path):
-                    with open(tasks_path, "r") as f:
-                        for line in f:
-                            if "In Progress" in line and f"(Agent: {agent_name})" in line:
-                                parts = line.split("] ")
-                                if len(parts) > 1:
-                                    task_name = parts[1].split(" (Agent:")[0].strip()
-                                break
-                
-                today_str = datetime.now().strftime("%Y-%m-%d")
-                
-                # More realistic cost calculation (Gemini 1.5 Flash approx)
-                # Input: $0.075 / 1M, Output: $0.30 / 1M
-                input_cost = (input_tokens / 1_000_000) * 0.075
-                output_cost = (output_tokens / 1_000_000) * 0.30
-                cost = input_cost + output_cost
-                
-                with open(billing_path, "a") as f:
-                    f.write(f"| {today_str} | {agent_name} | {input_tokens}/{output_tokens} | ${cost:.4f} | {task_name} |\n")
-                
-                log(f"({agent_name}): Updated {billing_path}")
-            except Exception as e:
-                log(f"Error updating billing: {e}")
 
         # Update Dashboard
         dashboard_script = os.path.join(script_dir, "jbot-dashboard.py")

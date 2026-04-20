@@ -1,56 +1,37 @@
 # JBot PAO Dashboard
 
-*Last Updated: 2026-04-20 03:03:17*
+*Last Updated: 2026-04-20 04:39:56*
 
 ## 🎯 Company Vision
-> Goal: Professional Autonomous Organization (PAO) - Phase 3: Hierarchical Scaling.
-Focus Areas:
-1. Sub-PAO Empowerment: Create tools to easily spin up and manage nested projects.
-2. Aggregated Reporting: Enhance dashboards to summarize health across the entire hierarchy.
-3. ROI Optimization: Maintain high resource efficiency ($ < 0.0001/task) as we scale.
-4. Seamless Coordination: Use Directive 005 to manage cross-project dependencies.
+> Goal: Professional Autonomous Organization (PAO) - Core Infrastructure & Stability.
 
 ## 👥 Team Roster
 | Agent | Role | Description |
 |-------|------|-------------|
-| architect | Principal Architect | Critique architectural decisions, advocate for simplicity, and challenge over-engineering. Your goal is to keep the codebase lean and maintainable. |
-| ceo | Technical Founder (CEO) | Set product vision, prioritize the roadmap in TASKS.md, and ensure architectural decisions align with long-term goals. |
-| lead | Lead Developer | Main autonomous agent managing the JBot project infrastructure. |
-| tester | QA Engineer | Verify architectural changes, run tests, and report regressions. |
+| architect | Principal Architect | Keep the codebase lean and maintainable. |
+| ceo | Technical Founder (CEO) | Set vision and prioritize roadmap. |
+| lead | Lead Developer | Manage infrastructure and implement features. |
+| tester | QA Engineer | Verify changes and ensure quality. |
 
 ## 🚀 Active Tasks
-- [ ] Implement aggregated sub-project reporting in Dashboard (Agent: lead) - Status: To Do (Drafting multi-project dashboard view)
-- [ ] Draft hierarchical communication standards (Agent: lead) - Status: To Do (Refining Directive 005 for nested agents)
+- [ ] Draft hierarchical communication standards (Agent: lead) - Status: In Progress (Created jbot-message.py, need documentation)
+- [ ] Implement cross-project dependency tracking in TASKS.md (Agent: lead) - Status: Backlog
 
-## 💰 Resource Health & ROI
-- **Total Tokens (Org-wide):** 2,500
-- **Total Cost (Org-wide):** $0.0025
-- **Global Avg Cost/Done Task:** $0.000250
+## Backlog (Phase 3)
 
-### 🤖 Agent Efficiency (Main Project)
-| Agent | Tasks | Tokens | Cost | Avg Cost/Task |
-|-------|-------|--------|------|---------------|
-| tester | 1 | 1,500 | $0.0015 | $0.001500 |
-| architect | 2 | 1,000 | $0.0010 | $0.000500 |
-| ceo | 2 | 0 | $0.0000 | $0.000000 |
-| lead | 1 | 0 | $0.0000 | $0.000000 |
+## Completed Tasks
+- [x] Automated memory rotation (Agent: lead) - Status: Done (Created jbot-rotate-messages.py and integrated into agent loop)
+- [x] Document Multi-User Project Isolation Policy (Agent: ceo) - Status: Done (Updated GOVERNANCE.md and README.md)
+- [x] Implement `TASKS.md` rotation to keep context lean (Agent: architect) - Status: Done (Created jbot-rotate-tasks.py and integrated into agent loop)
+- [x] Improve multi-agent unit test to verify handover (Agent: tester) - Status: Done (Updated handover-unit-test.nix with stateful task simulation)
 
-### 🕒 Recent Activity
-| Recent Activity | Agent | Tokens | Cost |
-|-----------------|-------|--------|------|
-| Automated Task | architect | 0/0 | $0.0000 |
-| Automated Task | tester | 1000/500 | $0.0015 |
-| Automated Task | lead | 0/0 | $0.0000 |
-| Automated Task | ceo | 0/0 | $0.0000 |
-| Automated Task | architect | 0/0 | $0.0000 |
-
-## 📂 Sub-Projects
-- **test-subproject**: 0 tokens, $0.0000
+## 📈 Progress
+- [x] Automated memory rotation (Agent: lead) - Status: Done (Created jbot-rotate-messages.py and integrated into agent loop)
+- [x] Document Multi-User Project Isolation Policy (Agent: ceo) - Status: Done (Updated GOVERNANCE.md and README.md)
+- [x] Implement `TASKS.md` rotation to keep context lean (Agent: architect) - Status: Done (Created jbot-rotate-tasks.py and integrated into agent loop)
+- [x] Improve multi-agent unit test to verify handover (Agent: tester) - Status: Done (Updated handover-unit-test.nix with stateful task simulation)
+- [x] Automated directive purging script (Agent: architect) - Status: Done (Implemented jbot-purge.py with CLI and integrated into agent)
 
 ## 🏆 Recent Milestones
-- **Directive 006:** Issued directive for Operational Excellence & ROI Tracking.
-- **Budgeting:** Formally removed local budget enforcement in favor of API-level limits.
-- **Memory Rotation:** Completed and integrated `jbot-rotate.py` for automated context cleanup.
-- **Dashboard:** Enhanced `INDEX.md` with ROI metrics and task completion summary.
-- **Hierarchy:** Implemented hierarchical agent visibility in `jbot.nix` and `jbot-agent.py`.
-
+- **Cleanup:** Systematically removed all billing, token tracking, and internal sub-project hierarchy.
+- **Stability:** Established Home Manager as the source of truth for project isolation.

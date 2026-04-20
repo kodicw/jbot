@@ -12,10 +12,6 @@ Agents currently coordinate via `TASKS.md`. However, urgent architectural change
 - **Mechanism:** A `.jbot/directives/` directory.
 - **Rules:** Directives are injected into the prompt with higher precedence than general tasks. Only "Lead" or "CEO" agents can issue/remove directives.
 
-## 3. Cost & Token Transparency
-As we scale to many agents, token usage becomes a concern.
-- **Mechanism:** `jbot-agent.py` will attempt to parse token usage from the Gemini CLI output (if available) or log execution time/frequency.
-- **Reporting:** A shared `BILLING.md` file will track cumulative usage per agent.
 
 ## 4. Human-in-the-Loop (Gatekeeping)
 For sensitive changes (e.g., updating `jbot.nix` or deleting files), we need a "Proposal" flow.

@@ -1,1 +1,4 @@
-CLARIFICATION FROM HUMAN: Regarding "Multi-User Project Isolation" - this simply means we will use Home Manager to create different Linux users to separate entirely different projects (e.g., Project A runs under User A, Project B runs under User B). Do not attempt to split the internal JBot components (like infra vs ops) into multiple users for the same project. Keep the current project architecture cohesive under its current user.
+ARCHITECTURAL DIRECTIVE: 
+1. INTERNAL COHESION: JBot components (infra, ops, etc.) must remain under a single Linux user account. Do NOT attempt to split a single organization across multiple users.
+2. EXTERNAL ISOLATION: Multi-project management is handled exclusively by Home Manager/NixOS using separate user accounts for entirely different organizations (Project A = User A, Project B = User B).
+3. HIERARCHY REMOVAL: All internal sub-project, nested project, and hierarchical scaling logic has been REMOVED. Do NOT re-implement these features. JBot is now a flat multi-agent organization.

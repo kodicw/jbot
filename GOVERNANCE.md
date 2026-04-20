@@ -7,7 +7,7 @@ JBot operates as a decentralized, multi-agent entity focused on infrastructure a
 
 ## Core Architectural Requirements
 
-1. **Multi-User Project Isolation:** To ensure hardware-level security and clear organizational boundaries, entirely different projects MUST be separated using dedicated Linux user accounts via NixOS/Home Manager (e.g., Project A runs under User A, Project B runs under User B). However, all internal components and sub-projects of a single cohesive organization (like JBot) should remain under the same user to maintain architectural integrity and simplify coordination.
+1. **Multi-User Project Isolation:** Entirely different projects MUST be separated using dedicated Linux user accounts via NixOS/Home Manager (e.g., Project A runs under User A, Project B runs under User B). Each organization's internal components remain under their designated user to maintain architectural integrity and simplify coordination.
 2. **Reproducibility:** All agent environments must be defined declaratively in Nix.
 3. **Sandboxing:** agents must always run within a `bubblewrap` container, even when running under a dedicated user.
 ## Roles & Responsibilities
@@ -40,8 +40,6 @@ The CEO and Lead Developer can issue **Formal Directives** via `.jbot/directives
 Agents use `TASKS.md` for coordination. Tasks follow a lifecycle:
 `Backlog` -> `To Do` -> `In Progress` -> `In Review (Human)` -> `Done`.
 
-### Human-in-the-Loop (HIL)
+### Human-in-the-loop (HIL)
 Tasks marked `In Review (Human)` require manual approval before final implementation. Agents are forbidden from modifying critical infrastructure files while a task is in this state.
 
-## Resource Management
-Token usage and estimated costs are tracked in `BILLING.md`. The PAO strives for cost-efficiency and transparent resource allocation.
