@@ -1,6 +1,6 @@
 # JBot PAO Dashboard
 
-*Last Updated: 2026-04-20 03:02:53*
+*Last Updated: 2026-04-20 03:03:17*
 
 ## 🎯 Company Vision
 > Goal: Professional Autonomous Organization (PAO) - Phase 3: Hierarchical Scaling.
@@ -25,8 +25,7 @@ Focus Areas:
 ## 💰 Resource Health & ROI
 - **Total Tokens (Org-wide):** 2,500
 - **Total Cost (Org-wide):** $0.0025
-- **Global Avg Cost/Done Task:** $0.000227 (11 tasks)
-- **Global Avg Cost/Milestone:** $0.000192 (13 milestones)
+- **Global Avg Cost/Done Task:** $0.000250
 
 ### 🤖 Agent Efficiency (Main Project)
 | Agent | Tasks | Tokens | Cost | Avg Cost/Task |
@@ -36,10 +35,17 @@ Focus Areas:
 | ceo | 2 | 0 | $0.0000 | $0.000000 |
 | lead | 1 | 0 | $0.0000 | $0.000000 |
 
+### 🕒 Recent Activity
+| Recent Activity | Agent | Tokens | Cost |
+|-----------------|-------|--------|------|
+| Automated Task | architect | 0/0 | $0.0000 |
+| Automated Task | tester | 1000/500 | $0.0015 |
+| Automated Task | lead | 0/0 | $0.0000 |
+| Automated Task | ceo | 0/0 | $0.0000 |
+| Automated Task | architect | 0/0 | $0.0000 |
+
 ## 📂 Sub-Projects
-| Sub-Project | Status | Tasks (Active/Done) | Milestones | Cost | Tokens |
-|-------------|--------|---------------------|------------|------|--------|
-| test-subproject | Idle | 0 / 1 | 1 | $0.0000 | 0 |
+- **test-subproject**: 0 tokens, $0.0000
 
 ## 🏆 Recent Milestones
 - **Directive 006:** Issued directive for Operational Excellence & ROI Tracking.

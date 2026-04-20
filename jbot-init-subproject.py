@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+"""
+JBot Sub-Project Initializer
+Standardizes the creation of nested PAO (Professional Autonomous Organization) sub-projects.
+
+Usage:
+    python3 jbot-init-subproject.py <name> [options]
+
+Options:
+    -d, --dir <path>       Parent directory (default: current directory)
+    -g, --goal <string>    Strategic goal for the sub-project
+    -s, --supervisor <name> Name of the supervisor agent
+"""
+
 import os
 import argparse
 import json
@@ -14,6 +28,7 @@ def init_subproject(name, parent_dir=".", goal="A sub-project of JBot.", supervi
     else:
         log(f"Directory {sub_dir} already exists. Initializing missing components...")
 
+    # Core JBot structure
     os.makedirs(os.path.join(sub_dir, ".jbot", "directives"), exist_ok=True)
     os.makedirs(os.path.join(sub_dir, ".jbot", "messages"), exist_ok=True)
     os.makedirs(os.path.join(sub_dir, ".jbot", "queues"), exist_ok=True)
@@ -30,6 +45,7 @@ def init_subproject(name, parent_dir=".", goal="A sub-project of JBot.", supervi
             f.write("- [x] Initialize sub-project structure (Agent: lead) - Status: Done\n\n")
             f.write("## Backlog\n")
             f.write("- [ ] Define roadmap for {name}\n")
+            f.write("- [ ] Implement first sub-project feature\n")
         log(f"Created {tasks_path}")
     
     # Initialize .project_goal
@@ -63,6 +79,24 @@ def init_subproject(name, parent_dir=".", goal="A sub-project of JBot.", supervi
             f.write("- **Initialization:** Created sub-project structure.\n")
         log(f"Created {changelog_path}")
 
+    # README for the sub-project
+    readme_path = os.path.join(sub_dir, "README.md")
+    if not os.path.exists(readme_path):
+        with open(readme_path, "w") as f:
+            f.write(f"# {name} Sub-Project\n\n")
+            f.write(f"## Overview\n{goal}\n\n")
+            f.write("## Parent Project\nJBot (Root)\n\n")
+            f.write("## Operational Guide\n")
+            f.write("This project is managed by JBot agents. To run an agent for this project:\n\n")
+            f.write("1. Ensure the agent is defined in your Home Manager configuration.\n")
+            f.write("2. The `projectDir` should point to this directory.\n")
+            f.write("3. Use `systemctl --user start jbot-agent-<name>` to trigger a run.\n\n")
+            f.write("## Hierarchy\n")
+            if supervisor:
+                f.write(f"- **Supervisor Agent:** {supervisor}\n")
+            f.write(f"- **Project Directory:** `{os.path.abspath(sub_dir)}`\n")
+        log(f"Created {readme_path}")
+
     # README for directives
     dir_readme = os.path.join(sub_dir, ".jbot", "directives", "README.md")
     if not os.path.exists(dir_readme):
@@ -71,16 +105,18 @@ def init_subproject(name, parent_dir=".", goal="A sub-project of JBot.", supervi
             f.write("This directory contains formal directives specific to this sub-project.\n")
 
     log(f"Successfully initialized sub-project '{name}' at {sub_dir}")
-    log(f"NEXT STEPS:")
-    log(f"1. Update your Home Manager configuration to add an agent for this project:")
-    log(f"   programs.jbot.agents.\"{name.lower()}\" = {{")
-    log(f"     enable = true;")
-    log(f"     role = \"Sub-Lead\";")
-    log(f"     projectDir = \"{os.path.abspath(sub_dir)}\";")
+    log(f"--- ACTION REQUIRED ---")
+    log(f"Update your Home Manager configuration (jbot.nix) to include this sub-project:")
+    log(f"")
+    log(f"  programs.jbot.agents.\"{name.lower()}\" = {{")
+    log(f"    enable = true;")
+    log(f"    role = \"Sub-Lead\";")
+    log(f"    projectDir = \"{os.path.abspath(sub_dir)}\";")
     if supervisor:
-        log(f"     supervisor = \"{supervisor}\";")
-    log(f"   }};")
-    log(f"2. Run 'home-manager switch' to activate the agent.")
+        log(f"    supervisor = \"{supervisor}\";")
+    log(f"  }};")
+    log(f"")
+    log(f"Then run: home-manager switch")
     return True
 
 if __name__ == "__main__":

@@ -17,3 +17,4 @@ This file tracks the resource consumption of the JBot autonomous organization.
 | 2026-04-19 | tester | 1000/500 | $0.0015 | Automated Task |
 | 2026-04-19 | lead | 0/0 | $0.0000 | Automated Task |
 | 2026-04-19 | ceo | 0/0 | $0.0000 | Automated Task |
+| 2026-04-20 | architect | 0/0 | $0.0000 | Automated Task |
