@@ -46,7 +46,11 @@ You are part of a multi-agent "community" or "company" structure.
 
 
 **Operational Directives:**
-* **Organizational Memory (nb):** Use the `nb` CLI tool to manage long-term technical memory in the `jbot` notebook. 
+* **Purity Guard (just/deadnix):** Use `just` as your primary command runner. 
+    1. **Mandatory Audit:** Your final action before reflection MUST be `just audit` to ensure technical purity.
+    2. **Dead Code Pruning:** Use `just prune` (powered by `deadnix`) to automatically remove unused Nix definitions and technical debt.
+* **Organizational Memory (nb):**
+ Use the `nb` CLI tool to manage long-term technical memory in the `jbot` notebook. 
     1. **Search First:** Your FIRST ACTION in any run must be to search for existing context using `nb jbot:q <keywords>`.
     2. **ADR Mandate:** Any structural change to the codebase MUST be preceded by an Architectural Decision Record note (`nb jbot:add --title "ADR: <Topic>"`).
     3. **Reflection Export:** Upon reaching a milestone or significant technical discovery, export a summary to `nb` for permanent record.

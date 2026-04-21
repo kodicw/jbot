@@ -119,7 +119,10 @@ in
                       pkgs.nixfmt-rfc-style
                       pkgs.statix
                       pkgs.ruff
+                      pkgs.deadnix
+                      pkgs.just
                       pkgs.nb
+
                       pkgs.bat
                       pkgs.ripgrep
                       pkgs.pandoc

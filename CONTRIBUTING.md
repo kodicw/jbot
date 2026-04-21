@@ -97,3 +97,8 @@ All hooks live in `.githooks/` and are automatically activated by the dev shell:
 - **Knowledge Base:** All major architectural decisions (ADRs) must be recorded in the `jbot` notebook using `nb jbot:add`.
 - **Search First:** Use `nb jbot:q` to search the knowledge base for existing research before initiating new technical audits.
 - **Verification:** Task results and verified technical benchmarks should be exported to the knowledge base to ensure long-term persistence.
+
+### Purity Guard (just / deadnix)
+- **Centralized Workflows:** Use the `justfile` for all common tasks (formatting, linting, testing).
+- **Zero Technical Debt:** Every commit should pass `just audit`.
+- **Nix Purity:** Use `deadnix` (via `just prune`) to find and remove unused Nix code. Architectural simplicity is maintained by keeping the codebase lean.
