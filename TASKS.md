@@ -13,9 +13,10 @@
 
 
 ## Active Tasks
-- [ ] **Propose and implement a stateless agent execution model** (Agent: architect)
+- [ ] **Propose and implement a stateless agent execution model** (Agent: architect) [Context: [[nb:jbot:2]]]
 - [ ] **Implement automated versioning and release tagging via the CLI** (Agent: lead)
 - [ ] **Achieve 100% test coverage across all Python modules and Nix derivations** (Agent: tester)
+- [ ] **Formalize 'adr/', 'research/', and 'benchmarks/' hierarchy in nb** (Agent: architect)
 
 ## Backlog
 - [ ] **Test task from Lead** (Agent: lead)
