@@ -7,55 +7,53 @@
 let
   cfg = config.programs.jbot;
 
-  agentModule =
-    { name, ... }:
-    {
-      options = {
-        enable = lib.mkEnableOption "this JBot agent";
-        role = lib.mkOption {
-          type = lib.types.str;
-          default = "General Developer";
-          description = "The role name for this agent (e.g., QA, CEO, Lead Developer).";
-        };
-        description = lib.mkOption {
-          type = lib.types.str;
-          default = "An autonomous AI agent managing the codebase.";
-          description = "A description of this agent's purpose.";
-        };
-        projectDir = lib.mkOption {
-          type = lib.types.path;
-          description = "The project directory to manage.";
-        };
-        interval = lib.mkOption {
-          type = lib.types.str;
-          default = "hourly";
-          description = "Systemd calendar interval for the JBot agent.";
-        };
-        geminiPackage = lib.mkOption {
-          type = lib.types.package;
-          default = pkgs.gemini-cli;
-          description = "The Gemini CLI package to use for this agent.";
-        };
-        promptFile = lib.mkOption {
-          type = lib.types.path;
-          default = ./jbot_prompt.txt;
-          description = "The base prompt file to use.";
-        };
-        extraPackages = lib.mkOption {
-          type = lib.types.listOf lib.types.package;
-          default = [ ];
-          description = "Additional packages for this agent's sandbox.";
-        };
-        dependsOn = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ ];
-          description = "Other agents this agent depends on (systemd After/Wants).";
-        };
+  agentModule = _: {
+    options = {
+      enable = lib.mkEnableOption "this JBot agent";
+      role = lib.mkOption {
+        type = lib.types.str;
+        default = "General Developer";
+        description = "The role name for this agent (e.g., QA, CEO, Lead Developer).";
+      };
+      description = lib.mkOption {
+        type = lib.types.str;
+        default = "An autonomous AI agent managing the codebase.";
+        description = "A description of this agent's purpose.";
+      };
+      projectDir = lib.mkOption {
+        type = lib.types.path;
+        description = "The project directory to manage.";
+      };
+      interval = lib.mkOption {
+        type = lib.types.str;
+        default = "hourly";
+        description = "Systemd calendar interval for the JBot agent.";
+      };
+      geminiPackage = lib.mkOption {
+        type = lib.types.package;
+        default = pkgs.gemini-cli;
+        description = "The Gemini CLI package to use for this agent.";
+      };
+      promptFile = lib.mkOption {
+        type = lib.types.path;
+        default = ./jbot_prompt.txt;
+        description = "The base prompt file to use.";
+      };
+      extraPackages = lib.mkOption {
+        type = lib.types.listOf lib.types.package;
+        default = [ ];
+        description = "Additional packages for this agent's sandbox.";
+      };
+      dependsOn = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Other agents this agent depends on (systemd After/Wants).";
       };
     };
+  };
   agentsJson = pkgs.writeText "agents.json" (
     builtins.toJSON (
-      lib.mapAttrs (name: agent: {
+      lib.mapAttrs (_name: agent: {
         inherit (agent) role description interval;
         projectDir = toString agent.projectDir;
       }) cfg.agents
@@ -164,6 +162,14 @@ in
                 export PROJECT_DIR="$PROJECT_DIR"
                 export PROMPT_FILE="${agent.promptFile}"
                 export GEMINI_PACKAGE="${agent.geminiPackage}/bin/gemini"
+
+                # Pre-configure identity to bypass nb/git interactive setup
+                export GIT_AUTHOR_NAME="JBot (${name})"
+                export GIT_AUTHOR_EMAIL="jbot-${name}@internal.pao"
+                export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
+                export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+                export NB_USER_NAME="$GIT_AUTHOR_NAME"
+                export NB_USER_EMAIL="$GIT_AUTHOR_EMAIL"
 
                 echo "[$(date)] JBot (${name}): Launching agent runner in sandbox..."
 

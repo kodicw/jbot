@@ -29,58 +29,56 @@ let
 in
 pkgs.testers.nixosTest {
   name = "jbot-test";
-  nodes.machine =
-    { config, pkgs, ... }:
-    {
-      imports = [ home-manager.nixosModules.home-manager ];
+  nodes.machine = _: {
+    imports = [ home-manager.nixosModules.home-manager ];
 
-      users.users.testuser = {
-        isNormalUser = true;
-        home = "/home/testuser";
-      };
+    users.users.testuser = {
+      isNormalUser = true;
+      home = "/home/testuser";
+    };
 
-      home-manager = {
-        useGlobalPkgs = true;
-        useUserPackages = true;
-        users.testuser =
-          { ... }:
-          {
-            imports = [ jbot-module ];
-            programs.jbot = {
-              enable = true;
-              agents = {
-                ceo = {
-                  enable = true;
-                  role = "CEO";
-                  description = "Oversee project goals and coordinate other agents.";
-                  projectDir = "/home/testuser/project";
-                  interval = "*-*-* *:*:*";
-                  geminiPackage = mockGemini;
-                };
-                dev = {
-                  enable = true;
-                  role = "Lead Developer";
-                  description = "Implement core features.";
-                  projectDir = "/home/testuser/project";
-                  interval = "*-*-* *:*:*";
-                  geminiPackage = mockGemini;
-                  dependsOn = [ "ceo" ];
-                };
-                qa = {
-                  enable = true;
-                  role = "QA Engineer";
-                  description = "Test everything and report bugs.";
-                  projectDir = "/home/testuser/project";
-                  interval = "*-*-* *:*:*";
-                  geminiPackage = mockGemini;
-                  dependsOn = [ "dev" ];
-                };
+    home-manager = {
+      useGlobalPkgs = true;
+      useUserPackages = true;
+      users.testuser =
+        { ... }:
+        {
+          imports = [ jbot-module ];
+          programs.jbot = {
+            enable = true;
+            agents = {
+              ceo = {
+                enable = true;
+                role = "CEO";
+                description = "Oversee project goals and coordinate other agents.";
+                projectDir = "/home/testuser/project";
+                interval = "*-*-* *:*:*";
+                geminiPackage = mockGemini;
+              };
+              dev = {
+                enable = true;
+                role = "Lead Developer";
+                description = "Implement core features.";
+                projectDir = "/home/testuser/project";
+                interval = "*-*-* *:*:*";
+                geminiPackage = mockGemini;
+                dependsOn = [ "ceo" ];
+              };
+              qa = {
+                enable = true;
+                role = "QA Engineer";
+                description = "Test everything and report bugs.";
+                projectDir = "/home/testuser/project";
+                interval = "*-*-* *:*:*";
+                geminiPackage = mockGemini;
+                dependsOn = [ "dev" ];
               };
             };
-            home.stateVersion = "23.11";
           };
-      };
+          home.stateVersion = "23.11";
+        };
     };
+  };
 
   testScript = ''
     machine.wait_for_unit("home-manager-testuser.service")

@@ -94,7 +94,7 @@ def test_cli_main_add_task(tmp_path, capsys):
         ["jbot-cli.py", "-d", str(tmp_path), "task", "add", "Backlog Task", "-b"],
     ):
         jbot_cli.main()
-    
+
     captured = capsys.readouterr()
     assert "Successfully added task: Backlog Task" in captured.out
     assert "## Backlog" in tasks_file.read_text()
@@ -107,7 +107,7 @@ def test_cli_task_list(tmp_path, capsys):
 
     with patch("sys.argv", ["jbot-cli.py", "-d", str(tmp_path), "task", "list"]):
         jbot_cli.main()
-    
+
     captured = capsys.readouterr()
     assert "Task A" in captured.out
     assert "Task B" in captured.out
@@ -120,10 +120,19 @@ def test_cli_task_update_and_done(tmp_path, capsys):
     # Update
     with patch(
         "sys.argv",
-        ["jbot-cli.py", "-d", str(tmp_path), "task", "update", "Initial", "-t", "Updated"],
+        [
+            "jbot-cli.py",
+            "-d",
+            str(tmp_path),
+            "task",
+            "update",
+            "Initial",
+            "-t",
+            "Updated",
+        ],
     ):
         jbot_cli.main()
-    
+
     captured = capsys.readouterr()
     assert "Successfully updated task matching: Initial" in captured.out
     assert "Updated" in tasks_file.read_text()
@@ -134,7 +143,7 @@ def test_cli_task_update_and_done(tmp_path, capsys):
         ["jbot-cli.py", "-d", str(tmp_path), "task", "done", "Updated"],
     ):
         jbot_cli.main()
-    
+
     captured = capsys.readouterr()
     assert "Successfully completed task matching: Updated" in captured.out
     assert "- [x] **Updated**" in tasks_file.read_text()
@@ -151,7 +160,9 @@ def test_cli_version(tmp_path, capsys):
     assert "Current JBot Version: v1.0.0" in captured.out
 
     # Bump version
-    with patch("sys.argv", ["jbot-cli.py", "-d", str(tmp_path), "version", "bump", "minor"]):
+    with patch(
+        "sys.argv", ["jbot-cli.py", "-d", str(tmp_path), "version", "bump", "minor"]
+    ):
         jbot_cli.main()
     captured = capsys.readouterr()
     assert "Successfully bumped version to: v1.1.0" in captured.out

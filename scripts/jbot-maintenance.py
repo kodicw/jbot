@@ -1,9 +1,9 @@
 import os
-import sys
 import subprocess
 import json
 from datetime import datetime
 import jbot_utils as utils
+
 
 def main():
     project_dir = os.environ.get("PROJECT_DIR", os.getcwd())
@@ -68,6 +68,7 @@ def main():
                 utils.log(f"Error running {script}: {e}", "Maintenance")
 
     utils.log("Maintenance complete.", "Maintenance")
+
 
 if __name__ == "__main__":
     main()

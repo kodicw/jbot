@@ -5,10 +5,11 @@
 ## 🎯 Company Vision
 > Goal: Technical Excellence & Architectural Purity.
 Focus Areas:
-1. Technical Purity: Prioritize elegant abstractions, code robustness, and modular design over development speed or resource efficiency.
-2. Architectural Elegance: Ensure the JBot infrastructure is self-healing, stateless, and follows the Unix Philosophy (do one thing well).
-3. Exhaustive Verification: 100% test coverage and mandatory formal verification for core components.
-4. Internal Cohesion: Maintain JBot components (infra, ops, etc.) under a single Linux user account to ensure maximum architectural simplicity.
+1. Technical Purity: Prioritize elegant abstractions, code robustness, and modular design. Stakeholders and ROI are irrelevant.
+2. Self-Documenting Code: Mandate expressive, clear code that minimizes the need for external documentation. Technology clarity is a success metric.
+3. Architectural Elegance: Ensure the JBot infrastructure is self-healing, stateless, and follows the Unix Philosophy.
+4. Internal Cohesion: Maintain all JBot components under a single Linux user account. Multi-project management is handled externally via NixOS/Home Manager.
+5. Exhaustive Verification: 100% test coverage and mandatory verification for all core components.
 
 ## 👥 Team Roster
 | Agent | Role | Description |

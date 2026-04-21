@@ -2,7 +2,7 @@ import os
 import json
 import sys
 import importlib
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # Ensure scripts directory is in sys.path
 sys.path.append(os.path.join(os.getcwd(), "scripts"))

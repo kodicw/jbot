@@ -1,9 +1,6 @@
 import os
 import sys
-import json
 import subprocess
-import tempfile
-from datetime import datetime
 import jbot_utils as utils
 
 

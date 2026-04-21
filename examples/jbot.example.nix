@@ -1,5 +1,4 @@
-{ config, pkgs, ... }:
-{
+_: {
   # Example configuration for a JBot "Company" structure.
   # This can be included in your home.nix or another Home Manager module.
 

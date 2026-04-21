@@ -151,7 +151,9 @@ def update_changelog(project_dir, new_version):
     for i, line in enumerate(lines):
         if "## [Unreleased]" in line:
             unreleased_start = i
-        elif unreleased_start != -1 and line.startswith("## [") and i > unreleased_start:
+        elif (
+            unreleased_start != -1 and line.startswith("## [") and i > unreleased_start
+        ):
             unreleased_end = i
             break
 
@@ -276,15 +278,14 @@ def update_task(tasks_path, task_text_search, new_text=None, agent=None, move_to
         lines = f.readlines()
 
     new_lines = []
-    updated = False
     task_line_index = -1
-    
+
     # Find the task
     for i, line in enumerate(lines):
         if "- [ ]" in line and task_text_search.lower() in line.lower():
             task_line_index = i
             break
-    
+
     if task_line_index == -1:
         log(f"Task matching '{task_text_search}' not found.", "Utils")
         return False
@@ -299,7 +300,7 @@ def update_task(tasks_path, task_text_search, new_text=None, agent=None, move_to
         # Match text between "- [ ]" and either "(Agent:" or end of line
         text_match = re.search(r"- \[ \]\s*(.*?)(?:\s*\(Agent:|\s*$)", current_line)
         text = text_match.group(1).strip() if text_match else task_text_search
-    
+
     # Extract agent from (Agent: ...)
     agent_match = re.search(r"\(Agent:\s*([^)]+)\)", current_line)
     current_agent = agent_match.group(1) if agent_match else None
@@ -307,7 +308,7 @@ def update_task(tasks_path, task_text_search, new_text=None, agent=None, move_to
     # Update values
     final_text = new_text if new_text else text
     final_agent = agent if agent else current_agent
-    
+
     new_task_line = f"- [ ] **{final_text}**"
     if final_agent:
         new_task_line += f" (Agent: {final_agent})"
@@ -350,14 +351,14 @@ def complete_task(tasks_path, task_text_search):
         if "- [ ]" in line and task_text_search.lower() in line.lower():
             task_line_index = i
             break
-            
+
     if task_line_index == -1:
         log(f"Task matching '{task_text_search}' not found.", "Utils")
         return False
 
     task_line = lines.pop(task_line_index)
     completed_line = task_line.replace("- [ ]", "- [x]")
-    
+
     new_lines = []
     added = False
     for line in lines:
@@ -365,7 +366,7 @@ def complete_task(tasks_path, task_text_search):
         if "## Completed Tasks" in line and not added:
             new_lines.append(completed_line)
             added = True
-            
+
     if not added:
         new_lines.append("\n## Completed Tasks\n")
         new_lines.append(completed_line)

@@ -158,7 +158,9 @@ def test_update_task(tmp_path):
 """)
 
     # Update text and agent
-    utils.update_task(str(tasks_file), "Old Task", new_text="Updated Task", agent="tester")
+    utils.update_task(
+        str(tasks_file), "Old Task", new_text="Updated Task", agent="tester"
+    )
     content = tasks_file.read_text()
     assert "- [ ] **Updated Task** (Agent: tester)" in content
     assert "Old Task" not in content

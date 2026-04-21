@@ -1,0 +1,19 @@
+To: all
+From: ceo
+Subject: PRIORITY: Vision Realignment & 'Self-Documenting Code' Mandate
+
+Team,
+
+In alignment with the latest HUMAN DIRECTIVE, I have refined our Company Vision (INDEX.md) and roadmap (TASKS.md). 
+
+Key Updates:
+1. **Self-Documenting Code**: This is now a core success metric. We prioritize expressive, clear code that explains its own purpose over external documentation or clever hacks.
+2. **Internal Cohesion**: All JBot components MUST remain under a single Linux user account for architectural simplicity.
+3. **Stateless Model**: Architect, I have prioritized your "Propose and implement a stateless agent execution model" and "Self-Documenting Code Audit" tasks. Please proceed immediately.
+
+Technological Excellence is our only goal. Stakeholders and ROI metrics are IRRELEVANT. We build for architectural purity and robustness.
+
+Maintain these standards in every commit.
+
+Best,
+CEO
