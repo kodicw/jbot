@@ -2,7 +2,9 @@ import os
 import json
 from datetime import datetime
 import sys
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+import subprocess
+import pytest
 
 # Ensure scripts directory is in sys.path
 sys.path.append(os.path.join(os.getcwd(), "scripts"))
@@ -98,6 +100,18 @@ def test_write_file(tmp_path):
 
     with patch("os.makedirs", side_effect=Exception("Write Error")):
         assert utils.write_file("some.txt", "Content") is False
+
+
+def test_is_git_clean():
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(stdout="")
+        assert utils.is_git_clean() is True
+
+        mock_run.return_value = MagicMock(stdout="M file.txt")
+        assert utils.is_git_clean() is False
+        
+    with patch("subprocess.run", side_effect=Exception("git error")):
+        assert utils.is_git_clean() is False
 
 
 def test_parse_tasks(tmp_path):
@@ -283,3 +297,114 @@ def test_versioning(tmp_path):
     # Test invalid part
     version_file.write_text("1.0.0")
     assert utils.bump_version(str(tmp_path), "invalid") is None
+
+def test_update_changelog(tmp_path):
+    changelog_file = tmp_path / "CHANGELOG.md"
+    changelog_file.write_text("""
+## [Unreleased]
+### Added
+- Feature A
+## [1.0.0] - 2026-04-19
+- Initial release
+""")
+    
+    success = utils.update_changelog(str(tmp_path), "1.1.0")
+    assert success is True
+    content = changelog_file.read_text()
+    assert "## [1.1.0]" in content
+    assert "- Feature A" in content
+    assert "## [Unreleased]\n\n## [1.1.0]" in content
+
+    # Error case
+    os.remove(changelog_file)
+    assert utils.update_changelog(str(tmp_path), "1.2.0") is False
+
+def test_purge_directives(tmp_path):
+    dir_path = tmp_path / "directives"
+    dir_path.mkdir()
+    archive_path = tmp_path / "archive"
+    
+    (dir_path / "001_2000-01-01_expired.txt").write_text("Expired")
+    (dir_path / "002_2099-01-01_active.txt").write_text("Active")
+    
+    count = utils.purge_directives(str(dir_path), str(archive_path))
+    assert count == 1
+    assert not (dir_path / "001_2000-01-01_expired.txt").exists()
+    assert (archive_path / "001_2000-01-01_expired.txt").exists()
+
+def test_rotate_memory(tmp_path):
+    log_file = tmp_path / "memory.log"
+    archive_file = tmp_path / "memory.log.archive"
+    
+    content = "".join([json.dumps({"i": i}) + "\n" for i in range(20)])
+    log_file.write_text(content)
+    
+    success = utils.rotate_memory(str(log_file), str(archive_file), limit=10)
+    assert success is True
+    assert len(log_file.read_text().strip().split("\n")) == 10
+    assert archive_file.exists()
+
+def test_rotate_tasks(tmp_path):
+    tasks_file = tmp_path / "TASKS.md"
+    archive_file = tmp_path / "TASKS.archive.md"
+    
+    tasks_file.write_text("""
+## Strategic Vision
+Vision
+## Active Tasks
+- [ ] Active Task
+## Completed Tasks
+- [x] Done 1
+- [x] Done 2
+""")
+    
+    success = utils.rotate_tasks(str(tasks_file), str(archive_file), limit=1)
+    assert success is True
+    content = tasks_file.read_text()
+    assert "Done 2" in content
+    assert "Done 1" not in content
+    assert archive_file.exists()
+
+def test_rotate_messages(tmp_path):
+    msg_dir = tmp_path / "messages"
+    msg_dir.mkdir()
+    archive_dir = tmp_path / "archive"
+    
+    for i in range(10):
+        (msg_dir / f"m{i}.txt").write_text("msg")
+        
+    success = utils.rotate_messages(str(msg_dir), str(archive_dir), limit=5)
+    assert success is True
+    assert len(os.listdir(msg_dir)) == 5
+    assert len(os.listdir(archive_dir)) == 5
+
+def test_generate_dashboard(tmp_path):
+    (tmp_path / ".project_goal").write_text("Vision")
+    (tmp_path / "TASKS.md").write_text("## Active Tasks\n- [ ] Task")
+    
+    success = utils.generate_dashboard("INDEX.md", str(tmp_path))
+    assert success is True
+    assert (tmp_path / "INDEX.md").exists()
+    content = (tmp_path / "INDEX.md").read_text()
+    assert "Vision" in content
+    assert "Task" in content
+
+def test_send_message(tmp_path):
+    msgs_dir = tmp_path / ".jbot" / "messages"
+    msgs_dir.mkdir(parents=True)
+    
+    success = utils.send_message(str(tmp_path), "ceo", "hello world")
+    assert success is True
+    assert len(os.listdir(msgs_dir)) == 1
+
+def test_run_maintenance(tmp_path):
+    jbot_dir = tmp_path / ".jbot"
+    jbot_dir.mkdir()
+    queues_dir = jbot_dir / "queues"
+    queues_dir.mkdir()
+    (queues_dir / "tester.json").write_text(json.dumps({"summary": "done"}))
+    
+    success = utils.run_maintenance(str(tmp_path))
+    assert success is True
+    assert (jbot_dir / "memory.log").exists()
+    assert not (queues_dir / "tester.json").exists()

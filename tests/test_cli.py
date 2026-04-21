@@ -253,15 +253,15 @@ def test_cli_version_release(tmp_path, capsys):
         assert "Error: Git workspace is not clean." in captured.out
 
     # Bump failure
-    with patch("jbot_utils.bump_version", return_value=None):
-        with patch(
-            "sys.argv",
-            ["jbot-cli.py", "-d", str(tmp_path), "version", "release", "minor"],
-        ):
-            jbot_cli.main()
-        captured = capsys.readouterr()
-        assert "Error: Failed to bump version." in captured.out
-
+    with patch("jbot_utils.is_git_clean", return_value=True):
+        with patch("jbot_utils.bump_version", return_value=None):
+            with patch(
+                "sys.argv",
+                ["jbot-cli.py", "-d", str(tmp_path), "version", "release", "minor"],
+            ):
+                jbot_cli.main()
+            captured = capsys.readouterr()
+            assert "Error: Failed to bump version." in captured.out
     # Git failure
     with patch("subprocess.run") as mock_run:
         mock_run.side_effect = subprocess.CalledProcessError(1, "git add")
