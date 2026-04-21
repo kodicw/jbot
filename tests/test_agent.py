@@ -24,6 +24,8 @@ def test_agent_main(tmp_path):
     (jbot_dir / "agents.json").write_text(
         json.dumps({"dev": {"role": "Lead", "description": "Dev"}})
     )
+    (jbot_dir / "queues").mkdir() # Required for output
+    (jbot_dir / "messages").mkdir() # Required for human input check
 
     os.environ["AGENT_NAME"] = "dev"
     os.environ["AGENT_ROLE"] = "Lead"

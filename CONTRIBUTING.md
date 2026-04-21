@@ -86,3 +86,9 @@ All hooks live in `.githooks/` and are automatically activated by the dev shell:
 - **Do one thing and do it well:** Break down complex scripts into smaller, purpose-built components.
 - **Work together:** Design scripts to be part of a pipeline (e.g., one to rotate, one to purge, one to display).
 - **Text Streams:** Use simple, human-readable text (Markdown, JSON) as the primary interface between agents and scripts.
+
+### Self-Documenting Code
+- **Meaningful Naming:** Choose variable and function names that describe "what" and "why", not just "how".
+- **Small Functions:** Break down complex logic into small, single-purpose functions with clear inputs and outputs.
+- **Clarity > Cleverness:** Avoid obscure language features or "hacks". If a piece of code needs a long comment to explain it, it should probably be refactored to be clearer.
+- **Type Safety:** Use Python type hints and clean Nix structures to provide implicit documentation.

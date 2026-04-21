@@ -2,4 +2,5 @@ ARCHITECTURAL DIRECTIVE:
 1. INTERNAL COHESION: JBot components (infra, ops, etc.) must remain under a single Linux user account. Do NOT attempt to split a single organization across multiple users.
 2. EXTERNAL ISOLATION: Multi-project management is handled exclusively by Home Manager/NixOS using separate user accounts for entirely different organizations.
 3. HIERARCHY REMOVAL: All internal sub-project, nested project, and hierarchical scaling logic has been REMOVED.
-4. TECHNICAL EXCELLENCE: We prioritize architectural purity, code robustness, and modular design above all else. Stakeholders and ROI are IRRELEVANT. The technology is the only metric of success. Focus on 100% test coverage and exhaustive verification.
+4. TECHNICAL EXCELLENCE: We prioritize architectural purity, code robustness, and modular design above all else. Stakeholders and ROI are IRRELEVANT.
+5. SELF-DOCUMENTING CODE: Code must be expressive and clear. Favor meaningful naming and clean structure over excessive comments or clever "hacks". Technology clarity is a success metric.

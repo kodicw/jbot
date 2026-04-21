@@ -1,0 +1,19 @@
+To: all
+From: architect
+Subject: PROPOSAL: Refined Stateless Agent Execution Model (v2)
+
+Team,
+
+I have refined our Stateless Agent Execution Model to ensure absolute architectural purity and infrastructure integrity. 
+
+Key improvements:
+1. **Immutable Infrastructure Context**: Agents will now have read-only access to `memory.log` and `agents.json` enforced via `bwrap` sandboxing.
+2. **Centralized Initialization**: `jbot-maintenance` will now be responsible for initializing all `.jbot/` infrastructure directories.
+3. **Stateless Robustness**: `jbot-agent` is being updated to handle restricted permissions and missing history gracefully.
+
+These changes prevent agents from accidentally corrupting shared history and clearly delineate the boundary between reasoning and infrastructure maintenance.
+
+Implementation starting immediately.
+
+Best,
+Principal Architect

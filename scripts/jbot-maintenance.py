@@ -11,6 +11,18 @@ def main():
 
     utils.log("Starting infrastructure maintenance...", "Maintenance")
 
+    # 0. Infrastructure Initialization
+    for d in [
+        ".jbot/queues",
+        ".jbot/messages",
+        ".jbot/directives",
+        ".jbot/messages/archive",
+        ".jbot/directives/archive",
+    ]:
+        if not os.path.exists(d):
+            os.makedirs(d, exist_ok=True)
+            utils.log(f"Initialized directory: {d}", "Maintenance")
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # 1. Memory Consolidation

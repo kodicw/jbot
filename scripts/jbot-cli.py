@@ -114,16 +114,27 @@ def handle_version(project_root, action, part=None):
             print("Error: Must specify version part (major, minor, patch) for release.")
             return
 
+        # Check for cleanliness
+        if not utils.is_git_clean(project_root):
+            print("Error: Git workspace is not clean. Please commit or stash changes before release.")
+            # Note: We allow dirty if it's just the files we are about to change? 
+            # Actually, standard practice is to start clean.
+            return
+
         print(f"Starting release process (bump {part})...")
         new_v = utils.bump_version(project_root, part)
         if not new_v:
             print("Error: Failed to bump version.")
             return
 
+        # Update changelog
+        if not utils.update_changelog(project_root, new_v):
+            print("Warning: Failed to update CHANGELOG.md automatically.")
+
         tag_name = f"v{new_v}"
         try:
-            # Add and commit the version bump
-            subprocess.run(["git", "add", "VERSION"], check=True)
+            # Add and commit the version bump and changelog
+            subprocess.run(["git", "add", "VERSION", "CHANGELOG.md"], check=True)
             subprocess.run(
                 ["git", "commit", "-m", f"chore: release {tag_name}"], check=True
             )

@@ -21,15 +21,6 @@ def main():
 
     os.chdir(project_dir)
 
-    # Setup directories
-    for d in [
-        ".jbot/queues",
-        ".jbot/memory",
-        ".jbot/messages",
-        ".jbot/directives",
-    ]:
-        os.makedirs(d, exist_ok=True)
-
     utils.log(f"Starting stateless execution loop as {agent_role}...", agent_name)
 
     # Context Assembly

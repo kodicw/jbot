@@ -169,6 +169,8 @@ in
                   --tmpfs /tmp \
                   --tmpfs /home \
                   --bind "$PROJECT_DIR" "$PROJECT_DIR" \
+                  --ro-bind-try "$PROJECT_DIR/.jbot/memory.log" "$PROJECT_DIR/.jbot/memory.log" \
+                  --ro-bind-try "$PROJECT_DIR/.jbot/agents.json" "$PROJECT_DIR/.jbot/agents.json" \
                   --bind "${config.home.homeDirectory}/.gemini" "${config.home.homeDirectory}/.gemini" \
                   --bind-try "${config.home.homeDirectory}/.config/gh" "${config.home.homeDirectory}/.config/gh" \
                   --ro-bind-try "${config.home.homeDirectory}/.gitconfig" "${config.home.homeDirectory}/.gitconfig" \

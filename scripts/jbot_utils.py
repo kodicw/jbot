@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import subprocess
 from datetime import datetime
 
 
@@ -79,6 +80,22 @@ def write_file(file_path, content):
         return False
 
 
+# --- Git ---
+def is_git_clean(project_dir="."):
+    """Check if the git workspace is clean."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", project_dir, "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return len(result.stdout.strip()) == 0
+    except Exception as e:
+        log(f"Error checking git status: {e}", "Utils")
+        return False
+
+
 # --- Versioning ---
 def get_version(project_dir="."):
     """Retrieve the current version from the VERSION file."""
@@ -114,6 +131,58 @@ def bump_version(project_dir=".", part="patch"):
     except Exception as e:
         log(f"Error bumping version: {e}", "Utils")
     return None
+
+
+def update_changelog(project_dir, new_version):
+    """Updates CHANGELOG.md by moving [Unreleased] content to a new version section."""
+    changelog_path = os.path.join(project_dir, "CHANGELOG.md")
+    if not os.path.exists(changelog_path):
+        log("CHANGELOG.md not found.", "Utils")
+        return False
+
+    with open(changelog_path, "r") as f:
+        lines = f.readlines()
+
+    new_lines = []
+    unreleased_start = -1
+    unreleased_end = -1
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    for i, line in enumerate(lines):
+        if "## [Unreleased]" in line:
+            unreleased_start = i
+        elif unreleased_start != -1 and line.startswith("## [") and i > unreleased_start:
+            unreleased_end = i
+            break
+
+    if unreleased_start == -1:
+        log("Could not find [Unreleased] section in CHANGELOG.md", "Utils")
+        return False
+
+    if unreleased_end == -1:
+        unreleased_end = len(lines)
+
+    # Extract unreleased content
+    unreleased_content = lines[unreleased_start + 1 : unreleased_end]
+
+    # Check if there's actual content (more than just empty lines)
+    if not any(
+        line.strip() and not line.strip().startswith("###")
+        for line in unreleased_content
+    ):
+        log("No changes found in [Unreleased] section.", "Utils")
+        # We still proceed but maybe log it.
+
+    # Reconstruct changelog
+    new_lines = lines[: unreleased_start + 1]
+    new_lines.append("\n")  # Empty space for new Unreleased section
+    new_lines.append(f"## [{new_version}] - {today}\n")
+    new_lines.extend(unreleased_content)
+    new_lines.extend(lines[unreleased_end:])
+
+    with open(changelog_path, "w") as f:
+        f.writelines(new_lines)
+    return True
 
 
 # --- Tasks ---
