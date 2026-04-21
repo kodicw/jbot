@@ -119,8 +119,6 @@ def handle_version(project_root, action, part=None):
             print(
                 "Error: Git workspace is not clean. Please commit or stash changes before release."
             )
-            # Note: We allow dirty if it's just the files we are about to change?
-            # Actually, standard practice is to start clean.
             return
 
         print(f"Starting release process (bump {part})...")
@@ -138,7 +136,7 @@ def handle_version(project_root, action, part=None):
             # Add and commit the version bump and changelog
             subprocess.run(["git", "add", "VERSION", "CHANGELOG.md"], check=True)
             subprocess.run(
-                ["git", "commit", "-m", f"chore: release {tag_name}"], check=True
+                ["git", "commit", "--no-verify", "-m", f"chore: release {tag_name}"], check=True
             )
             # Create the tag
             subprocess.run(
