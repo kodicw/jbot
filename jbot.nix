@@ -119,7 +119,13 @@ in
                       pkgs.nixfmt-rfc-style
                       pkgs.statix
                       pkgs.ruff
+                      pkgs.nb
+                      pkgs.bat
+                      pkgs.ripgrep
+                      pkgs.pandoc
+                      pkgs.w3m
                       agent.geminiPackage
+
                       pkgs.python3
                     ]
                     ++ agent.extraPackages
@@ -134,8 +140,8 @@ in
                 agent.projectDir
                 "${config.home.homeDirectory}/.gemini"
                 "${config.home.homeDirectory}/.config/gh"
+                "${config.home.homeDirectory}/.nb"
               ];
-
               ExecStart = "${pkgs.writeShellScript "jbot-launcher-${name}" ''
                 set -euo pipefail
 

@@ -92,3 +92,8 @@ All hooks live in `.githooks/` and are automatically activated by the dev shell:
 - **Small Functions:** Break down complex logic into small, single-purpose functions with clear inputs and outputs.
 - **Clarity > Cleverness:** Avoid obscure language features or "hacks". If a piece of code needs a long comment to explain it, it should probably be refactored to be clearer.
 - **Type Safety:** Use Python type hints and clean Nix structures to provide implicit documentation.
+
+### Organizational Memory (nb)
+- **Knowledge Base:** All major architectural decisions (ADRs) must be recorded in the `jbot` notebook using `nb jbot:add`.
+- **Search First:** Use `nb jbot:q` to search the knowledge base for existing research before initiating new technical audits.
+- **Verification:** Task results and verified technical benchmarks should be exported to the knowledge base to ensure long-term persistence.
