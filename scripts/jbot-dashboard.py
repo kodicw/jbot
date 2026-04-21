@@ -6,7 +6,7 @@ import jbot_utils as utils
 
 def generate_dashboard(output_file="INDEX.md", project_dir="."):
     os.chdir(project_dir)
-    dashboard_content = "# JBot PAO Dashboard\n\n"
+    dashboard_content = "# JBot Dashboard\n\n"
     dashboard_content += (
         f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
     )
@@ -85,7 +85,7 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="JBot PAO Dashboard Generator")
+    parser = argparse.ArgumentParser(description="JBot Dashboard Generator")
     parser.add_argument(
         "-o", "--output", default="INDEX.md", help="Output file (default: INDEX.md)"
     )

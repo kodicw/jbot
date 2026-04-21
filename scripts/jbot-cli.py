@@ -10,7 +10,7 @@ def get_status(project_dir):
     goal_path = ".project_goal"
     tasks_path = "TASKS.md"
 
-    print("\n--- JBot PAO Status ---")
+    print("\n--- JBot Organization Status ---")
     if os.path.exists(goal_path):
         with open(goal_path, "r") as f:
             print(f"\n🎯 Company Vision:\n> {f.read().strip()}")
@@ -214,6 +214,31 @@ def main():
         "-n", "--count", type=int, default=5, help="Number of messages to show"
     )
 
+    # --- Message Send Command ---
+    send_msg_parser = subparsers.add_parser("send-message", help="Send a message to all agents")
+    send_msg_parser.add_argument("-f", "--from-agent", required=True, help="Agent sending the message")
+    send_msg_parser.add_argument("-s", "--subject", default="No Subject", help="Message subject")
+    send_msg_parser.add_argument("-m", "--message", required=True, help="Message body")
+
+    # --- Infrastructure Commands ---
+    subparsers.add_parser("maintenance", help="Run automated infrastructure maintenance")
+    
+    subparsers.add_parser("purge", help="Archive expired directives")
+    
+    rotate_parser = subparsers.add_parser("rotate", help="Rotate infrastructure data")
+    rotate_subparsers = rotate_parser.add_subparsers(dest="rotate_target", help="Rotate target")
+    
+    memory_rotate = rotate_subparsers.add_parser("memory", help="Rotate memory logs")
+    memory_rotate.add_argument("-l", "--limit", type=int, default=100, help="Max entries to keep")
+
+    tasks_rotate = rotate_subparsers.add_parser("tasks", help="Rotate task board")
+    tasks_rotate.add_argument("-l", "--limit", type=int, default=10, help="Max completed tasks to keep")
+
+    msg_rotate = rotate_subparsers.add_parser("messages", help="Rotate agent messages")
+    msg_rotate.add_argument("-l", "--limit", type=int, default=50, help="Max messages to keep")
+
+    subparsers.add_parser("dashboard", help="Manually regenerate the PAO dashboard")
+
     version_parser = subparsers.add_parser(
         "version", help="Manage JBot versioning and releases"
     )
@@ -271,6 +296,50 @@ def main():
         get_logs(project_root, args.count)
     elif args.command == "messages":
         get_messages(project_root, args.count)
+    elif args.command == "send-message":
+        if utils.send_message(project_root, args.from_agent, args.message, args.subject):
+            print("Message sent successfully.")
+    elif args.command == "maintenance":
+        utils.run_maintenance(project_root)
+    elif args.command == "purge":
+        count = utils.purge_directives(
+            os.path.join(project_root, ".jbot/directives"),
+            os.path.join(project_root, ".jbot/directives/archive"),
+        )
+        print(f"Purged {count} expired directives.")
+    elif args.command == "rotate":
+        if args.rotate_target == "memory":
+            if utils.rotate_memory(
+                os.path.join(project_root, ".jbot/memory.log"),
+                os.path.join(project_root, ".jbot/memory.log.archive"),
+                args.limit,
+            ):
+                print("Memory log rotated.")
+            else:
+                print("Memory log rotation not needed or failed.")
+        elif args.rotate_target == "tasks":
+            if utils.rotate_tasks(
+                os.path.join(project_root, "TASKS.md"),
+                os.path.join(project_root, "TASKS.archive.md"),
+                args.limit,
+            ):
+                print("Tasks rotated.")
+            else:
+                print("Task rotation not needed or failed.")
+        elif args.rotate_target == "messages":
+            if utils.rotate_messages(
+                os.path.join(project_root, ".jbot/messages"),
+                os.path.join(project_root, ".jbot/messages/archive"),
+                args.limit,
+            ):
+                print("Messages rotated.")
+            else:
+                print("Message rotation not needed or failed.")
+        else:
+            rotate_parser.print_help()
+    elif args.command == "dashboard":
+        if utils.generate_dashboard(project_dir=project_root):
+            print("Dashboard regenerated.")
     elif args.command == "version":
         handle_version(project_root, args.action, getattr(args, "part", None))
     else:

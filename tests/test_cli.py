@@ -192,10 +192,11 @@ def test_cli_version_release(tmp_path, capsys):
             jbot_cli.main()
 
         # Should have called:
-        # 1. git add VERSION
-        # 2. git commit -m "chore: release v1.1.1"
-        # 3. git tag -a v1.1.1 -m "Release v1.1.1"
-        assert mock_run.call_count == 3
+        # 1. git status (is_git_clean)
+        # 2. git add VERSION CHANGELOG.md
+        # 3. git commit -m "chore: release v1.1.1"
+        # 4. git tag -a v1.1.1 -m "Release v1.1.1"
+        assert mock_run.call_count == 4
         assert version_file.read_text() == "1.1.1"
         captured = capsys.readouterr()
         assert "Successfully released v1.1.1" in captured.out

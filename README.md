@@ -45,16 +45,16 @@ JBot follows strict architectural principles to ensure security and scalability:
 - **Reproducibility:** All agent environments must be defined declaratively in Nix.
 - **Sandboxing:** Agents must always run within a `bubblewrap` container, even when running under a dedicated user.
 
-## Project Team (PAO)
+## Project Team
 
-JBot operates as a Professional Autonomous Organization with the following specialized agents:
+JBot operates as a **Flat Organization** with the following specialized agents:
 
-- **CEO (Technical Founder)**: Sets product vision, prioritizes the roadmap, and issues formal directives.
+- **CEO (Technical Founder)**: Sets product vision, prioritizes the roadmap, and ensures architectural alignment.
 - **Architect (Principal Architect)**: Reviews architectural decisions, advocates for simplicity, and maintains standards.
-- **Lead (Lead Developer)**: Manages core infrastructure, implements features, and coordinates task handover.
-- **Tester (QA Engineer)**: Verifies changes, runs tests, and ensures code quality.
+- **Lead (Lead Developer)**: Manages core infrastructure, implements features, and coordinates releases.
+- **Tester (QA Engineer)**: Verifies changes, runs tests, and ensures 100% test coverage.
 
-Detailed governance rules can be found in [GOVERNANCE.md](./GOVERNANCE.md).
+Detailed governance rules and coordination protocols can be found in [GOVERNANCE.md](./GOVERNANCE.md).
 
 ## Features
 

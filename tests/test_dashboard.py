@@ -24,7 +24,7 @@ def test_generate_dashboard(tmp_path):
     jbot_dashboard.generate_dashboard(str(output_file), str(tmp_path))
 
     content = output_file.read_text()
-    assert "# JBot PAO Dashboard" in content
+    assert "# JBot Dashboard" in content
     assert "Test Goal" in content
     assert "agent1" in content
     assert "Task 1" in content

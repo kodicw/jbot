@@ -104,7 +104,7 @@ pkgs.runCommand "jbot-unit-test"
       exit 1
     fi
 
-    if ! grep -q "JBot PAO Dashboard" INDEX.md; then
+    if ! grep -q "JBot Dashboard" INDEX.md; then
       echo "Error: INDEX.md content incorrect"
       exit 1
     fi
