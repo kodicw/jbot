@@ -64,6 +64,34 @@ let
     ${pkgs.python3}/bin/python3 ${./scripts}/jbot-cli.py "$@"
   '';
 
+  corePackages = [
+    pkgs.coreutils
+    pkgs.bash
+    pkgs.procps
+    pkgs.nix
+    pkgs.bubblewrap
+    pkgs.git
+    pkgs.gh
+    pkgs.curl
+    pkgs.findutils
+    pkgs.gnused
+    pkgs.gawk
+    pkgs.bc
+    pkgs.jq
+    pkgs.nixfmt-rfc-style
+    pkgs.statix
+    pkgs.ruff
+    pkgs.deadnix
+    pkgs.just
+    pkgs.nb
+    pkgs.tealdeer
+    pkgs.bat
+    pkgs.ripgrep
+    pkgs.pandoc
+    pkgs.w3m
+    pkgs.python3
+  ];
+
   # Pick a representative project directory for maintenance if multiple exist
   firstAgent = lib.head (lib.attrValues cfg.agents ++ [ { projectDir = "/dev/null"; } ]);
   maintenanceProjectDir = firstAgent.projectDir;
@@ -86,6 +114,51 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = [ jbot-cli ];
 
+    home.activation.jbotEnvironmentAudit = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+      # Generate Technical Environment Note for nb
+      AUDIT_CONTENT=$(cat <<EOF
+      # ADR: Technical Environment & Tool Registry (Deep Audit)
+      *Automated Environment Audit generated from Nix configuration on $(date).*
+
+      ## 🛠️ Comprehensive Toolstack
+      $(echo "${lib.concatStringsSep "\n" (map (p: "- **${p.pname or p.name}**: ${p.version or "Nix Managed"} (${lib.getBin p}/bin)") corePackages)}")
+
+      ## 👥 Active Agent Registry
+      $(echo "${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: agent: "- **${name}**: ${agent.role} (Interval: ${agent.interval}, DependsOn: ${lib.concatStringsSep ", " agent.dependsOn})") cfg.agents)}")
+
+      ## 🔒 Sandbox Architecture (bwrap)
+      - **Runtime Isolation**: Full unshare (--unshare-all)
+      - **Networking**: Enabled (--share-net)
+      - **Shared Memory**: .nb bound to %h/.nb
+      - **Identity persistence**: .gemini bound to %h/.gemini
+      - **Credential Guard**: .config/gh (Read-Write), .gitconfig (Read-Only)
+
+      ## 🆔 Standardized Agent Environment
+      - **GIT_NAME**: JBot ({AGENT_NAME})
+      - **AGENT_ROOT**: {PROJECT_DIR}
+      - **CONTEXT_FILE**: {PROMPT_FILE}
+      - **MEMORY_INGESTION**: {MEMORY_OUTPUT}
+
+      ## 📖 Quick Reference (tldr)
+      - **Audit**: \`just audit\`
+      - **Search Memory**: \`nb jbot:q <query>\`
+      - **Check Purity**: \`just prune\`
+      - **Run Tests**: \`just test\`
+      - **Command Help**: \`tldr <command>\`
+
+      ## 📜 Architectural Directives
+      1. **Technical Purity**: 100% test coverage and zero technical debt.
+      2. **Information Density**: Documentation as executable metadata.
+      3. **Internal Cohesion**: Single-user PAO model.
+      EOF
+      )
+
+      # Push to nb (Overwrite existing if any)
+      if command -v nb > /dev/null; then
+        echo "$AUDIT_CONTENT" | NB_USER_NAME="System" NB_USER_EMAIL="root@nixos" nb jbot:add --title "ADR: Environment and Tool Registry" --overwrite --force || true
+      fi
+    '';
+
     systemd.user.services =
       (lib.mapAttrs' (
         name: agent:
@@ -100,35 +173,8 @@ in
               Environment = [
                 "PATH=${
                   lib.makeBinPath (
-                    [
-                      pkgs.coreutils
-                      pkgs.bash
-                      pkgs.procps
-                      pkgs.nix
-                      pkgs.bubblewrap
-                      pkgs.git
-                      pkgs.gh
-                      pkgs.curl
-                      pkgs.findutils
-                      pkgs.gnused
-                      pkgs.gawk
-                      pkgs.bc
-                      pkgs.jq
-                      pkgs.nixfmt-rfc-style
-                      pkgs.statix
-                      pkgs.ruff
-                      pkgs.deadnix
-                      pkgs.just
-                      pkgs.nb
-
-                      pkgs.bat
-                      pkgs.ripgrep
-                      pkgs.pandoc
-                      pkgs.w3m
-                      agent.geminiPackage
-
-                      pkgs.python3
-                    ]
+                    corePackages
+                    ++ [ agent.geminiPackage ]
                     ++ agent.extraPackages
                   )
                 }"
