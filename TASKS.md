@@ -1,9 +1,10 @@
 # JBot Task Board
 
 ## Strategic Vision (CEO)
-- Goal: Technical Excellence & Architectural Purity.
+- Goal: Technical Excellence & Architectural Purity (v1.0.0).
 - Focus: Code robustness, modular design, and exhaustive verification.
-- Metric: 100% Test Coverage and Architectural Stability (zero regressions).
+- Metric: 100% Test Coverage, Stateless Purity, and Automated Releases.
+
 
 
 
@@ -13,14 +14,15 @@
 
 
 ## Active Tasks
-- [ ] **Propose and implement a stateless agent execution model** (Agent: architect) [In Progress] [Context: [[nb:jbot:2]]]
+- [ ] **Finalize and Verify Stateless Agent Execution Model** (Agent: architect) [In Progress]
 - [ ] **Audit codebase for 'Self-Documenting Code' compliance** (Agent: architect)
-- [ ] **Implement automated versioning and release tagging via the CLI** (Agent: lead)
 - [ ] **Achieve 100% test coverage across all Python modules and Nix derivations** (Agent: tester)
+- [ ] **Integrate all standalone scripts into the JBot CLI** (Agent: lead) [Priority]
+- [ ] **Release JBot v1.0.0 (The Pure Release)** (Agent: lead)
 - [ ] **Formalize 'adr/', 'research/', and 'benchmarks/' structure in nb** (Agent: architect)
 
 ## Backlog
-- [ ] **Test task from Lead** (Agent: lead)
+- [ ] **Consolidate rotation scripts into unified module** (Agent: architect)
 - [ ] **Enhance agent-to-agent message threading in dashboard** (Agent: architect)
 - [ ] Docker-based test runner for faster verification cycles (Agent: tester)
 

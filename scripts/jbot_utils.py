@@ -134,7 +134,10 @@ def bump_version(project_dir=".", part="patch"):
 
 
 def update_changelog(project_dir, new_version):
-    """Updates CHANGELOG.md by moving [Unreleased] content to a new version section."""
+    """
+    Updates CHANGELOG.md by moving content from the [Unreleased] section 
+    to a new versioned section.
+    """
     changelog_path = os.path.join(project_dir, "CHANGELOG.md")
     if not os.path.exists(changelog_path):
         log("CHANGELOG.md not found.", "Utils")
@@ -143,47 +146,51 @@ def update_changelog(project_dir, new_version):
     with open(changelog_path, "r") as f:
         lines = f.readlines()
 
-    new_lines = []
-    unreleased_start = -1
-    unreleased_end = -1
-    today = datetime.now().strftime("%Y-%m-%d")
+    unreleased_header = "## [Unreleased]"
+    unreleased_index = -1
+    next_version_index = -1
+    today_date = datetime.now().strftime("%Y-%m-%d")
 
+    # Locate the [Unreleased] section and the start of the next version section
     for i, line in enumerate(lines):
-        if "## [Unreleased]" in line:
-            unreleased_start = i
-        elif (
-            unreleased_start != -1 and line.startswith("## [") and i > unreleased_start
-        ):
-            unreleased_end = i
+        if unreleased_header in line:
+            unreleased_index = i
+        elif unreleased_index != -1 and line.startswith("## [") and i > unreleased_index:
+            next_version_index = i
             break
 
-    if unreleased_start == -1:
+    if unreleased_index == -1:
         log("Could not find [Unreleased] section in CHANGELOG.md", "Utils")
         return False
 
-    if unreleased_end == -1:
-        unreleased_end = len(lines)
+    # If no next version section exists, unreleased content goes to the end of the file
+    if next_version_index == -1:
+        next_version_index = len(lines)
 
-    # Extract unreleased content
-    unreleased_content = lines[unreleased_start + 1 : unreleased_end]
+    # Extract the unreleased content (lines between unreleased header and next section)
+    unreleased_content = lines[unreleased_index + 1 : next_version_index]
 
-    # Check if there's actual content (more than just empty lines)
-    if not any(
+    # Check if there is actual meaningful change content beyond headers
+    has_changes = any(
         line.strip() and not line.strip().startswith("###")
         for line in unreleased_content
-    ):
-        log("No changes found in [Unreleased] section.", "Utils")
-        # We still proceed but maybe log it.
+    )
+    if not has_changes:
+        log("No meaningful changes found in [Unreleased] section.", "Utils")
+        # We still proceed to create the version header, as bump was requested.
 
-    # Reconstruct changelog
-    new_lines = lines[: unreleased_start + 1]
-    new_lines.append("\n")  # Empty space for new Unreleased section
-    new_lines.append(f"## [{new_version}] - {today}\n")
-    new_lines.extend(unreleased_content)
-    new_lines.extend(lines[unreleased_end:])
+    # Reconstruct the changelog with a new empty [Unreleased] section
+    # and the new versioned section containing the extracted content.
+    updated_changelog = lines[: unreleased_index + 1]
+    updated_changelog.append("\n")  # Empty line after [Unreleased] header
+    updated_changelog.append(f"## [{new_version}] - {today_date}\n")
+    updated_changelog.extend(unreleased_content)
+    updated_changelog.extend(lines[next_version_index:])
 
     with open(changelog_path, "w") as f:
-        f.writelines(new_lines)
+        f.writelines(updated_changelog)
+    
+    log(f"Updated CHANGELOG.md for version {new_version}.", "Utils")
     return True
 
 
