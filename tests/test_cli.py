@@ -263,15 +263,21 @@ def test_cli_version_release(tmp_path, capsys):
             captured = capsys.readouterr()
             assert "Error: Failed to bump version." in captured.out
     # Git failure
-    with patch("subprocess.run") as mock_run:
-        mock_run.side_effect = subprocess.CalledProcessError(1, "git add")
-        with patch(
-            "sys.argv",
-            ["jbot-cli.py", "-d", str(tmp_path), "version", "release", "major"],
-        ):
-            jbot_cli.main()
-        captured = capsys.readouterr()
-        assert "Error: Release failed during git operations" in captured.out
+    with patch("jbot_utils.is_git_clean", return_value=True):
+        with patch("subprocess.run") as mock_run:
+            def mock_run_side_effect(cmd, *args, **kwargs):
+                if "add" in cmd:
+                    raise subprocess.CalledProcessError(1, "git add")
+                return MagicMock(returncode=0)
+            mock_run.side_effect = mock_run_side_effect
+            
+            with patch(
+                "sys.argv",
+                ["jbot-cli.py", "-d", str(tmp_path), "version", "release", "major"],
+            ):
+                jbot_cli.main()
+            captured = capsys.readouterr()
+            assert "Error: Release failed during git operations" in captured.out
 
 
 def test_cli_infrastructure_commands(tmp_path, capsys):
