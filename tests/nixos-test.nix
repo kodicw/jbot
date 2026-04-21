@@ -111,10 +111,19 @@ pkgs.testers.nixosTest {
     machine.succeed("grep 'You are dev, acting as Lead Developer' /home/testuser/project/.test_prompt_dev")
     machine.succeed("grep '# Task Board' /home/testuser/project/.test_prompt_dev")
 
-    # Wait for Dev to finish so it consolidates its memory
+    # Wait for Dev to finish. It should NOT create memory.log directly (Stateless Model)
     machine.wait_until_succeeds("! systemctl --user -M testuser is-active jbot-agent-dev.service")
+    machine.fail("test -f /home/testuser/project/.jbot/memory.log")
+    machine.succeed("test -f /home/testuser/project/.jbot/queues/dev.json")
+
+    # Now run maintenance to consolidate memory
+    machine.succeed("systemctl --user -M testuser start jbot-maintenance.service")
+    machine.wait_until_succeeds("! systemctl --user -M testuser is-active jbot-maintenance.service")
+
+    # Verify memory consolidation happened
     machine.succeed("test -f /home/testuser/project/.jbot/memory.log")
     machine.succeed("grep '\"agent\": \"dev\"' /home/testuser/project/.jbot/memory.log")
+    machine.fail("test -f /home/testuser/project/.jbot/queues/dev.json")
 
     # Start the QA agent
     machine.succeed("systemctl --user -M testuser start jbot-agent-qa.service")

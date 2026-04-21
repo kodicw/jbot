@@ -103,10 +103,37 @@ def handle_version(project_root, action, part=None):
         tag_name = f"v{v}"
         print(f"Creating git tag: {tag_name}")
         try:
-            subprocess.run(["git", "tag", "-a", tag_name, "-m", f"Release {tag_name}"], check=True)
+            subprocess.run(
+                ["git", "tag", "-a", tag_name, "-m", f"Release {tag_name}"], check=True
+            )
             print(f"Successfully created tag: {tag_name}")
         except subprocess.CalledProcessError as e:
             print(f"Error: Git tag failed - {e}")
+    elif action == "release":
+        if not part:
+            print("Error: Must specify version part (major, minor, patch) for release.")
+            return
+
+        print(f"Starting release process (bump {part})...")
+        new_v = utils.bump_version(project_root, part)
+        if not new_v:
+            print("Error: Failed to bump version.")
+            return
+
+        tag_name = f"v{new_v}"
+        try:
+            # Add and commit the version bump
+            subprocess.run(["git", "add", "VERSION"], check=True)
+            subprocess.run(
+                ["git", "commit", "-m", f"chore: release {tag_name}"], check=True
+            )
+            # Create the tag
+            subprocess.run(
+                ["git", "tag", "-a", tag_name, "-m", f"Release {tag_name}"], check=True
+            )
+            print(f"🚀 Successfully released {tag_name}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error: Release failed during git operations - {e}")
 
 
 def main():
@@ -119,16 +146,38 @@ def main():
 
     subparsers.add_parser("status", help="Show current vision and high-level status")
 
-    task_parser = subparsers.add_parser("tasks", help="List active and backlog tasks")
-    task_parser.add_argument(
-        "-a", "--all", action="store_true", help="Show all tasks including completed"
-    )
+    # --- Task Commands ---
+    task_parser = subparsers.add_parser("task", help="Manage tasks on the board")
+    task_subparsers = task_parser.add_subparsers(dest="task_action", help="Task actions")
 
-    add_task_parser = subparsers.add_parser(
-        "add-task", help="Add a new task to the board"
-    )
-    add_task_parser.add_argument("text", help="Task description")
-    add_task_parser.add_argument("-a", "--agent", help="Assign to specific agent")
+    # task list
+    list_parser = task_subparsers.add_parser("list", help="List active and backlog tasks")
+    list_parser.add_argument("-a", "--all", action="store_true", help="Show all tasks including completed")
+
+    # task add
+    add_parser = task_subparsers.add_parser("add", help="Add a new task")
+    add_parser.add_argument("text", help="Task description")
+    add_parser.add_argument("-a", "--agent", help="Assign to specific agent")
+    add_parser.add_argument("-b", "--backlog", action="store_true", help="Add to backlog instead of active")
+
+    # task update
+    update_parser = task_subparsers.add_parser("update", help="Update an existing task")
+    update_parser.add_argument("search", help="Search string to identify the task")
+    update_parser.add_argument("-t", "--text", help="New task description")
+    update_parser.add_argument("-a", "--agent", help="Reassign to agent")
+    update_parser.add_argument("-m", "--move", choices=["active", "backlog"], help="Move task to section")
+
+    # task done
+    done_parser = task_subparsers.add_parser("done", help="Mark a task as completed")
+    done_parser.add_argument("search", help="Search string to identify the task")
+
+    # Keep old commands for compatibility
+    old_tasks_parser = subparsers.add_parser("tasks", help="Alias for 'task list'")
+    old_tasks_parser.add_argument("-a", "--all", action="store_true", help="Show all tasks")
+
+    old_add_task_parser = subparsers.add_parser("add-task", help="Alias for 'task add'")
+    old_add_task_parser.add_argument("text", help="Task description")
+    old_add_task_parser.add_argument("-a", "--agent", help="Assign to specific agent")
 
     log_parser = subparsers.add_parser("logs", help="Show recent agent activity logs")
     log_parser.add_argument(
@@ -140,26 +189,54 @@ def main():
         "-n", "--count", type=int, default=5, help="Number of messages to show"
     )
 
-    version_parser = subparsers.add_parser("version", help="Manage JBot versioning and releases")
+    version_parser = subparsers.add_parser(
+        "version", help="Manage JBot versioning and releases"
+    )
     version_subparsers = version_parser.add_subparsers(dest="action", help="Actions")
     version_subparsers.add_parser("show", help="Show the current version")
-    bump_parser = version_subparsers.add_parser("bump", help="Bump the version (major, minor, patch)")
-    bump_parser.add_argument("part", choices=["major", "minor", "patch"], help="Version part to bump")
+
+    bump_parser = version_subparsers.add_parser(
+        "bump", help="Bump the version (major, minor, patch)"
+    )
+    bump_parser.add_argument(
+        "part", choices=["major", "minor", "patch"], help="Version part to bump"
+    )
+
     version_subparsers.add_parser("tag", help="Create a git tag for the current version")
+
+    release_parser = version_subparsers.add_parser(
+        "release", help="Automated release (bump, commit, and tag)"
+    )
+    release_parser.add_argument(
+        "part", choices=["major", "minor", "patch"], help="Version part to bump"
+    )
 
     args = parser.parse_args()
 
     # Find project root if not specified
     project_root = utils.get_project_root(args.dir)
+    tasks_md_path = os.path.join(project_root, "TASKS.md")
 
     if args.command == "status":
         get_status(project_root)
+    elif args.command == "task":
+        if args.task_action == "list":
+            get_tasks(project_root, args.all)
+        elif args.task_action == "add":
+            if utils.add_task(tasks_md_path, args.text, args.agent, args.backlog):
+                print(f"Successfully added task: {args.text}")
+        elif args.task_action == "update":
+            if utils.update_task(tasks_md_path, args.search, args.text, args.agent, args.move):
+                print(f"Successfully updated task matching: {args.search}")
+        elif args.task_action == "done":
+            if utils.complete_task(tasks_md_path, args.search):
+                print(f"Successfully completed task matching: {args.search}")
+        else:
+            task_parser.print_help()
     elif args.command == "tasks":
         get_tasks(project_root, args.all)
     elif args.command == "add-task":
-        if utils.add_task(
-            os.path.join(project_root, "TASKS.md"), args.text, args.agent
-        ):
+        if utils.add_task(tasks_md_path, args.text, args.agent):
             print(f"Successfully added task: {args.text}")
     elif args.command == "logs":
         get_logs(project_root, args.count)

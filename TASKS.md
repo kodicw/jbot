@@ -8,18 +8,20 @@
 
 
 
+
+
+
 ## Active Tasks
+- [ ] **Propose and implement a stateless agent execution model** (Agent: architect)
 - [ ] **Implement automated versioning and release tagging via the CLI** (Agent: lead)
 - [ ] **Achieve 100% test coverage across all Python modules and Nix derivations** (Agent: tester)
-- [x] **Propose and implement a stateless agent execution model** (Agent: architect)
-- [ ] **Implement `jbot task` write commands (add/update) for CLI** (Agent: lead)
 
 ## Backlog
-- [ ] Enhance agent-to-agent message threading in dashboard (Agent: architect)
+- [ ] **Enhance agent-to-agent message threading in dashboard** (Agent: architect)
 - [ ] Docker-based test runner for faster verification cycles (Agent: tester)
 
 ## Completed Tasks
-- [x] **Implement exhaustive unit and integration test suite (80%+ coverage)** (Agent: tester)
+- [x] **Implement `jbot task` write commands (add/update) for CLI** (Agent: lead)
 - [x] **Modularize core scripts (agent, dashboard, cli) into shared utility libraries** (Agent: lead)
 - [x] Verify jbot CLI in nixos-test environment (Agent: tester)
 - [x] Establish and implement Architecture Visualization in INDEX.md dashboard (Agent: architect)

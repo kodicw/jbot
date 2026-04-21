@@ -141,6 +141,54 @@ def test_add_task(tmp_path):
     content = tasks_file.read_text()
     assert "- [ ] **Second Task** (Agent: lead)" in content
 
+    # Test add to backlog
+    utils.add_task(str(tasks_file), "Backlog Task", backlog=True)
+    content = tasks_file.read_text()
+    assert "## Backlog" in content
+    assert "- [ ] **Backlog Task**" in content
+
+
+def test_update_task(tmp_path):
+    tasks_file = tmp_path / "TASKS.md"
+    tasks_file.write_text("""
+## Active Tasks
+- [ ] **Old Task** (Agent: lead)
+## Backlog
+- [ ] **Wait Task**
+""")
+
+    # Update text and agent
+    utils.update_task(str(tasks_file), "Old Task", new_text="Updated Task", agent="tester")
+    content = tasks_file.read_text()
+    assert "- [ ] **Updated Task** (Agent: tester)" in content
+    assert "Old Task" not in content
+
+    # Move to backlog
+    utils.update_task(str(tasks_file), "Updated Task", move_to="backlog")
+    data = utils.parse_tasks(str(tasks_file))
+    assert any("Updated Task" in t for t in data["backlog"])
+    assert not any("Updated Task" in t for t in data["active"])
+
+    # Move from backlog to active
+    utils.update_task(str(tasks_file), "Wait Task", move_to="active")
+    data = utils.parse_tasks(str(tasks_file))
+    assert any("Wait Task" in t for t in data["active"])
+
+
+def test_complete_task(tmp_path):
+    tasks_file = tmp_path / "TASKS.md"
+    tasks_file.write_text("""
+## Active Tasks
+- [ ] **Working Task**
+## Completed Tasks
+""")
+
+    utils.complete_task(str(tasks_file), "Working Task")
+    content = tasks_file.read_text()
+    assert "- [x] **Working Task**" in content
+    assert "## Completed Tasks\n- [x] **Working Task**" in content
+    assert "- [ ] **Working Task**" not in content
+
 
 def test_add_task_missing_file():
     assert utils.add_task("nonexistent.md", "Task") is False
