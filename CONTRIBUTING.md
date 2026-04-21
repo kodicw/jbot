@@ -102,3 +102,10 @@ All hooks live in `.githooks/` and are automatically activated by the dev shell:
 - **Centralized Workflows:** Use the `justfile` for all common tasks (formatting, linting, testing).
 - **Zero Technical Debt:** Every commit should pass `just audit`.
 - **Nix Purity:** Use `deadnix` (via `just prune`) to find and remove unused Nix code. Architectural simplicity is maintained by keeping the codebase lean.
+
+### Information Density
+- **Executable Metadata:** Treat documentation as executable law.
+- **ADR Links:** Reference `nb` ADRs directly in code comments (e.g., `# Context: [[nb:jbot:adr-001]]`).
+- **Mermaid-as-Code:** Every complex script should have an accompanying `.mermaid` file or Mermaid docstring block.
+- **Type-Driven Docs:** 100% usage of Python Type Hints and Nix Lib types. Use pydocstyle block structures.
+- **Structure as Code:** Define JSON Schemas for all state files (e.g., `agents.json`) to prevent data hallucination.
