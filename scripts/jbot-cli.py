@@ -215,29 +215,45 @@ def main():
     )
 
     # --- Message Send Command ---
-    send_msg_parser = subparsers.add_parser("send-message", help="Send a message to all agents")
-    send_msg_parser.add_argument("-f", "--from-agent", required=True, help="Agent sending the message")
-    send_msg_parser.add_argument("-s", "--subject", default="No Subject", help="Message subject")
+    send_msg_parser = subparsers.add_parser(
+        "send-message", help="Send a message to all agents"
+    )
+    send_msg_parser.add_argument(
+        "-f", "--from-agent", required=True, help="Agent sending the message"
+    )
+    send_msg_parser.add_argument(
+        "-s", "--subject", default="No Subject", help="Message subject"
+    )
     send_msg_parser.add_argument("-m", "--message", required=True, help="Message body")
 
     # --- Infrastructure Commands ---
-    subparsers.add_parser("maintenance", help="Run automated infrastructure maintenance")
-    
+    subparsers.add_parser(
+        "maintenance", help="Run automated infrastructure maintenance"
+    )
+
     subparsers.add_parser("purge", help="Archive expired directives")
-    
+
     rotate_parser = subparsers.add_parser("rotate", help="Rotate infrastructure data")
-    rotate_subparsers = rotate_parser.add_subparsers(dest="rotate_target", help="Rotate target")
-    
+    rotate_subparsers = rotate_parser.add_subparsers(
+        dest="rotate_target", help="Rotate target"
+    )
+
     memory_rotate = rotate_subparsers.add_parser("memory", help="Rotate memory logs")
-    memory_rotate.add_argument("-l", "--limit", type=int, default=100, help="Max entries to keep")
+    memory_rotate.add_argument(
+        "-l", "--limit", type=int, default=100, help="Max entries to keep"
+    )
 
     tasks_rotate = rotate_subparsers.add_parser("tasks", help="Rotate task board")
-    tasks_rotate.add_argument("-l", "--limit", type=int, default=10, help="Max completed tasks to keep")
+    tasks_rotate.add_argument(
+        "-l", "--limit", type=int, default=10, help="Max completed tasks to keep"
+    )
 
     msg_rotate = rotate_subparsers.add_parser("messages", help="Rotate agent messages")
-    msg_rotate.add_argument("-l", "--limit", type=int, default=50, help="Max messages to keep")
+    msg_rotate.add_argument(
+        "-l", "--limit", type=int, default=50, help="Max messages to keep"
+    )
 
-    subparsers.add_parser("dashboard", help="Manually regenerate the PAO dashboard")
+    subparsers.add_parser("dashboard", help="Manually regenerate the JBot dashboard")
 
     version_parser = subparsers.add_parser(
         "version", help="Manage JBot versioning and releases"
@@ -297,7 +313,9 @@ def main():
     elif args.command == "messages":
         get_messages(project_root, args.count)
     elif args.command == "send-message":
-        if utils.send_message(project_root, args.from_agent, args.message, args.subject):
+        if utils.send_message(
+            project_root, args.from_agent, args.message, args.subject
+        ):
             print("Message sent successfully.")
     elif args.command == "maintenance":
         utils.run_maintenance(project_root)

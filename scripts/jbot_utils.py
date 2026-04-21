@@ -135,7 +135,7 @@ def bump_version(project_dir=".", part="patch"):
 
 def update_changelog(project_dir, new_version):
     """
-    Updates CHANGELOG.md by moving content from the [Unreleased] section 
+    Updates CHANGELOG.md by moving content from the [Unreleased] section
     to a new versioned section.
     """
     changelog_path = os.path.join(project_dir, "CHANGELOG.md")
@@ -155,7 +155,9 @@ def update_changelog(project_dir, new_version):
     for i, line in enumerate(lines):
         if unreleased_header in line:
             unreleased_index = i
-        elif unreleased_index != -1 and line.startswith("## [") and i > unreleased_index:
+        elif (
+            unreleased_index != -1 and line.startswith("## [") and i > unreleased_index
+        ):
             next_version_index = i
             break
 
@@ -189,7 +191,7 @@ def update_changelog(project_dir, new_version):
 
     with open(changelog_path, "w") as f:
         f.writelines(updated_changelog)
-    
+
     log(f"Updated CHANGELOG.md for version {new_version}.", "Utils")
     return True
 
@@ -650,19 +652,25 @@ def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=2
             if not os.path.exists(archive_file) or os.path.getsize(archive_file) == 0:
                 write_file(archive_file, "# JBot Task Archive\n\n")
             with open(archive_file, "a") as f:
-                f.write(f"## Archived on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(
+                    f"## Archived on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                )
                 f.writelines(to_archive)
                 f.write("\n")
 
         with open(tasks_file, "w") as f:
-            f.writelines(sections["header"] if sections["header"] else ["# JBot Task Board\n\n"])
+            f.writelines(
+                sections["header"] if sections["header"] else ["# JBot Task Board\n\n"]
+            )
             f.writelines(sections["vision"])
             f.write("\n")
             f.writelines(new_active)
-            if not new_active[-1].endswith("\n"): f.write("\n")
+            if not new_active[-1].endswith("\n"):
+                f.write("\n")
             f.write("\n")
             f.writelines(new_backlog)
-            if not new_backlog[-1].endswith("\n"): f.write("\n")
+            if not new_backlog[-1].endswith("\n"):
+                f.write("\n")
             f.write("\n")
             f.writelines(sections["completed"][:1])
             f.writelines(to_keep)
@@ -680,11 +688,14 @@ def rotate_messages(msg_dir, archive_dir, limit=50):
         return False
 
     os.makedirs(archive_dir, exist_ok=True)
-    
-    msg_files = sorted([
-        f for f in os.listdir(msg_dir)
-        if os.path.isfile(os.path.join(msg_dir, f)) and f != "human.txt"
-    ])
+
+    msg_files = sorted(
+        [
+            f
+            for f in os.listdir(msg_dir)
+            if os.path.isfile(os.path.join(msg_dir, f)) and f != "human.txt"
+        ]
+    )
 
     if len(msg_files) <= limit:
         return False
@@ -693,6 +704,7 @@ def rotate_messages(msg_dir, archive_dir, limit=50):
     log(f"Archiving {len(to_archive)} messages.", "Rotate")
 
     import shutil
+
     for mf in to_archive:
         shutil.move(os.path.join(msg_dir, mf), os.path.join(archive_dir, mf))
 

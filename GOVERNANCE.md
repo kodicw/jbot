@@ -8,7 +8,7 @@ JBot follows a **Flat Organization** model focused on **Technical Excellence**.
 
 - **Internal Cohesion**: All JBot components (agents, infrastructure, scripts) for a single organization MUST reside under a single Linux user account.
 - **External Isolation**: Management of entirely different projects/organizations is handled exclusively by NixOS/Home Manager using separate user accounts.
-- **No Internal Hierarchy**: There are no "sub-projects" or "nested PAOs". Coordination is achieved through shared state and decentralized negotiation.
+- **No Internal Hierarchy**: There are no "sub-projects" or "nested organizations". Coordination is achieved through shared state and decentralized negotiation.
 
 ## 2. Team Roles
 

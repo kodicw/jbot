@@ -212,7 +212,7 @@ in
 
                 # Pre-configure identity to bypass nb/git interactive setup
                 export GIT_AUTHOR_NAME="JBot (${name})"
-                export GIT_AUTHOR_EMAIL="jbot-${name}@internal.pao"
+                export GIT_AUTHOR_EMAIL="jbot-${name}@internal.jbot"
                 export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
                 export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
                 export NB_USER_NAME="$GIT_AUTHOR_NAME"
@@ -269,11 +269,12 @@ in
                   pkgs.findutils
                   pkgs.gnused
                   pkgs.gawk
+                  jbot-cli
                 ]
               }"
               "PROJECT_DIR=${maintenanceProjectDir}"
             ];
-            ExecStart = "${pkgs.python3}/bin/python3 ${./scripts}/jbot-maintenance.py";
+            ExecStart = "${jbot-cli}/bin/jbot maintenance";
             WorkingDirectory = maintenanceProjectDir;
           };
         };

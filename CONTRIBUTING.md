@@ -10,7 +10,7 @@
 
 JBot follows a **Flat Organization** model. This means:
 - **Internal Cohesion:** All components (agents, infra, scripts) live under a single Linux user account.
-- **No Hierarchy:** We avoid nested project structures or "Sub-PAOs". Coordination happens via a shared `TASKS.md` and `.jbot/messages/`.
+- **No Hierarchy:** We avoid nested project structures or "Sub-Organizations". Coordination happens via a shared `TASKS.md` and `.jbot/messages/`.
 - **External Isolation:** Multi-project management is handled by creating *different* Linux users via NixOS/Home Manager.
 
 ---

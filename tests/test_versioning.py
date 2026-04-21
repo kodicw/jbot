@@ -1,11 +1,11 @@
 import os
 import sys
 from datetime import datetime
-import pytest
 
 # Ensure scripts directory is in sys.path
 sys.path.append(os.path.join(os.getcwd(), "scripts"))
 import jbot_utils as utils
+
 
 def test_update_changelog(tmp_path):
     changelog_file = tmp_path / "CHANGELOG.md"
@@ -22,10 +22,10 @@ def test_update_changelog(tmp_path):
 
     new_version = "1.1.0"
     today = datetime.now().strftime("%Y-%m-%d")
-    
+
     success = utils.update_changelog(str(tmp_path), new_version)
     assert success is True
-    
+
     content = changelog_file.read_text()
     assert "## [Unreleased]\n\n" in content
     assert f"## [1.1.0] - {today}\n" in content
@@ -33,14 +33,16 @@ def test_update_changelog(tmp_path):
     assert "- Feature B" in content
     assert "## [1.0.0] - 2026-04-19" in content
 
+
 def test_update_changelog_no_unreleased(tmp_path):
     changelog_file = tmp_path / "CHANGELOG.md"
     changelog_file.write_text("""# Changelog
 ## [1.0.0] - 2026-04-19
 """)
-    
+
     success = utils.update_changelog(str(tmp_path), "1.1.0")
     assert success is False
+
 
 def test_update_changelog_empty_unreleased(tmp_path):
     changelog_file = tmp_path / "CHANGELOG.md"
@@ -49,10 +51,10 @@ def test_update_changelog_empty_unreleased(tmp_path):
 
 ## [1.0.0] - 2026-04-19
 """)
-    
+
     new_version = "1.1.0"
     success = utils.update_changelog(str(tmp_path), new_version)
     # The current implementation still proceeds but logs that no changes found.
     assert success is True
     content = changelog_file.read_text()
-    assert f"## [1.1.0]" in content
+    assert "## [1.1.0]" in content

@@ -11,21 +11,22 @@
 
 
 
-
-
 ## Active Tasks
 - [ ] **Finalize and Verify Stateless Agent Execution Model** (Agent: architect) [In Progress]
 - [ ] **Audit codebase for 'Self-Documenting Code' compliance** (Agent: architect)
 - [ ] **Achieve 100% test coverage across all Python modules and Nix derivations** (Agent: tester)
-- [ ] **Integrate `maintenance`, `purge`, `rotate`, `dashboard` into JBot CLI** (Agent: lead) [Priority]
-- [ ] **Release JBot v1.0.0 (The Pure Release)** (Agent: lead)
+- [ ] **Release JBot v1.0.0 (The Pure Release)** (Agent: lead) [In Progress]
 - [ ] **Formalize 'adr/', 'research/', and 'benchmarks/' structure in nb** (Agent: architect)
 
 ## Backlog
 - [ ] **Consolidate rotation scripts into unified module** (Agent: architect)
 - [ ] **Enhance agent-to-agent message threading in dashboard** (Agent: architect)
 - [ ] Docker-based test runner for faster verification cycles (Agent: tester)
-- [ ] **Implement `jbot init` for quick project setup** (Agent: lead)
+
+## Completed Tasks
+- [x] **Integrate all standalone scripts into the JBot CLI** (Agent: lead)
+- [x] **Implement `jbot task` write commands (add/update) for CLI** (Agent: lead)
+
 
 ## Completed Tasks
 - [x] **Implement `jbot task` write commands (add/update) for CLI** (Agent: lead)

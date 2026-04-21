@@ -42,7 +42,6 @@ def agent_env(tmp_path):
 
 
 def test_agent_main(agent_env):
-    tmp_path = agent_env
     # Mock Popen and run
     with patch("subprocess.Popen") as mock_popen, patch("subprocess.run"):
         mock_process = MagicMock()
@@ -69,15 +68,19 @@ def test_agent_missing_env():
 def test_agent_with_rag_and_human(agent_env):
     tmp_path = agent_env
     jbot_dir = tmp_path / ".jbot"
-    
+
     # Add memory logs
     with open(jbot_dir / "memory.log", "w") as f:
-        f.write(json.dumps({"agent": "ceo", "content": {"summary": "Vision set"}}) + "\n")
-        f.write(json.dumps({"agent": "lead", "content": {"summary": "Code done"}}) + "\n")
-    
+        f.write(
+            json.dumps({"agent": "ceo", "content": {"summary": "Vision set"}}) + "\n"
+        )
+        f.write(
+            json.dumps({"agent": "lead", "content": {"summary": "Code done"}}) + "\n"
+        )
+
     # Add human input
     (jbot_dir / "messages" / "human.txt").write_text("Focus on tests")
-    
+
     # Add messages
     (jbot_dir / "messages" / "msg1.txt").write_text("Hello team")
 
@@ -129,11 +132,11 @@ def test_agent_with_pre_commit_success(agent_env):
         mock_process.wait.return_value = 0
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
-        
+
         mock_run.return_value = MagicMock(returncode=0)
 
         jbot_agent.main()
-        
+
         # Verify pre-commit was called
         # The script calls subprocess.run(["bash", pre_commit_script])
         mock_run.assert_called_with(["bash", str(pre_commit)], check=True)
@@ -153,7 +156,7 @@ def test_agent_with_pre_commit_failure(agent_env):
         mock_process.wait.return_value = 0
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
-        
+
         mock_run.side_effect = subprocess.CalledProcessError(1, "bash")
 
         # Failure in pre-commit shouldn't exit with 1 if it's just a warning in the script
@@ -166,10 +169,10 @@ def test_agent_with_pre_commit_failure(agent_env):
 def test_agent_git_tree(agent_env):
     tmp_path = agent_env
     (tmp_path / ".git").mkdir()
-    
+
     with patch("subprocess.check_output") as mock_check:
-        mock_check.side_effect = ["file1\nfile2\n" + "longfile\n"*60, b"unused"]
-        
+        mock_check.side_effect = ["file1\nfile2\n" + "longfile\n" * 60, b"unused"]
+
         with patch("subprocess.Popen") as mock_popen, patch("subprocess.run"):
             mock_process = MagicMock()
             mock_process.stdout = ["Success\n"]
@@ -178,18 +181,19 @@ def test_agent_git_tree(agent_env):
             mock_popen.return_value = mock_process
 
             jbot_agent.main()
-            
+
             args, _ = mock_popen.call_args
             prompt = args[0][4]
             assert "... (truncated)" in prompt
 
+
 def test_agent_git_tree_error(agent_env):
     tmp_path = agent_env
     (tmp_path / ".git").mkdir()
-    
+
     with patch("subprocess.check_output") as mock_check:
         mock_check.side_effect = Exception("git error")
-        
+
         with patch("subprocess.Popen") as mock_popen, patch("subprocess.run"):
             mock_process = MagicMock()
             mock_process.stdout = ["Success\n"]
@@ -198,7 +202,7 @@ def test_agent_git_tree_error(agent_env):
             mock_popen.return_value = mock_process
 
             jbot_agent.main()
-            
+
             args, _ = mock_popen.call_args
             prompt = args[0][4]
             assert "Error running git ls-files" in prompt
