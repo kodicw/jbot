@@ -100,7 +100,12 @@ let
     pkgs.gum
     pkgs.pandoc
     pkgs.w3m
-    pkgs.python3
+    (pkgs.python3.withPackages (ps: [
+      ps.jinja2
+      ps.pytest
+      ps.pytest-mock
+      ps.pytest-cov
+    ]))
   ];
 
   # Pick a representative project directory for maintenance if multiple exist

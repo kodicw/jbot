@@ -89,27 +89,33 @@ def assemble_context(
     recent_msgs = infra.get_recent_messages(msgs_dir, 5)
     messages = "\n".join([f"--- Message {m['filename']} ---\n{m['content']}" for m in recent_msgs]) if recent_msgs else "No recent messages."
 
-    # Final Prompt Assembly
-    replacements = {
-        "{AGENT_NAME}": agent_name,
-        "{AGENT_ROLE}": agent_role,
-        "{AGENT_DESCRIPTION}": agent_desc,
-        "{PROJECT_GOAL}": goal,
-        "{DIRECTORY_TREE}": tree,
-        "{ADDITIONAL_CONTEXT}": realtime_context,
-        "{ENVIRONMENT_AUDIT}": env_audit,
-        "{RAG_DATABASE_RESULTS}": rag_formatted,
-        "{TASK_BOARD}": task_board,
-        "{TEAM_REGISTRY}": team_registry,
-        "{MESSAGES}": messages,
-        "{DIRECTIVES}": directives,
-        "{HUMAN_INPUT}": f"{human_input}\n\n--- IDEAS ---\n{fresh_ideas}",
+    # Final Prompt Assembly using Jinja2
+    from jinja2 import Template
+    
+    template_data = {
+        "agent": {
+            "name": agent_name,
+            "role": agent_role,
+            "description": agent_desc,
+        },
+        "goal": goal,
+        "environment_audit": env_audit,
+        "shared_history": rag_formatted,
+        "realtime_state": realtime_context,
+        "tasks": task_board,
+        "team": agents, # Full registry dict
+        "messages": messages,
+        "directives": directives,
+        "human_input": human_input,
+        "fresh_ideas": fresh_ideas,
     }
 
-    for k, v in replacements.items():
-        prompt_content = prompt_content.replace(k, str(v))
-
-    return prompt_content
+    try:
+        template = Template(prompt_content)
+        return template.render(**template_data)
+    except Exception as e:
+        core.log(f"Jinja2 rendering failed: {e}. Falling back to raw content.", agent_name)
+        return prompt_content
 
 
 def run_agent(
