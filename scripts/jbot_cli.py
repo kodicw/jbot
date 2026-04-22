@@ -47,7 +47,7 @@ def get_status(project_dir: str) -> None:
     print("  - New Ideas: `nb jbot:add --title \"Idea: <Title>\" --tags type:idea` (Appends)")
     print("  - Re-Program: `nb jbot:add --title \"System Prompt\" --tags type:prompt` (High-Prio)")
 
-    tasks_data = tasks.parse_tasks(tasks_path)
+    tasks_data = tasks.parse_tasks("")
     print(f"\n🚀 Active Tasks ({len(tasks_data['active'])}):")
     for t in tasks_data["active"][:5]:
         print(f"  {t}")
@@ -73,8 +73,8 @@ def get_tasks(project_dir: str, show_all: bool = False) -> None:
         for t in tasks_data["backlog"]:
             print(t)
     else:
-        with open(tasks_path, "r") as f:
-            print(f.read().strip())
+        # We don't have a path, so we just print the raw content from nb
+        print(infra.get_note_content("type:tasks"))
 
 
 def get_logs(project_dir: str, count: int = 10) -> None:
@@ -173,6 +173,44 @@ def handle_version(project_root: str, action: str, part: str = None) -> None:
             print(f"Error: Release failed during git operations - {e}")
 
 
+def handle_system(project_root: str, action: str) -> None:
+    """Handles viewing and editing the JBot system prompt."""
+    os.chdir(project_root)
+
+    if action == "show":
+        nb_prompt = infra.get_note_content("type:prompt")
+        if nb_prompt:
+            print("\n--- SYSTEM PROMPT (nb knowledge base) ---")
+            print(nb_prompt)
+        else:
+            prompt_file = os.path.join(project_root, "jbot_prompt.txt")
+            print("\n--- SYSTEM PROMPT (Bootstrap file) ---")
+            print(core.read_file(prompt_file))
+
+    elif action == "edit":
+        print("\n[NB] Opening system prompt for editing...")
+        # Check if it exists first to ensure we tag it correctly if it's new
+        if not infra.get_note_content("type:prompt"):
+            print("Note: Creating new system prompt note in nb.")
+            # Create a skeleton if empty
+            subprocess.run(
+                [
+                    "nb",
+                    "jbot:add",
+                    "--title",
+                    "System Prompt",
+                    "--tags",
+                    "type:prompt",
+                    "--content",
+                    "Initialize prompt here.",
+                ],
+                capture_output=True,
+            )
+
+        # Use interactive nb edit
+        subprocess.run(["nb", "jbot:edit", "type:prompt"])
+
+
 def main():
     """JBot Centralized CLI Entry Point."""
     parser = argparse.ArgumentParser(description="JBot Centralized CLI Tool")
@@ -251,6 +289,14 @@ def main():
     # Human Interaction
     subparsers.add_parser("human", help="Interact with the organization (TUI)")
 
+    # System Management
+    sys_parser = subparsers.add_parser(
+        "system", help="Manage organization 'operating system' (prompt)"
+    )
+    sys_sub = sys_parser.add_subparsers(dest="sys_action")
+    sys_sub.add_parser("show", help="Display the current system prompt")
+    sys_sub.add_parser("edit", help="Edit the system prompt in nb")
+
     args = parser.parse_args()
     project_root = core.get_project_root(args.dir)
 
@@ -327,6 +373,8 @@ def main():
         )
     elif args.command == "human":
         jbot_tui.main()
+    elif args.command == "system":
+        handle_system(project_root, args.sys_action)
     elif args.command == "version":
         handle_version(project_root, args.action, getattr(args, "part", None))
     else:
