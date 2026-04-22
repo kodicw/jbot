@@ -61,31 +61,44 @@ def send_message(
 def get_note_content(query: str) -> Optional[str]:
     """Retrieves the full content of the first nb note matching the query."""
     import subprocess
+    import re
 
     try:
-        # 1. Try direct retrieval by tag/title
-        # nb show returns the content of the note
-        result = subprocess.run(
-            ["nb", "jbot:show", query, "--print"],
-            capture_output=True,
-            text=True,
-            env={**os.environ, "EDITOR": "cat"},
+        tag = query.replace("type:", "").replace("input:", "").replace("#", "")
+        
+        # 1. Search for the ID using 'nb jbot:q' which is the most reliable search
+        search_res = subprocess.run(
+            ["nb", "jbot:q", f"#{tag}", "--limit", "1"],
+            capture_output=True, text=True, env={**os.environ, "EDITOR": "cat"}
         )
-        if result.returncode == 0 and result.stdout.strip() and "! Not found" not in result.stdout:
-            return result.stdout.strip()
+        
+        note_id = None
+        if search_res.returncode == 0 and search_res.stdout.strip():
+            match = re.search(r"\[jbot:(\d+)\]", search_res.stdout)
+            if match:
+                note_id = match.group(1)
+        
+        # 2. Fallback to title search if tag search failed
+        if not note_id and tag == "prompt":
+            search_res = subprocess.run(
+                ["nb", "jbot:ls", "Authoritative System Prompt"],
+                capture_output=True, text=True, env={**os.environ, "EDITOR": "cat"}
+            )
+            if search_res.returncode == 0 and search_res.stdout.strip():
+                match = re.search(r"\[jbot:(\d+)\]", search_res.stdout)
+                if match:
+                    note_id = match.group(1)
 
-        # 2. Fallback: Search by title if it's the prompt
-        if query == "#prompt" or query == "prompt":
-            fallback_titles = ["Authoritative System Prompt", "System Prompt"]
-            for title in fallback_titles:
-                res = subprocess.run(
-                    ["nb", "jbot:show", title, "--print"],
-                    capture_output=True,
-                    text=True,
-                    env={**os.environ, "EDITOR": "cat"},
-                )
-                if res.returncode == 0 and res.stdout.strip() and "! Not found" not in res.stdout:
-                    return res.stdout.strip()
+        # 3. Get the actual content using the ID
+        if note_id:
+            result = subprocess.run(
+                ["nb", "jbot:show", note_id, "--print"],
+                capture_output=True,
+                text=True,
+                env={**os.environ, "EDITOR": "cat"},
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip()
 
         return None
     except Exception as e:
