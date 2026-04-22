@@ -123,7 +123,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [ jbot-cli ];
+    home.packages = [
+      jbot-cli
+      pkgs.nb
+      pkgs.gum
+      pkgs.tealdeer
+      pkgs.bat
+      pkgs.ripgrep
+    ];
 
     home.activation.jbotEnvironmentAudit = config.lib.dag.entryAfter [ "writeBoundary" ] ''
       # Generate Technical Environment Note for nb

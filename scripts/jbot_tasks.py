@@ -1,11 +1,41 @@
 import os
 import re
-from typing import Dict, Any, Optional
+import subprocess
+import json
+import tempfile
+from typing import Dict, Any, Optional, List
 import jbot_core as core
+import jbot_infra as infra
 
 
-def parse_tasks(tasks_path: str) -> Dict[str, Any]:
-    """Parses TASKS.md into sections and extracted data."""
+def _get_nb_tasks() -> str:
+    """Helper to fetch task board content from nb."""
+    return infra.get_note_content("type:tasks") or "# JBot Task Board\n\n## Strategic Vision\n- Goal: Technical Excellence\n\n## Active Tasks\n\n## Backlog\n\n## Completed Tasks\n"
+
+
+def _push_nb_tasks(content: str) -> bool:
+    """Helper to push updated task board back to nb."""
+    env = os.environ.copy()
+    env["EDITOR"] = "cat"
+    if "NB_USER_NAME" not in env:
+        env["NB_USER_NAME"] = "System (CLI)"
+    
+    try:
+        subprocess.run(
+            ["nb", "jbot:add", "--title", "Task Board", "--tags", "type:tasks", "--content", content, "--overwrite", "--force"],
+            check=True, capture_output=True, env=env
+        )
+        return True
+    except Exception as e:
+        core.log(f"Error pushing tasks to nb: {e}", "Tasks")
+        return False
+
+
+def parse_tasks(tasks_path: str = "") -> Dict[str, Any]:
+    """Parses the task board from nb into sections and extracted data."""
+    # tasks_path is ignored, we pull from nb
+    content = _get_nb_tasks()
+    
     data = {
         "active": [],
         "done_count": 0,
@@ -19,33 +49,30 @@ def parse_tasks(tasks_path: str) -> Dict[str, Any]:
             "completed": [],
         },
     }
-    if not os.path.exists(tasks_path):
-        return data
 
-    with open(tasks_path, "r") as f:
-        lines = f.readlines()
-        current_section = "header"
-        for line in lines:
-            if "## Strategic Vision" in line:
-                current_section = "vision"
-            elif "## Active Tasks" in line:
-                current_section = "active"
-            elif "## Backlog" in line:
-                current_section = "backlog"
-            elif "## Completed Tasks" in line:
-                current_section = "completed"
+    lines = content.splitlines(keepends=True)
+    current_section = "header"
+    for line in lines:
+        if "## Strategic Vision" in line:
+            current_section = "vision"
+        elif "## Active Tasks" in line:
+            current_section = "active"
+        elif "## Backlog" in line:
+            current_section = "backlog"
+        elif "## Completed Tasks" in line:
+            current_section = "completed"
 
-            data["sections"][current_section].append(line)
+        data["sections"][current_section].append(line)
 
-            if current_section == "vision" and not line.startswith("##"):
-                data["vision"] += line
-            elif current_section == "active" and line.strip().startswith("- [ ]"):
-                data["active"].append(line.strip())
-            elif current_section == "backlog" and line.strip().startswith("- [ ]"):
-                data["backlog"].append(line.strip())
+        if current_section == "vision" and not line.startswith("##"):
+            data["vision"] += line
+        elif current_section == "active" and line.strip().startswith("- [ ]"):
+            data["active"].append(line.strip())
+        elif current_section == "backlog" and line.strip().startswith("- [ ]"):
+            data["backlog"].append(line.strip())
 
-            if line.strip().startswith("- [x]"):
-                data["done_count"] += 1
+        if line.strip().startswith("- [x]"):
+            data["done_count"] += 1
 
     data["vision"] = data["vision"].strip()
     return data
@@ -54,13 +81,9 @@ def parse_tasks(tasks_path: str) -> Dict[str, Any]:
 def add_task(
     tasks_path: str, task_text: str, agent: Optional[str] = None, backlog: bool = False
 ) -> bool:
-    """Adds a new task to TASKS.md."""
-    if not os.path.exists(tasks_path):
-        core.log(f"Tasks file {tasks_path} not found.", "Tasks")
-        return False
-
-    with open(tasks_path, "r") as f:
-        lines = f.readlines()
+    """Adds a new task to the nb task board."""
+    content = _get_nb_tasks()
+    lines = content.splitlines(keepends=True)
 
     new_lines = []
     added = False
@@ -81,9 +104,7 @@ def add_task(
         new_lines.append(f"\n{target_section}\n")
         new_lines.append(task_entry)
 
-    with open(tasks_path, "w") as f:
-        f.writelines(new_lines)
-    return True
+    return _push_nb_tasks("".join(new_lines))
 
 
 def update_task(
@@ -93,13 +114,9 @@ def update_task(
     agent: Optional[str] = None,
     move_to: Optional[str] = None,
 ) -> bool:
-    """Updates a task in TASKS.md."""
-    if not os.path.exists(tasks_path):
-        core.log(f"Tasks file {tasks_path} not found.", "Tasks")
-        return False
-
-    with open(tasks_path, "r") as f:
-        lines = f.readlines()
+    """Updates a task in the nb task board."""
+    content = _get_nb_tasks()
+    lines = content.splitlines(keepends=True)
 
     new_lines = []
     task_line_index = -1
@@ -111,7 +128,7 @@ def update_task(
             break
 
     if task_line_index == -1:
-        core.log(f"Task matching '{task_text_search}' not found.", "Tasks")
+        core.log(f"Task matching '{task_text_search}' not found in nb.", "Tasks")
         return False
 
     # Parse current task line
@@ -147,23 +164,18 @@ def update_task(
         if not added:
             new_lines.append(f"\n{target_header}\n")
             new_lines.append(new_task_line)
+        final_content = "".join(new_lines)
     else:
         lines[task_line_index] = new_task_line
-        new_lines = lines
+        final_content = "".join(lines)
 
-    with open(tasks_path, "w") as f:
-        f.writelines(new_lines)
-    return True
+    return _push_nb_tasks(final_content)
 
 
 def complete_task(tasks_path: str, task_text_search: str) -> bool:
-    """Marks a task as completed and moves it to the Completed Tasks section."""
-    if not os.path.exists(tasks_path):
-        core.log(f"Tasks file {tasks_path} not found.", "Tasks")
-        return False
-
-    with open(tasks_path, "r") as f:
-        lines = f.readlines()
+    """Marks a task as completed in the nb task board."""
+    content = _get_nb_tasks()
+    lines = content.splitlines(keepends=True)
 
     task_line_index = -1
     for i, line in enumerate(lines):
@@ -172,7 +184,7 @@ def complete_task(tasks_path: str, task_text_search: str) -> bool:
             break
 
     if task_line_index == -1:
-        core.log(f"Task matching '{task_text_search}' not found.", "Tasks")
+        core.log(f"Task matching '{task_text_search}' not found in nb.", "Tasks")
         return False
 
     task_line = lines.pop(task_line_index)
@@ -190,6 +202,4 @@ def complete_task(tasks_path: str, task_text_search: str) -> bool:
         new_lines.append("\n## Completed Tasks\n")
         new_lines.append(completed_line)
 
-    with open(tasks_path, "w") as f:
-        f.writelines(new_lines)
-    return True
+    return _push_nb_tasks("".join(new_lines))

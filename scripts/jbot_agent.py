@@ -17,84 +17,57 @@ def assemble_context(
     prompt_file: str,
 ) -> str:
     """
-    Assembles the full context for the agent by reading various infrastructure files.
-    Ensures the prompt is populated with the latest project state.
+    Assembles the full context for the agent exclusively from the nb knowledge base.
+    This ensures that all instructions and state are Git-backed and versioned.
     """
-    # Find key project files
-    tasks_path = core.find_file_upwards("TASKS.md", project_dir) or "TASKS.md"
-    goal_path = core.find_file_upwards(".project_goal", project_dir) or ".project_goal"
-
-    # Directory Tree (Git-aware)
-    if os.path.exists(os.path.join(project_dir, ".git")):
-        try:
-            tree = subprocess.check_output(
-                ["git", "-C", project_dir, "ls-files"], text=True
-            ).strip()
-            lines = tree.split("\n")
-            if len(lines) > 50:
-                tree = "\n".join(lines[:50]) + "\n... (truncated)"
-        except Exception:
-            tree = "Error running git ls-files"
-    else:
-        tree_cmd = [
-            "find",
-            project_dir,
-            "-maxdepth",
-            "2",
-            "-not",
-            "-path",
-            "*/.*",
-            "-not",
-            "-path",
-            "*/__pycache__*",
-            "-not",
-            "-path",
-            "*/tests*",
-        ]
-        try:
-            tree = subprocess.check_output(tree_cmd, text=True).strip()
-        except Exception:
-            tree = "Error generating directory tree"
-
-    # 1. System Prompt (Knowledge Base First)
+    # 1. Base Operating System (Prompt)
     # Bootstrap: use local prompt_file if not in nb
     nb_prompt = infra.get_note_content("type:prompt")
     if nb_prompt:
-        core.log("Using system prompt from nb knowledge base.", agent_name)
+        core.log("Gathering system prompt from nb knowledge base.", agent_name)
         prompt_content = nb_prompt
     else:
         core.log("Knowledge base prompt missing. Bootstrapping from local file.", agent_name)
         prompt_content = core.read_file(prompt_file)
 
-    # 2. Human Input (Knowledge Base)
-    # Replaces .jbot/messages/human.txt
-    human_input = infra.get_note_content("input:human")
-    if human_input:
-        human_input_block = f"--- HUMAN FEEDBACK/DIRECTIVE (nb) ---\n{human_input}\n--- END HUMAN FEEDBACK ---"
-        core.log("Injected human feedback from nb.", agent_name)
-    else:
-        human_input_block = "No active human feedback in nb."
+    # 2. Operational Directives & Command Registry
+    directives = infra.get_note_content("type:directives") or "No formal directives in nb."
+    
+    # 3. Project Goal & Roadmap
+    goal = infra.get_note_content("type:goal") or "No project goal defined in nb."
+    task_board = infra.get_note_content("type:tasks") or "No task board found in nb."
 
-    # 3. Ideas & Brainstorming (Knowledge Base)
-    fresh_ideas = infra.get_note_content("type:idea")
-    ideas_block = f"--- FRESH IDEAS FROM HUMAN (nb) ---\n{fresh_ideas or 'No new ideas recorded.'}\n--- END IDEAS ---"
+    # 4. Human Input & Ideas
+    human_input = infra.get_note_content("input:human") or "No active human feedback."
+    fresh_ideas = infra.get_note_content("type:idea") or "No new ideas recorded."
 
-    # 4. Project Goal & Task Board
-    goal = core.read_file(
-        goal_path, "Maintain and improve the JBot project infrastructure."
-    )
-    task_board = core.read_file(
-        tasks_path,
-        f"No Task Board found at {tasks_path}. Please initialize it if needed.",
-    )
-
-    # 5. Real-time Environment Context
+    # 5. Environment & Tooling (Dynamic Context)
+    env_audit = infra.get_note_content("ADR: Environment and Tool Registry") or "No environment audit available."
     git_status = core.get_git_status(project_dir)
     nix_metadata = core.get_nix_metadata(project_dir)
-    env_context = f"**Git Status:**\n{git_status}\n\n**Nix Metadata:**\n{nix_metadata}"
+    
+    # Directory Tree (Git-aware)
+    try:
+        tree = subprocess.check_output(["git", "-C", project_dir, "ls-files"], text=True).strip()
+        lines = tree.split("\n")
+        if len(lines) > 50:
+            tree = "\n".join(lines[:50]) + "\n... (truncated)"
+    except Exception:
+        tree = "Error generating directory tree"
 
-    # 6. Memory / RAG (Shared History from nb)
-    logs = infra.get_recent_logs("", 10)
+    realtime_context = f"""
+**Real-time Git Status:**
+{git_status}
+
+**Nix Flake Metadata:**
+{nix_metadata}
+
+**Workspace Tree:**
+{tree}
+"""
+
+    # 6. Collective Memory (Shared History from nb)
+    logs = infra.get_recent_logs("", 15)
     rag_entries = []
     seen_summaries = set()
     for entry in logs:
@@ -104,58 +77,33 @@ def assemble_context(
             rag_entries.append(f"[{agent}] {summary}")
             seen_summaries.add(summary)
     rag_entries.reverse()
-    rag_formatted = (
-        "\n".join(rag_entries) if rag_entries else "No previous memory found in nb."
-    )
+    rag_formatted = "\n".join(rag_entries) if rag_entries else "No previous memory found in nb."
 
-    # Team Registry
+    # 7. Team Registry
     agents = infra.get_team_registry(project_dir)
-    registry_lines = [
-        f"- {name}: {info.get('role')} ({info.get('description')})"
-        for name, info in agents.items()
-        if name != agent_name
-    ]
-    team_registry = (
-        "\n".join(registry_lines)
-        if registry_lines
-        else "No other agents in visibility."
-    )
+    registry_lines = [f"- {name}: {info.get('role')} ({info.get('description')})" for name, info in agents.items() if name != agent_name]
+    team_registry = "\n".join(registry_lines) if registry_lines else "No other agents in visibility."
 
-    # Messages (Agent-to-Agent)
+    # 8. Inter-Agent Messaging
     msgs_dir = os.path.join(project_dir, ".jbot/messages")
     recent_msgs = infra.get_recent_messages(msgs_dir, 5)
-    messages = (
-        "\n".join(
-            [f"--- Message {m['filename']} ---\n{m['content']}" for m in recent_msgs]
-        )
-        if recent_msgs
-        else "No recent messages."
-    )
+    messages = "\n".join([f"--- Message {m['filename']} ---\n{m['content']}" for m in recent_msgs]) if recent_msgs else "No recent messages."
 
-    # Directives (Formal Laws)
-    dir_list = infra.parse_directives(os.path.join(project_dir, ".jbot/directives"))
-    directives = (
-        "\n".join(
-            [f"--- Directive {d['filename']} ---\n{d['content']}" for d in dir_list]
-        )
-        if dir_list
-        else "No formal directives."
-    )
-
-    # Prompt Preparation
+    # Final Prompt Assembly
     replacements = {
         "{AGENT_NAME}": agent_name,
         "{AGENT_ROLE}": agent_role,
         "{AGENT_DESCRIPTION}": agent_desc,
         "{PROJECT_GOAL}": goal,
         "{DIRECTORY_TREE}": tree,
-        "{ADDITIONAL_CONTEXT}": env_context,
+        "{ADDITIONAL_CONTEXT}": realtime_context,
+        "{ENVIRONMENT_AUDIT}": env_audit,
         "{RAG_DATABASE_RESULTS}": rag_formatted,
         "{TASK_BOARD}": task_board,
         "{TEAM_REGISTRY}": team_registry,
         "{MESSAGES}": messages,
         "{DIRECTIVES}": directives,
-        "{HUMAN_INPUT}": human_input_block + "\n\n" + ideas_block,
+        "{HUMAN_INPUT}": f"{human_input}\n\n--- IDEAS ---\n{fresh_ideas}",
     }
 
     for k, v in replacements.items():
