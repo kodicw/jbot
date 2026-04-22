@@ -70,8 +70,17 @@ let
     )
   );
 
+  jbotPython = (
+    pkgs.python3.withPackages (ps: [
+      ps.jinja2
+      ps.pytest
+      ps.pytest-mock
+      ps.pytest-cov
+    ])
+  );
+
   jbot-cli = pkgs.writeShellScriptBin "jbot" ''
-    ${pkgs.python3}/bin/python3 ${./scripts}/jbot_cli.py "$@"
+    ${jbotPython}/bin/python3 ${./scripts}/jbot_cli.py "$@"
   '';
 
   corePackages = [
@@ -101,12 +110,7 @@ let
     pkgs.pandoc
     pkgs.nmap
     pkgs.w3m
-    (pkgs.python3.withPackages (ps: [
-      ps.jinja2
-      ps.pytest
-      ps.pytest-mock
-      ps.pytest-cov
-    ]))
+    jbotPython
   ];
 
   # Pick a representative project directory for maintenance if multiple exist
