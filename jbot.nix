@@ -247,6 +247,7 @@ in
                 export GEMINI_PACKAGE="${agent.geminiPackage}/bin/gemini"
 
                 # Pre-configure identity to bypass nb/git interactive setup
+                export NB_DIR="${config.home.homeDirectory}/.nb"
                 export GIT_AUTHOR_NAME="JBot (${name})"
                 export GIT_AUTHOR_EMAIL="jbot-${name}@internal.jbot"
                 export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
@@ -275,11 +276,20 @@ in
                   --bind "$PROJECT_DIR/.jbot/outbox" "$PROJECT_DIR/.jbot/outbox" \
                   --bind "${config.home.homeDirectory}/.gemini" "${config.home.homeDirectory}/.gemini" \
                   --bind-try "${config.home.homeDirectory}/.config/gh" "${config.home.homeDirectory}/.config/gh" \
+                  --bind "${config.home.homeDirectory}/.nb" "${config.home.homeDirectory}/.nb" \
                   --ro-bind-try "${config.home.homeDirectory}/.gitconfig" "${config.home.homeDirectory}/.gitconfig" \
                   --ro-bind-try "$HM_PROFILE" "$HM_PROFILE" \
                   --ro-bind "/run/user/$USER_ID/bus" "/run/user/$USER_ID/bus" \
                   --setenv HOME "${config.home.homeDirectory}" \
                   --setenv PATH "$PATH" \
+                  --setenv NB_DIR "$NB_DIR" \
+                  --setenv NB_USER_NAME "$NB_USER_NAME" \
+                  --setenv NB_USER_EMAIL "$NB_USER_EMAIL" \
+                  --setenv GIT_AUTHOR_NAME "$GIT_AUTHOR_NAME" \
+                  --setenv GIT_AUTHOR_EMAIL "$GIT_AUTHOR_EMAIL" \
+                  --setenv GIT_COMMITTER_NAME "$GIT_COMMITTER_NAME" \
+                  --setenv GIT_COMMITTER_EMAIL "$GIT_COMMITTER_EMAIL" \
+                  --setenv EDITOR "cat" \
                   --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=/run/user/$USER_ID/bus" \
                   --chdir "$PROJECT_DIR" \
                   --unshare-all \
