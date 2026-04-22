@@ -73,8 +73,9 @@ pkgs.runCommand "jbot-directive-expiration-test"
             export PROMPT_FILE="${jbot_prompt_txt}"
             export GEMINI_PACKAGE="gemini"
             export MEMORY_OUTPUT=".jbot/queues/dev.json"
+            export PYTHONPATH=$PYTHONPATH:${jbot-scripts}
 
-            python3 ${jbot-scripts}/jbot-agent.py
+            python3 ${jbot-scripts}/jbot-cli.py agent
 
             # Verifications
             echo "Verifying prompt content..."

@@ -53,7 +53,11 @@ pkgs.runCommand "jbot-multi-agent-unit-test"
     export GEMINI_PACKAGE="gemini"
     export MEMORY_OUTPUT=".jbot/queues/tester.json"
 
-    python3 ${jbot-scripts}/jbot-agent.py
+    # Run maintenance to consolidate memory from other agents (lead.json) into memory.log
+    export PYTHONPATH=$PYTHONPATH:${jbot-scripts}
+    python3 ${jbot-scripts}/jbot-cli.py maintenance
+
+    python3 ${jbot-scripts}/jbot-cli.py agent
 
     # Verifications
     if ! grep -q "\[lead\] Task 1 completed" .prompt_received; then

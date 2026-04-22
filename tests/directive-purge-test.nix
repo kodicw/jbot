@@ -1,6 +1,6 @@
 {
   pkgs,
-  jbot-purge-py,
+  jbot-cli-py,
   ...
 }:
 pkgs.runCommand "jbot-directive-purge-test"
@@ -14,6 +14,9 @@ pkgs.runCommand "jbot-directive-purge-test"
         export PROJECT_DIR=$TMPDIR/project
         mkdir -p $PROJECT_DIR
         cd $PROJECT_DIR
+
+        # Need .project_goal to identify project root
+        echo "Goal" > .project_goal
 
         mkdir -p .jbot/directives
         
@@ -40,8 +43,9 @@ pkgs.runCommand "jbot-directive-purge-test"
     Future content directive content
     EOF
 
-        # Run purge script
-        python3 ${jbot-purge-py}
+        # Run purge via CLI
+        export PYTHONPATH=$PYTHONPATH:${dirOf jbot-cli-py}
+        python3 ${jbot-cli-py} purge
 
         # Verifications
         echo "Verifying purged directives..."

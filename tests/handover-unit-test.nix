@@ -55,8 +55,9 @@ pkgs.runCommand "jbot-handover-unit-test"
     export PROMPT_FILE="${jbot_prompt_txt}"
     export GEMINI_PACKAGE="gemini"
     export MEMORY_OUTPUT=".jbot/queues/tester.json"
+    export PYTHONPATH=$PYTHONPATH:${jbot-scripts}
 
-    python3 ${jbot-scripts}/jbot-agent.py
+    python3 ${jbot-scripts}/jbot-cli.py agent
 
     # Verifications
     if ! grep -q "Implement new feature (Agent: lead) - Status: Done" .prompt_received; then

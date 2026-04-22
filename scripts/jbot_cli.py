@@ -3,9 +3,11 @@ import os
 import argparse
 import subprocess
 import jbot_utils as utils
+import jbot_rotation
 
 
-def get_status(project_dir):
+def get_status(project_dir: str) -> None:
+    """Displays the high-level project vision and active tasks status."""
     os.chdir(project_dir)
     goal_path = ".project_goal"
     tasks_path = "TASKS.md"
@@ -25,7 +27,8 @@ def get_status(project_dir):
     print(f"\n📈 Overall Progress: {tasks_data['done_count']} tasks completed.")
 
 
-def get_tasks(project_dir, show_all=False):
+def get_tasks(project_dir: str, show_all: bool = False) -> None:
+    """Lists tasks from the project task board."""
     os.chdir(project_dir)
     tasks_path = "TASKS.md"
     if not os.path.exists(tasks_path):
@@ -48,7 +51,8 @@ def get_tasks(project_dir, show_all=False):
             print(f.read().strip())
 
 
-def get_logs(project_dir, count=10):
+def get_logs(project_dir: str, count: int = 10) -> None:
+    """Displays recent agent activity logs from the memory log."""
     os.chdir(project_dir)
     log_path = ".jbot/memory.log"
     logs = utils.get_recent_logs(log_path, count)
@@ -66,7 +70,8 @@ def get_logs(project_dir, count=10):
         print(f"[{agent}] {summary}")
 
 
-def get_messages(project_dir, count=5):
+def get_messages(project_dir: str, count: int = 5) -> None:
+    """Displays recent inter-agent messages."""
     os.chdir(project_dir)
     msg_dir = ".jbot/messages"
     messages = utils.get_recent_messages(msg_dir, count)
@@ -87,7 +92,8 @@ def get_messages(project_dir, count=5):
         print(f"[{m['filename']}] {from_line} - {subject_line}")
 
 
-def handle_version(project_root, action, part=None):
+def handle_version(project_root: str, action: str, part: str = None) -> None:
+    """Handles version management and automated releases."""
     os.chdir(project_root)
     if action == "show":
         v = utils.get_version(project_root)
@@ -114,7 +120,6 @@ def handle_version(project_root, action, part=None):
             print("Error: Must specify version part (major, minor, patch) for release.")
             return
 
-        # Check for cleanliness
         if not utils.is_git_clean(project_root):
             print(
                 "Error: Git workspace is not clean. Please commit or stash changes before release."
@@ -127,18 +132,16 @@ def handle_version(project_root, action, part=None):
             print("Error: Failed to bump version.")
             return
 
-        # Update changelog
         if not utils.update_changelog(project_root, new_v):
             print("Warning: Failed to update CHANGELOG.md automatically.")
 
         tag_name = f"v{new_v}"
         try:
-            # Add and commit the version bump and changelog
             subprocess.run(["git", "add", "VERSION", "CHANGELOG.md"], check=True)
             subprocess.run(
-                ["git", "commit", "--no-verify", "-m", f"chore: release {tag_name}"], check=True
+                ["git", "commit", "--no-verify", "-m", f"chore: release {tag_name}"],
+                check=True,
             )
-            # Create the tag
             subprocess.run(
                 ["git", "tag", "-a", tag_name, "-m", f"Release {tag_name}"], check=True
             )
@@ -148,6 +151,7 @@ def handle_version(project_root, action, part=None):
 
 
 def main():
+    """JBot Centralized CLI Entry Point."""
     parser = argparse.ArgumentParser(description="JBot Centralized CLI Tool")
     parser.add_argument(
         "-d", "--dir", default=".", help="Project directory (default: .)"
@@ -155,15 +159,15 @@ def main():
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
+    # --- Status & Info ---
     subparsers.add_parser("status", help="Show current vision and high-level status")
 
-    # --- Task Commands ---
+    # --- Task Management ---
     task_parser = subparsers.add_parser("task", help="Manage tasks on the board")
     task_subparsers = task_parser.add_subparsers(
         dest="task_action", help="Task actions"
     )
 
-    # task list
     list_parser = task_subparsers.add_parser(
         "list", help="List active and backlog tasks"
     )
@@ -171,7 +175,6 @@ def main():
         "-a", "--all", action="store_true", help="Show all tasks including completed"
     )
 
-    # task add
     add_parser = task_subparsers.add_parser("add", help="Add a new task")
     add_parser.add_argument("text", help="Task description")
     add_parser.add_argument("-a", "--agent", help="Assign to specific agent")
@@ -179,7 +182,6 @@ def main():
         "-b", "--backlog", action="store_true", help="Add to backlog instead of active"
     )
 
-    # task update
     update_parser = task_subparsers.add_parser("update", help="Update an existing task")
     update_parser.add_argument("search", help="Search string to identify the task")
     update_parser.add_argument("-t", "--text", help="New task description")
@@ -188,11 +190,10 @@ def main():
         "-m", "--move", choices=["active", "backlog"], help="Move task to section"
     )
 
-    # task done
     done_parser = task_subparsers.add_parser("done", help="Mark a task as completed")
     done_parser.add_argument("search", help="Search string to identify the task")
 
-    # Keep old commands for compatibility
+    # --- Legacy Task Aliases ---
     old_tasks_parser = subparsers.add_parser("tasks", help="Alias for 'task list'")
     old_tasks_parser.add_argument(
         "-a", "--all", action="store_true", help="Show all tasks"
@@ -202,6 +203,7 @@ def main():
     old_add_task_parser.add_argument("text", help="Task description")
     old_add_task_parser.add_argument("-a", "--agent", help="Assign to specific agent")
 
+    # --- Logs & Messages ---
     log_parser = subparsers.add_parser("logs", help="Show recent agent activity logs")
     log_parser.add_argument(
         "-n", "--count", type=int, default=10, help="Number of entries to show"
@@ -212,7 +214,6 @@ def main():
         "-n", "--count", type=int, default=5, help="Number of messages to show"
     )
 
-    # --- Message Send Command ---
     send_msg_parser = subparsers.add_parser(
         "send-message", help="Send a message to all agents"
     )
@@ -224,7 +225,7 @@ def main():
     )
     send_msg_parser.add_argument("-m", "--message", required=True, help="Message body")
 
-    # --- Infrastructure Commands ---
+    # --- Infrastructure & Maintenance ---
     subparsers.add_parser(
         "maintenance", help="Run automated infrastructure maintenance"
     )
@@ -253,6 +254,15 @@ def main():
 
     subparsers.add_parser("dashboard", help="Manually regenerate the JBot dashboard")
 
+    # --- Agent Execution ---
+    agent_parser = subparsers.add_parser("agent", help="Run a JBot agent")
+    agent_parser.add_argument("--name", help="Agent name")
+    agent_parser.add_argument("--role", help="Agent role")
+    agent_parser.add_argument("--desc", help="Agent description")
+    agent_parser.add_argument("--prompt", help="Path to prompt file")
+    agent_parser.add_argument("--gemini", help="Path to gemini package")
+
+    # --- Versioning ---
     version_parser = subparsers.add_parser(
         "version", help="Manage JBot versioning and releases"
     )
@@ -279,10 +289,11 @@ def main():
 
     args = parser.parse_args()
 
-    # Find project root if not specified
+    # Context Resolution
     project_root = utils.get_project_root(args.dir)
     tasks_md_path = os.path.join(project_root, "TASKS.md")
 
+    # Execution Dispatch
     if args.command == "status":
         get_status(project_root)
     elif args.command == "task":
@@ -318,14 +329,14 @@ def main():
     elif args.command == "maintenance":
         utils.run_maintenance(project_root)
     elif args.command == "purge":
-        count = utils.purge_directives(
+        count = jbot_rotation.purge_directives(
             os.path.join(project_root, ".jbot/directives"),
             os.path.join(project_root, ".jbot/directives/archive"),
         )
         print(f"Purged {count} expired directives.")
     elif args.command == "rotate":
         if args.rotate_target == "memory":
-            if utils.rotate_memory(
+            if jbot_rotation.rotate_memory(
                 os.path.join(project_root, ".jbot/memory.log"),
                 os.path.join(project_root, ".jbot/memory.log.archive"),
                 args.limit,
@@ -334,7 +345,7 @@ def main():
             else:
                 print("Memory log rotation not needed or failed.")
         elif args.rotate_target == "tasks":
-            if utils.rotate_tasks(
+            if jbot_rotation.rotate_tasks(
                 os.path.join(project_root, "TASKS.md"),
                 os.path.join(project_root, "TASKS.archive.md"),
                 args.limit,
@@ -343,7 +354,7 @@ def main():
             else:
                 print("Task rotation not needed or failed.")
         elif args.rotate_target == "messages":
-            if utils.rotate_messages(
+            if jbot_rotation.rotate_messages(
                 os.path.join(project_root, ".jbot/messages"),
                 os.path.join(project_root, ".jbot/messages/archive"),
                 args.limit,
@@ -356,6 +367,15 @@ def main():
     elif args.command == "dashboard":
         if utils.generate_dashboard(project_dir=project_root):
             print("Dashboard regenerated.")
+    elif args.command == "agent":
+        utils.run_agent(
+            name=args.name,
+            role=args.role,
+            description=args.desc,
+            project_dir=project_root,
+            prompt_file=args.prompt,
+            gemini_pkg=args.gemini,
+        )
     elif args.command == "version":
         handle_version(project_root, args.action, getattr(args, "part", None))
     else:

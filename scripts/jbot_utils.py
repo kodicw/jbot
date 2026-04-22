@@ -2,17 +2,22 @@ import os
 import json
 import re
 import subprocess
+import sys
 from datetime import datetime
+import jbot_rotation
+
+
+from typing import List, Dict, Any, Optional
 
 
 # --- Logging ---
-def log(msg, component="JBot"):
+def log(msg: str, component: str = "JBot") -> None:
     """Standardized logging format for all JBot scripts."""
     print(f"[{datetime.now()}] {component}: {msg}")
 
 
 # --- Paths & Files ---
-def find_file_upwards(filename, start_dir="."):
+def find_file_upwards(filename: str, start_dir: str = ".") -> Optional[str]:
     """Search for a file in the current directory and its parents."""
     current = os.path.abspath(start_dir)
     while True:
@@ -26,7 +31,7 @@ def find_file_upwards(filename, start_dir="."):
     return None
 
 
-def get_project_root(start_dir="."):
+def get_project_root(start_dir: str = ".") -> str:
     """Find the project root by looking for .project_goal."""
     goal_path = find_file_upwards(".project_goal", start_dir)
     if goal_path:
@@ -34,7 +39,7 @@ def get_project_root(start_dir="."):
     return os.path.abspath(start_dir)
 
 
-def load_json(file_path, default=None):
+def load_json(file_path: str, default: Any = None) -> Any:
     """Safely load a JSON file."""
     if not os.path.exists(file_path):
         return default if default is not None else {}
@@ -46,7 +51,7 @@ def load_json(file_path, default=None):
         return default if default is not None else {}
 
 
-def save_json(file_path, data):
+def save_json(file_path: str, data: Any) -> None:
     """Safely save a JSON file, ensuring the directory exists."""
     try:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -56,7 +61,7 @@ def save_json(file_path, data):
         log(f"Error saving JSON to {file_path}: {e}", "Utils")
 
 
-def read_file(file_path, default=""):
+def read_file(file_path: str, default: str = "") -> str:
     """Safely read a file's content."""
     if not os.path.exists(file_path):
         return default
@@ -68,7 +73,7 @@ def read_file(file_path, default=""):
         return default
 
 
-def write_file(file_path, content):
+def write_file(file_path: str, content: str) -> bool:
     """Safely write content to a file, ensuring the directory exists."""
     try:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -81,7 +86,7 @@ def write_file(file_path, content):
 
 
 # --- Git ---
-def is_git_clean(project_dir="."):
+def is_git_clean(project_dir: str = ".") -> bool:
     """Check if the git workspace is clean."""
     try:
         result = subprocess.run(
@@ -97,13 +102,13 @@ def is_git_clean(project_dir="."):
 
 
 # --- Versioning ---
-def get_version(project_dir="."):
+def get_version(project_dir: str = ".") -> str:
     """Retrieve the current version from the VERSION file."""
     version_path = os.path.join(project_dir, "VERSION")
     return read_file(version_path, default="0.0.0")
 
 
-def bump_version(project_dir=".", part="patch"):
+def bump_version(project_dir: str = ".", part: str = "patch") -> Optional[str]:
     """Increment the version (major, minor, patch)."""
     current_version = get_version(project_dir)
     try:
@@ -133,7 +138,7 @@ def bump_version(project_dir=".", part="patch"):
     return None
 
 
-def update_changelog(project_dir, new_version):
+def update_changelog(project_dir: str, new_version: str) -> bool:
     """
     Updates CHANGELOG.md by moving content from the [Unreleased] section
     to a new versioned section.
@@ -179,7 +184,6 @@ def update_changelog(project_dir, new_version):
     )
     if not has_changes:
         log("No meaningful changes found in [Unreleased] section.", "Utils")
-        # We still proceed to create the version header, as bump was requested.
 
     # Reconstruct the changelog with a new empty [Unreleased] section
     # and the new versioned section containing the extracted content.
@@ -197,7 +201,7 @@ def update_changelog(project_dir, new_version):
 
 
 # --- Tasks ---
-def parse_tasks(tasks_path):
+def parse_tasks(tasks_path: str) -> Dict[str, Any]:
     """Parses TASKS.md into sections and extracted data."""
     data = {
         "active": [],
@@ -244,7 +248,9 @@ def parse_tasks(tasks_path):
     return data
 
 
-def add_task(tasks_path, task_text, agent=None, backlog=False):
+def add_task(
+    tasks_path: str, task_text: str, agent: Optional[str] = None, backlog: bool = False
+) -> bool:
     """Adds a new task to TASKS.md."""
     if not os.path.exists(tasks_path):
         log(f"Tasks file {tasks_path} not found.", "Utils")
@@ -277,7 +283,13 @@ def add_task(tasks_path, task_text, agent=None, backlog=False):
     return True
 
 
-def update_task(tasks_path, task_text_search, new_text=None, agent=None, move_to=None):
+def update_task(
+    tasks_path: str,
+    task_text_search: str,
+    new_text: Optional[str] = None,
+    agent: Optional[str] = None,
+    move_to: Optional[str] = None,
+) -> bool:
     """Updates a task in TASKS.md."""
     if not os.path.exists(tasks_path):
         log(f"Tasks file {tasks_path} not found.", "Utils")
@@ -301,16 +313,13 @@ def update_task(tasks_path, task_text_search, new_text=None, agent=None, move_to
 
     # Parse current task line
     current_line = lines[task_line_index]
-    # Extract text from **...** or just after - [ ]
     match = re.search(r"\*\*([^*]+)\*\*", current_line)
     if match:
         text = match.group(1)
     else:
-        # Match text between "- [ ]" and either "(Agent:" or end of line
         text_match = re.search(r"- \[ \]\s*(.*?)(?:\s*\(Agent:|\s*$)", current_line)
         text = text_match.group(1).strip() if text_match else task_text_search
 
-    # Extract agent from (Agent: ...)
     agent_match = re.search(r"\(Agent:\s*([^)]+)\)", current_line)
     current_agent = agent_match.group(1) if agent_match else None
 
@@ -324,7 +333,6 @@ def update_task(tasks_path, task_text_search, new_text=None, agent=None, move_to
     new_task_line += "\n"
 
     if move_to:
-        # Remove from current position and move to target section
         lines.pop(task_line_index)
         target_header = "## Active Tasks" if move_to == "active" else "## Backlog"
         added = False
@@ -337,7 +345,6 @@ def update_task(tasks_path, task_text_search, new_text=None, agent=None, move_to
             new_lines.append(f"\n{target_header}\n")
             new_lines.append(new_task_line)
     else:
-        # Just replace the line
         lines[task_line_index] = new_task_line
         new_lines = lines
 
@@ -346,7 +353,7 @@ def update_task(tasks_path, task_text_search, new_text=None, agent=None, move_to
     return True
 
 
-def complete_task(tasks_path, task_text_search):
+def complete_task(tasks_path: str, task_text_search: str) -> bool:
     """Marks a task as completed and moves it to the Completed Tasks section."""
     if not os.path.exists(tasks_path):
         log(f"Tasks file {tasks_path} not found.", "Utils")
@@ -386,14 +393,16 @@ def complete_task(tasks_path, task_text_search):
 
 
 # --- Team & Registry ---
-def get_team_registry(project_dir="."):
+def get_team_registry(project_dir: str = ".") -> Dict[str, Any]:
     """Load the team registry from .jbot/agents.json."""
     agents_path = os.path.join(project_dir, ".jbot/agents.json")
     return load_json(agents_path, default={})
 
 
 # --- Messages ---
-def get_recent_messages(msgs_dir, count=5, include_human=False):
+def get_recent_messages(
+    msgs_dir: str, count: int = 5, include_human: bool = False
+) -> List[Dict[str, str]]:
     """Retrieve the most recent messages from the messages directory."""
     if not os.path.exists(msgs_dir):
         return []
@@ -418,7 +427,7 @@ def get_recent_messages(msgs_dir, count=5, include_human=False):
 
 
 # --- Memory & Logs ---
-def get_recent_logs(log_path, count=10):
+def get_recent_logs(log_path: str, count: int = 10) -> List[Dict[str, Any]]:
     """Retrieve recent entries from the memory log."""
     if not os.path.exists(log_path):
         return []
@@ -440,7 +449,7 @@ def get_recent_logs(log_path, count=10):
 
 
 # --- Directives ---
-def parse_directives(dir_path):
+def parse_directives(dir_path: str) -> List[Dict[str, str]]:
     """Parse directives and filter out expired ones."""
     if not os.path.exists(dir_path):
         return []
@@ -461,7 +470,6 @@ def parse_directives(dir_path):
             with open(os.path.join(dir_path, df), "r") as f:
                 content = f.read()
 
-                # Check expiration in content or filename
                 is_expired = False
                 content_exp_match = re.search(
                     r"Expiration:\s*(\d{4}-\d{2}-\d{2})", content, re.IGNORECASE
@@ -482,270 +490,35 @@ def parse_directives(dir_path):
     return valid_directives
 
 
-def purge_directives(dir_path, archive_path):
-    """Archives expired directives from dir_path to archive_path."""
-    if not os.path.exists(dir_path):
-        log(f"Error: Directive directory {dir_path} not found.", "Purge")
-        return 0
-
-    os.makedirs(archive_path, exist_ok=True)
-
-    today = datetime.now().strftime("%Y-%m-%d")
-    purged_count = 0
-
-    dir_files = [
-        f
-        for f in os.listdir(dir_path)
-        if f.endswith((".txt", ".md")) and f != "README.md"
-    ]
-
-    import shutil
-
-    for df in dir_files:
-        is_expired = False
-        df_path = os.path.join(dir_path, df)
-
-        if os.path.isdir(df_path):
-            continue
-
-        # Try to find a date (YYYY-MM-DD) in the filename
-        date_match = re.search(r"(\d{4}-\d{2}-\d{2})", df)
-        exp_date_from_filename = date_match.group(1) if date_match else None
-
-        try:
-            directive_content = read_file(df_path)
-            if not directive_content:
-                continue
-
-            # Check for explicit expiration in content: "Expiration: YYYY-MM-DD"
-            content_exp_match = re.search(
-                r"Expiration:\s*(\d{4}-\d{2}-\d{2})",
-                directive_content,
-                re.IGNORECASE,
-            )
-            if content_exp_match:
-                exp_date = content_exp_match.group(1)
-                if today > exp_date:
-                    is_expired = True
-                    log(
-                        f"Directive {df} has expired (from content: {exp_date}).",
-                        "Purge",
-                    )
-            elif exp_date_from_filename:
-                if today > exp_date_from_filename:
-                    is_expired = True
-                    log(
-                        f"Directive {df} has expired (from filename: {exp_date_from_filename}).",
-                        "Purge",
-                    )
-
-            if is_expired:
-                dest_path = os.path.join(archive_path, df)
-                if os.path.exists(dest_path):
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    name, ext = os.path.splitext(df)
-                    dest_path = os.path.join(archive_path, f"{name}_{timestamp}{ext}")
-
-                shutil.move(df_path, dest_path)
-                log(
-                    f"Archived expired directive: {df} -> {os.path.basename(dest_path)}",
-                    "Purge",
-                )
-                purged_count += 1
-
-        except Exception as e:
-            log(f"Error processing directive {df}: {e}", "Purge")
-
-    return purged_count
-
-
-def rotate_memory(memory_log, archive_log, limit=100):
-    """Rotates the memory log, moving older entries to archive."""
-    if not os.path.exists(memory_log):
-        log(f"Memory log {memory_log} not found. Skipping rotation.", "Rotate")
-        return False
-
-    try:
-        with open(memory_log, "r") as f:
-            lines = f.readlines()
-
-        if len(lines) <= limit:
-            return False
-
-        # Split lines
-        to_keep = lines[-limit:]
-        to_archive = lines[:-limit]
-
-        log(
-            f"Rotating memory: Keeping {len(to_keep)} entries, Archiving {len(to_archive)} entries.",
-            "Rotate",
-        )
-
-        # Append to archive
-        with open(archive_log, "a") as f:
-            f.writelines(to_archive)
-
-        # Rewrite memory log
-        with open(memory_log, "w") as f:
-            f.writelines(to_keep)
-
-        return True
-    except Exception as e:
-        log(f"Error rotating memory log: {e}", "Rotate")
-        return False
-
-
-def rotate_tasks(tasks_file="TASKS.md", archive_file="TASKS.archive.md", limit=20):
-    """Rotates the task board, moving completed tasks to archive."""
-    if not os.path.exists(tasks_file):
-        log(f"Tasks file {tasks_file} not found.", "Rotate")
-        return False
-
-    try:
-        tasks_data = parse_tasks(tasks_file)
-        sections = tasks_data["sections"]
-
-        # Ensure headers exist
-        if not sections["vision"]:
-            sections["vision"] = ["## Strategic Vision (CEO)\n"]
-        if not sections["active"]:
-            sections["active"] = ["## Active Tasks\n"]
-        if not sections["backlog"]:
-            sections["backlog"] = ["## Backlog\n"]
-        if not sections["completed"]:
-            sections["completed"] = ["## Completed Tasks\n"]
-
-        new_active = [sections["active"][0]]
-        new_backlog = [sections["backlog"][0]]
-        newly_completed = []
-
-        for line in sections["active"][1:]:
-            if "[x]" in line:
-                newly_completed.append(line)
-            elif line.strip() in ("", "..."):
-                continue
-            else:
-                new_active.append(line)
-
-        for line in sections["backlog"][1:]:
-            if "[x]" in line:
-                newly_completed.append(line)
-            elif line.strip() in ("", "..."):
-                continue
-            else:
-                new_backlog.append(line)
-
-        current_completed = [
-            line for line in sections["completed"][1:] if line.strip() != "..."
-        ]
-        all_completed = current_completed + newly_completed
-
-        to_keep = all_completed
-        to_archive = []
-
-        if len(all_completed) > limit:
-            to_keep = all_completed[-limit:]
-            to_archive = all_completed[:-limit]
-            log(f"Archiving {len(to_archive)} completed tasks.", "Rotate")
-
-        if to_archive:
-            if not os.path.exists(archive_file) or os.path.getsize(archive_file) == 0:
-                write_file(archive_file, "# JBot Task Archive\n\n")
-            with open(archive_file, "a") as f:
-                f.write(
-                    f"## Archived on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                )
-                f.writelines(to_archive)
-                f.write("\n")
-
-        with open(tasks_file, "w") as f:
-            f.writelines(
-                sections["header"] if sections["header"] else ["# JBot Task Board\n\n"]
-            )
-            f.writelines(sections["vision"])
-            f.write("\n")
-            f.writelines(new_active)
-            if not new_active[-1].endswith("\n"):
-                f.write("\n")
-            f.write("\n")
-            f.writelines(new_backlog)
-            if not new_backlog[-1].endswith("\n"):
-                f.write("\n")
-            f.write("\n")
-            f.writelines(sections["completed"][:1])
-            f.writelines(to_keep)
-
-        return True
-    except Exception as e:
-        log(f"Error rotating tasks: {e}", "Rotate")
-        return False
-
-
-def rotate_messages(msg_dir, archive_dir, limit=50):
-    """Archives older messages from msg_dir to archive_dir."""
-    if not os.path.exists(msg_dir):
-        log(f"Message directory {msg_dir} not found.", "Rotate")
-        return False
-
-    os.makedirs(archive_dir, exist_ok=True)
-
-    msg_files = sorted(
-        [
-            f
-            for f in os.listdir(msg_dir)
-            if os.path.isfile(os.path.join(msg_dir, f)) and f != "human.txt"
-        ]
-    )
-
-    if len(msg_files) <= limit:
-        return False
-
-    to_archive = msg_files[:-limit]
-    log(f"Archiving {len(to_archive)} messages.", "Rotate")
-
-    import shutil
-
-    for mf in to_archive:
-        shutil.move(os.path.join(msg_dir, mf), os.path.join(archive_dir, mf))
-
-    return True
-
-
-def generate_dashboard(output_file="INDEX.md", project_dir="."):
+def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") -> bool:
     """Generates a markdown dashboard summarizing the project status."""
     dashboard_content = "# JBot Dashboard\n\n"
     dashboard_content += (
         f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
     )
 
-    # Find core files upwards
     goal_path = find_file_upwards(".project_goal", project_dir)
     tasks_path = find_file_upwards("TASKS.md", project_dir)
     changelog_path = find_file_upwards("CHANGELOG.md", project_dir)
 
-    # 1. Company Vision
     dashboard_content += "## 🎯 Company Vision\n"
     if goal_path and os.path.exists(goal_path):
-        with open(goal_path, "r") as f:
-            dashboard_content += f"> {f.read().strip()}\n\n"
+        dashboard_content += f"> {read_file(goal_path)}\n\n"
     else:
         dashboard_content += "No current vision defined.\n\n"
 
-    # 2. Team Roster
     dashboard_content += "## 👥 Team Roster\n"
     agents = get_team_registry(project_dir)
     if agents:
-        dashboard_content += "| Agent | Role | Description |\n"
-        dashboard_content += "|-------|------|-------------|\n"
+        dashboard_content += (
+            "| Agent | Role | Description |\n|-------|------|-------------|\n"
+        )
         for name, info in agents.items():
             dashboard_content += (
                 f"| {name} | {info.get('role')} | {info.get('description')} |\n"
             )
         dashboard_content += "\n"
-    else:
-        dashboard_content += "No team registry found.\n\n"
 
-    # 3. Active Tasks
     dashboard_content += "## 🚀 Active Tasks\n"
     tasks_data = (
         parse_tasks(tasks_path) if tasks_path else {"active": [], "done_count": 0}
@@ -754,124 +527,343 @@ def generate_dashboard(output_file="INDEX.md", project_dir="."):
         for task in tasks_data["active"][:10]:
             dashboard_content += f"{task}\n"
         dashboard_content += "\n"
-    else:
-        dashboard_content += "No active tasks.\n\n"
 
-    # 4. Status & Progress
     dashboard_content += "## 📈 Status & Progress\n"
-
-    # Milestone count from changelog
     milestone_count = 0
     if changelog_path and os.path.exists(changelog_path):
         with open(changelog_path, "r") as f:
-            for line in f:
-                if line.strip().startswith("- **"):
-                    milestone_count += 1
+            milestone_count = sum(1 for line in f if line.strip().startswith("- **"))
 
     dashboard_content += f"- **Tasks Completed:** {tasks_data['done_count']}\n"
     dashboard_content += f"- **Milestones Achieved:** {milestone_count}\n\n"
 
-    # 5. Recent Milestones
     dashboard_content += "## 🏆 Recent Milestones\n"
     if changelog_path and os.path.exists(changelog_path):
         with open(changelog_path, "r") as f:
-            lines = f.readlines()
-            milestones = [
-                line.strip() for line in lines if line.strip().startswith("- **")
-            ]
+            milestones = [line.strip() for line in f if line.strip().startswith("- **")]
             for m in milestones[:5]:
                 dashboard_content += f"{m}\n"
             dashboard_content += "\n"
-    else:
-        dashboard_content += "No changelog found.\n\n"
 
     with open(os.path.join(project_dir, output_file), "w") as f:
         f.write(dashboard_content)
-
-    log(f"Dashboard generated successfully: {output_file}", "Dashboard")
     return True
 
 
-def send_message(to_dir, agent_name, body, subject="No Subject"):
-    """Sends a message to the specified project directory."""
-    msgs_dir = os.path.join(to_dir, ".jbot", "messages")
-    if not os.path.exists(msgs_dir):
-        log(f"Error: Messages directory {msgs_dir} not found.", "Messaging")
-        return False
+def send_message(
+    to_dir: str, agent_name: str, body: str, subject: str = "No Subject"
+) -> bool:
+    """
+    Sends a message. In the stateless model, messages are written to '.jbot/outbox'
+    and consolidated by the maintenance service to avoid cross-agent state corruption.
+    """
+    outbox_dir = os.path.join(to_dir, ".jbot", "outbox")
+    # In sandbox, outbox should already be initialized and bind-mounted as writeable.
+    if not os.path.exists(outbox_dir):
+        os.makedirs(outbox_dir, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"{timestamp}_{agent_name}.txt"
-    file_path = os.path.join(msgs_dir, filename)
+    # Using microsecond for extra uniqueness in case of rapid sends
+    microsecond = datetime.now().strftime("%f")
+    filename = f"{timestamp}_{microsecond}_{agent_name}.txt"
+    file_path = os.path.join(outbox_dir, filename)
 
     message_content = f"To: all\nFrom: {agent_name}\nSubject: {subject}\n\n{body}\n"
-
-    try:
-        with open(file_path, "w") as f:
-            f.write(message_content)
-        log(f"Message sent: {filename}", "Messaging")
-        return True
-    except Exception as e:
-        log(f"Error sending message: {e}", "Messaging")
-        return False
+    return write_file(file_path, message_content)
 
 
-def run_maintenance(project_dir):
-    """Performs all automated infrastructure maintenance tasks."""
-    log("Starting infrastructure maintenance...", "Maintenance")
-
-    # 0. Infrastructure Initialization
-    for d in [
+def initialize_infrastructure(project_dir: str) -> None:
+    """Ensures all required JBot infrastructure directories exist."""
+    infra_dirs = [
         ".jbot/queues",
         ".jbot/messages",
         ".jbot/directives",
+        ".jbot/outbox",
         ".jbot/messages/archive",
         ".jbot/directives/archive",
-    ]:
-        dir_path = os.path.join(project_dir, d)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path, exist_ok=True)
-            log(f"Initialized directory: {d}", "Maintenance")
+    ]
+    for d in infra_dirs:
+        os.makedirs(os.path.join(project_dir, d), exist_ok=True)
 
-    # 1. Memory Consolidation
+
+def consolidate_messages(project_dir: str) -> None:
+    """Moves messages from agent outboxes to the centralized message directory."""
+    import shutil
+
+    outbox_dir = os.path.join(project_dir, ".jbot/outbox")
+    messages_dir = os.path.join(project_dir, ".jbot/messages")
+
+    if not os.path.exists(outbox_dir):
+        return
+
+    for msg_file in os.listdir(outbox_dir):
+        if msg_file.endswith(".txt"):
+            try:
+                shutil.move(
+                    os.path.join(outbox_dir, msg_file),
+                    os.path.join(messages_dir, msg_file),
+                )
+                log(f"Consolidated message: {msg_file}", "Maintenance")
+            except Exception as e:
+                log(f"Error consolidating message {msg_file}: {e}", "Maintenance")
+
+
+def consolidate_memory(project_dir: str) -> None:
+    """Aggregates agent memory queues into the central memory log."""
     queues_dir = os.path.join(project_dir, ".jbot/queues")
     memory_log = os.path.join(project_dir, ".jbot/memory.log")
-    if os.path.exists(queues_dir):
-        for q_file in os.listdir(queues_dir):
-            if q_file.endswith(".json"):
-                q_path = os.path.join(queues_dir, q_file)
-                agent_name = q_file[:-5]
-                log(f"Consolidating memory from {agent_name}...", "Maintenance")
-                try:
-                    content = load_json(q_path)
-                    with open(memory_log, "a") as f:
-                        f.write(
-                            json.dumps(
-                                {
-                                    "agent": agent_name,
-                                    "content": content,
-                                    "timestamp": datetime.now().isoformat(),
-                                }
-                            )
-                            + "\n"
+
+    if not os.path.exists(queues_dir):
+        return
+
+    for q_file in os.listdir(queues_dir):
+        if q_file.endswith(".json"):
+            q_path = os.path.join(queues_dir, q_file)
+            agent_name = q_file[:-5]
+            try:
+                content = load_json(q_path)
+                with open(memory_log, "a") as f:
+                    f.write(
+                        json.dumps(
+                            {
+                                "agent": agent_name,
+                                "content": content,
+                                "timestamp": datetime.now().isoformat(),
+                            }
                         )
-                    os.remove(q_path)
-                except Exception as e:
-                    log(f"Error consolidating {q_path}: {e}", "Maintenance")
+                        + "\n"
+                    )
+                os.remove(q_path)
+                log(f"Consolidated memory for {agent_name}", "Maintenance")
+            except Exception as e:
+                log(f"Error consolidating memory for {agent_name}: {e}", "Maintenance")
 
-    # 2. Automated Purging
-    purge_directives(
-        os.path.join(project_dir, ".jbot/directives"),
-        os.path.join(project_dir, ".jbot/directives/archive"),
+
+def run_maintenance(project_dir: str) -> bool:
+    """
+    Performs all automated infrastructure maintenance tasks.
+    This is the central authority for infrastructure state changes.
+    """
+    log("Starting infrastructure maintenance...", "Maintenance")
+
+    try:
+        initialize_infrastructure(project_dir)
+        consolidate_messages(project_dir)
+        consolidate_memory(project_dir)
+        jbot_rotation.perform_rotations(project_dir)
+        generate_dashboard(project_dir=project_dir)
+        log("Maintenance complete.", "Maintenance")
+        return True
+    except Exception as e:
+        log(f"Maintenance failed: {e}", "Maintenance")
+        return False
+
+
+# --- Agent Execution ---
+def assemble_context(
+    agent_name: str,
+    agent_role: str,
+    agent_desc: str,
+    project_dir: str,
+    prompt_file: str,
+) -> str:
+    """
+    Assembles the full context for the agent by reading various infrastructure files.
+    """
+    # Find key project files
+    tasks_path = find_file_upwards("TASKS.md", project_dir) or "TASKS.md"
+    goal_path = find_file_upwards(".project_goal", project_dir) or ".project_goal"
+
+    # Directory Tree (Git-aware)
+    if os.path.exists(os.path.join(project_dir, ".git")):
+        try:
+            tree = subprocess.check_output(
+                ["git", "-C", project_dir, "ls-files"], text=True
+            ).strip()
+            lines = tree.split("\n")
+            if len(lines) > 50:
+                tree = "\n".join(lines[:50]) + "\n... (truncated)"
+        except Exception:
+            tree = "Error running git ls-files"
+    else:
+        tree_cmd = [
+            "find",
+            project_dir,
+            "-maxdepth",
+            "2",
+            "-not",
+            "-path",
+            "*/.*",
+            "-not",
+            "-path",
+            "*/__pycache__*",
+            "-not",
+            "-path",
+            "*/tests*",
+        ]
+        try:
+            tree = subprocess.check_output(tree_cmd, text=True).strip()
+        except Exception:
+            tree = "Error generating directory tree"
+
+    goal = read_file(goal_path, "Maintain and improve the JBot project infrastructure.")
+
+    # Memory / RAG (Shared History)
+    logs = get_recent_logs(os.path.join(project_dir, ".jbot/memory.log"), 10)
+    rag_entries = []
+    seen_summaries = set()
+    for entry in logs:
+        agent = entry.get("agent")
+        summary = entry.get("content", {}).get("summary", "").strip()
+        if summary and summary not in seen_summaries:
+            rag_entries.append(f"[{agent}] {summary}")
+            seen_summaries.add(summary)
+    rag_entries.reverse()
+    rag_formatted = (
+        "\n".join(rag_entries) if rag_entries else "No previous memory found."
     )
 
-    # 3. Automated Rotation
-    rotate_memory(
-        os.path.join(project_dir, ".jbot/memory.log"),
-        os.path.join(project_dir, ".jbot/memory.log.archive"),
+    task_board = read_file(
+        tasks_path,
+        f"No Task Board found at {tasks_path}. Please initialize it if needed.",
     )
 
-    # 4. Dashboard Generation
-    generate_dashboard(project_dir=project_dir)
+    # Team Registry
+    agents = get_team_registry(project_dir)
+    registry_lines = [
+        f"- {name}: {info.get('role')} ({info.get('description')})"
+        for name, info in agents.items()
+        if name != agent_name
+    ]
+    team_registry = (
+        "\n".join(registry_lines)
+        if registry_lines
+        else "No other agents in visibility."
+    )
 
-    log("Maintenance complete.", "Maintenance")
-    return True
+    # Messages (Agent-to-Agent)
+    msgs_dir = os.path.join(project_dir, ".jbot/messages")
+    human_input = "No direct human feedback for this cycle."
+    human_file = os.path.join(msgs_dir, "human.txt")
+    if os.path.exists(human_file):
+        human_input = f"--- HUMAN FEEDBACK/DIRECTIVE ---\n{read_file(human_file)}\n--- END HUMAN FEEDBACK ---"
+        log("Injected human feedback from human.txt", agent_name)
+
+    recent_msgs = get_recent_messages(msgs_dir, 5)
+    messages = (
+        "\n".join(
+            [f"--- Message {m['filename']} ---\n{m['content']}" for m in recent_msgs]
+        )
+        if recent_msgs
+        else "No recent messages."
+    )
+
+    # Directives (Formal Laws)
+    dir_list = parse_directives(os.path.join(project_dir, ".jbot/directives"))
+    directives = (
+        "\n".join(
+            [f"--- Directive {d['filename']} ---\n{d['content']}" for d in dir_list]
+        )
+        if dir_list
+        else "No formal directives."
+    )
+
+    # Prompt Preparation
+    prompt_content = read_file(prompt_file)
+    replacements = {
+        "{AGENT_NAME}": agent_name,
+        "{AGENT_ROLE}": agent_role,
+        "{AGENT_DESCRIPTION}": agent_desc,
+        "{PROJECT_GOAL}": goal,
+        "{DIRECTORY_TREE}": tree,
+        "{RAG_DATABASE_RESULTS}": rag_formatted,
+        "{TASK_BOARD}": task_board,
+        "{TEAM_REGISTRY}": team_registry,
+        "{MESSAGES}": messages,
+        "{DIRECTIVES}": directives,
+        "{HUMAN_INPUT}": human_input,
+    }
+
+    for k, v in replacements.items():
+        prompt_content = prompt_content.replace(k, str(v))
+
+    return prompt_content
+
+
+def run_agent(
+    name: str = None,
+    role: str = None,
+    description: str = None,
+    project_dir: str = None,
+    prompt_file: str = None,
+    gemini_pkg: str = "gemini",
+) -> None:
+    """Main execution logic for a JBot Agent (Stateless)."""
+    # Fallback to environment variables if parameters not provided
+    name = name or os.environ.get("AGENT_NAME")
+    role = role or os.environ.get("AGENT_ROLE")
+    description = description or os.environ.get("AGENT_DESCRIPTION")
+    project_dir = project_dir or os.environ.get("PROJECT_DIR")
+    prompt_file = prompt_file or os.environ.get("PROMPT_FILE")
+    gemini_pkg = gemini_pkg or os.environ.get("GEMINI_PACKAGE", "gemini")
+
+    if not all([name, role, project_dir, prompt_file]):
+        print(
+            f"Error: Missing required parameters or environment variables for agent {name or 'unknown'}."
+        )
+        sys.exit(1)
+
+    os.chdir(project_dir)
+    log(f"Starting stateless execution loop as {role}...", name)
+
+    # Verify write access to outbox and queues (Stateless Mandate)
+    queues_dir = ".jbot/queues"
+    outbox_dir = ".jbot/outbox"
+    for d in [queues_dir, outbox_dir]:
+        if not os.access(d, os.W_OK):
+            log(
+                f"WARNING: Directory {d} is NOT writable. Agent state may not be persisted.",
+                name,
+            )
+
+    # Assemble context
+    prompt_content = assemble_context(name, role, description, project_dir, prompt_file)
+
+    # Set up memory output for gemini (Redirects agent memory to a queue file)
+    os.environ["MEMORY_OUTPUT"] = f"{queues_dir}/{name}.json"
+
+    log("Invoking Gemini CLI...", name)
+
+    # Execution (Gemini CLI runs in the background and writes its memory to MEMORY_OUTPUT)
+    try:
+        process = subprocess.Popen(
+            [gemini_pkg, "-y", "-d", "-p", prompt_content],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        for line in process.stdout:
+            print(line, end="", flush=True)
+        process.wait()
+
+        if process.returncode != 0:
+            log(
+                f"Error: Gemini CLI failed with exit code {process.returncode}",
+                name,
+            )
+            sys.exit(process.returncode)
+
+        # Final Verification (Verification of Agent's Output)
+        pre_commit_script = os.path.join(project_dir, ".githooks/pre-commit")
+        if os.path.exists(pre_commit_script):
+            try:
+                log("Running final output verification...", name)
+                subprocess.run(["bash", pre_commit_script], check=True)
+            except Exception as e:
+                log(f"WARNING: Verification failed: {e}", name)
+
+    except Exception as e:
+        log(f"Error: Execution failed: {e}", name)
+        sys.exit(1)
+
+    log("Stateless execution loop finished.", name)

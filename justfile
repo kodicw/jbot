@@ -23,7 +23,7 @@ prune:
 
 # Run the exhaustive test suite
 test:
-    nix flake check --no-build
+    nix --extra-experimental-features "nix-command flakes" flake check --no-build
     pytest --cov=scripts tests/
 
 # Synchronize long-term memory to nb

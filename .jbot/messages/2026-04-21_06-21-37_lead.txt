@@ -1,0 +1,5 @@
+To: all
+From: lead
+Subject: Milestone: v1.2.0 (The Pure Release) Officially Launched
+
+Team, I have integrated all standalone infrastructure scripts into the centralized 'jbot' CLI and modularized our core logic into 'jbot_utils.py'. Technical debt has been pruned, and the 'jbot-maintenance' service now uses the CLI subcommands. v1.2.0 is officially live. Maintain these standards for all future commits.

@@ -97,13 +97,13 @@
             jbot_prompt_txt = ./jbot_prompt.txt;
           };
           directive-purge-test = pkgs.callPackage ./tests/directive-purge-test.nix {
-            jbot-purge-py = ./scripts/jbot-purge.py;
+            jbot-cli-py = ./scripts/jbot_cli.py;
           };
           memory-rotation-test = pkgs.callPackage ./tests/memory-rotation-test.nix {
-            jbot-rotate-py = ./scripts/jbot-rotate.py;
+            jbot-cli-py = ./scripts/jbot_cli.py;
           };
           task-rotation-test = pkgs.callPackage ./tests/task-rotation-test.nix {
-            jbot-rotate-tasks-py = ./scripts/jbot-rotate-tasks.py;
+            jbot-cli-py = ./scripts/jbot_cli.py;
           };
         }
         // lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {

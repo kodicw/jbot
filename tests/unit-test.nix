@@ -56,8 +56,9 @@ pkgs.runCommand "jbot-unit-test"
     export PROMPT_FILE="${jbot_prompt_txt}"
     export GEMINI_PACKAGE="gemini"
     export MEMORY_OUTPUT=".jbot/queues/dev.json"
+    export PYTHONPATH=$PYTHONPATH:$(pwd)/scripts
 
-    python3 scripts/jbot-agent.py
+    python3 scripts/jbot-cli.py agent
 
     # Verifications for Stateless Agent
     if ! grep -q "You are dev, acting as Lead" .prompt_received; then
@@ -80,8 +81,9 @@ pkgs.runCommand "jbot-unit-test"
       exit 1
     fi
 
-    # Run Maintenance
-    python3 scripts/jbot-maintenance.py
+    # Run Maintenance (Centralized CLI)
+    export PYTHONPATH=$PYTHONPATH:$(pwd)/scripts
+    python3 scripts/jbot-cli.py maintenance
 
     # Verifications for Maintenance
     if [ ! -f .jbot/memory.log ]; then

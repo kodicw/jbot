@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2026-04-21
 
-## [1.1.0] - 2026-04-21
-
 ### Added
 - **Infrastructure CLI Integration:** Integrated `maintenance`, `purge`, `rotate`, `dashboard`, and `send-message` as subcommands in the `jbot` CLI.
 - **Modularized Infrastructure Logic:** Moved core logic for purging, rotation, and dashboard generation into `scripts/jbot_utils.py` for architectural purity.
@@ -22,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Git Hooks Configuration:** Fixed and verified automated pre-commit and commit-msg verification.
 - **Flat Organization Audit:** Completed full audit and pruning of hierarchical logic from core scripts.
 - **Memory Rotation:** Completed and integrated `jbot-rotate.py` for automated context cleanup.
-- **Professional Autonomous Organization (organization)** governance model.
+- **JBot Organization (organization)** governance model.
 - **Formal Directives** system with expiration logic.
 - **Human-in-the-Loop (HIL)** task states in `TASKS.md`.
 - **INDEX.md dashboard** for organization transparency.

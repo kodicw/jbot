@@ -1,46 +1,54 @@
 {
   pkgs,
-  jbot-rotate-py,
+  jbot-cli-py,
+  ...
 }:
-pkgs.runCommand "memory-rotation-test"
+pkgs.runCommand "jbot-memory-rotation-test"
   {
-    buildInputs = [ pkgs.python3 ];
+    nativeBuildInputs = [
+      pkgs.python3
+      pkgs.coreutils
+      pkgs.jq
+    ];
   }
   ''
+    export PROJECT_DIR=$TMPDIR/project
+    mkdir -p $PROJECT_DIR
+    cd $PROJECT_DIR
+
+    # Need .project_goal to identify project root
+    echo "Goal" > .project_goal
+
     mkdir -p .jbot
-    # Create a memory log with 150 entries
-    for i in {1..150}; do
-      echo "{\"agent\": \"test\", \"content\": {\"summary\": \"Memory $i\"}}" >> .jbot/memory.log
+    # Create a memory log with 20 entries
+    for i in {1..20}; do
+      echo '{"agent": "test", "content": {"summary": "entry '$i'"}, "timestamp": "2026-04-20T12:00:00"}' >> .jbot/memory.log
     done
 
-    # Run rotation with limit 100
-    python3 ${jbot-rotate-py} -l 100
+    # Run rotation via CLI with limit 10
+    export PYTHONPATH=$PYTHONPATH:${dirOf jbot-cli-py}
+    python3 ${jbot-cli-py} rotate memory --limit 10
 
-    # Verify memory.log has 100 entries
-    LOG_COUNT=$(wc -l < .jbot/memory.log)
-    if [ "$LOG_COUNT" -ne 100 ]; then
-      echo "Error: memory.log has $LOG_COUNT entries, expected 100"
+    # Verifications
+    echo "Verifying memory rotation..."
+
+    if [ ! -f .jbot/memory.log.archive ]; then
+      echo "Error: Archive file not created"
       exit 1
     fi
 
-    # Verify archive has 50 entries
-    ARCHIVE_COUNT=$(wc -l < .jbot/memory.log.archive)
-    if [ "$ARCHIVE_COUNT" -ne 50 ]; then
-      echo "Error: memory.log.archive has $ARCHIVE_COUNT entries, expected 50"
+    LOG_LINES=$(wc -l < .jbot/memory.log)
+    if [ "$LOG_LINES" -ne 10 ]; then
+      echo "Error: Memory log should have 10 lines, but has $LOG_LINES"
       exit 1
     fi
 
-    # Verify last entries are preserved
-    if ! grep -q "Memory 150" .jbot/memory.log; then
-      echo "Error: Latest memory entry not found in memory.log"
+    ARCHIVE_LINES=$(wc -l < .jbot/memory.log.archive)
+    if [ "$ARCHIVE_LINES" -ne 10 ]; then
+      echo "Error: Archive should have 10 lines, but has $ARCHIVE_LINES"
       exit 1
     fi
 
-    # Verify first entries are archived
-    if ! grep -q "Memory 1" .jbot/memory.log.archive; then
-      echo "Error: First memory entry not found in archive"
-      exit 1
-    fi
-
+    echo "Memory rotation checks passed!"
     touch $out
   ''

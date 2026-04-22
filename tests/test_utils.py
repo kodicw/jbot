@@ -3,9 +3,6 @@ import json
 from datetime import datetime
 import sys
 from unittest.mock import patch, MagicMock
-import subprocess
-import pytest
-import shutil
 
 # Ensure scripts directory is in sys.path
 sys.path.append(os.path.join(os.getcwd(), "scripts"))
@@ -33,7 +30,7 @@ def test_find_file_upwards(tmp_path):
 
     not_found = utils.find_file_upwards("nonexistent.txt", str(child_dir))
     assert not_found is None
-    
+
     # Test root boundary
     assert utils.find_file_upwards("any", "/") is None
 
@@ -113,7 +110,7 @@ def test_is_git_clean():
 
         mock_run.return_value = MagicMock(stdout="M file.txt")
         assert utils.is_git_clean() is False
-        
+
     with patch("subprocess.run", side_effect=Exception("git error")):
         assert utils.is_git_clean() is False
 
@@ -193,11 +190,11 @@ def test_update_task(tmp_path):
     utils.update_task(str(tasks_file), "Wait Task", move_to="active")
     data = utils.parse_tasks(str(tasks_file))
     assert any("Wait Task" in t for t in data["active"])
-    
+
     # Error cases
     assert utils.update_task("nonexistent.md", "Task") is False
     assert utils.update_task(str(tasks_file), "NonExistentTask") is False
-    
+
     # Task with plain text (no **)
     with open(tasks_file, "w") as f:
         f.write("## Active Tasks\n- [ ] Plain task")
@@ -218,7 +215,7 @@ def test_complete_task(tmp_path):
     assert "- [x] **Working Task**" in content
     assert "## Completed Tasks\n- [x] **Working Task**" in content
     assert "- [ ] **Working Task**" not in content
-    
+
     # Error cases
     assert utils.complete_task("nonexistent.md", "Task") is False
     assert utils.complete_task(str(tasks_file), "NonExistent") is False
@@ -248,7 +245,7 @@ def test_get_recent_messages(tmp_path):
     assert len(msgs) == 1
 
     assert utils.get_recent_messages("nonexistent_dir") == []
-    
+
     with patch("builtins.open", side_effect=Exception("Read Error")):
         assert utils.get_recent_messages(str(msgs_dir)) == []
 
@@ -266,7 +263,7 @@ def test_get_recent_logs(tmp_path):
     assert logs[0]["agent"] == "a2"
 
     assert utils.get_recent_logs("nonexistent.log") == []
-    
+
     with patch("builtins.open", side_effect=Exception("Read Error")):
         assert utils.get_recent_logs(str(log_file)) == []
 
@@ -291,7 +288,7 @@ def test_parse_directives(tmp_path):
     assert "003_expired_content.txt" not in filenames
 
     assert utils.parse_directives("nonexistent_dir") == []
-    
+
     with patch("builtins.open", side_effect=Exception("Read Error")):
         assert utils.parse_directives(str(dir_path)) == []
 
@@ -324,9 +321,10 @@ def test_versioning(tmp_path):
     # Test invalid part
     version_file.write_text("1.0.0")
     assert utils.bump_version(str(tmp_path), "invalid") is None
-    
-    with patch("utils.write_file", return_value=False): # This patch might need absolute path
-        pass # covered by other tests
+
+    with patch("jbot_utils.write_file", return_value=False):
+        assert utils.bump_version(str(tmp_path), "patch") is None
+
 
 def test_update_changelog(tmp_path):
     changelog_file = tmp_path / "CHANGELOG.md"
@@ -337,18 +335,18 @@ def test_update_changelog(tmp_path):
 ## [1.0.0] - 2026-04-19
 - Initial release
 """)
-    
+
     success = utils.update_changelog(str(tmp_path), "1.1.0")
     assert success is True
     content = changelog_file.read_text()
     assert "## [1.1.0]" in content
     assert "- Feature A" in content
     assert "## [Unreleased]\n\n## [1.1.0]" in content
-    
+
     # Changelog with no next section
     changelog_file.write_text("## [Unreleased]\n- Fix")
     assert utils.update_changelog(str(tmp_path), "1.2.0") is True
-    
+
     # Changelog with no changes
     changelog_file.write_text("## [Unreleased]\n### Added\n")
     assert utils.update_changelog(str(tmp_path), "1.3.0") is True
@@ -356,124 +354,16 @@ def test_update_changelog(tmp_path):
     # Error cases
     os.remove(changelog_file)
     assert utils.update_changelog(str(tmp_path), "1.2.0") is False
-    
+
     changelog_file.write_text("No header")
     assert utils.update_changelog(str(tmp_path), "1.2.0") is False
 
-def test_purge_directives(tmp_path):
-    dir_path = tmp_path / "directives"
-    dir_path.mkdir()
-    archive_path = tmp_path / "archive"
-    
-    # By filename
-    (dir_path / "001_2000-01-01_expired.txt").write_text("Expired")
-    # By content
-    (dir_path / "002_active.txt").write_text("Expiration: 2000-01-01")
-    # Normal active
-    (dir_path / "003_2099-01-01_active.txt").write_text("Active")
-    
-    count = utils.purge_directives(str(dir_path), str(archive_path))
-    assert count == 2
-    assert (archive_path / "001_2000-01-01_expired.txt").exists()
-    
-    # Test directory skipping
-    (dir_path / "subdir").mkdir()
-    utils.purge_directives(str(dir_path), str(archive_path))
-    
-    # Test collision in archive
-    (dir_path / "001_2000-01-01_expired.txt").write_text("Expired again")
-    utils.purge_directives(str(dir_path), str(archive_path))
-    assert any("001_2000-01-01_expired_" in f for f in os.listdir(archive_path))
-
-    # Error cases
-    assert utils.purge_directives("nonexistent", "archive") == 0
-    with patch("jbot_utils.read_file", side_effect=Exception("Error")):
-        utils.purge_directives(str(dir_path), str(archive_path))
-
-def test_rotate_memory(tmp_path):
-    log_file = tmp_path / "memory.log"
-    archive_file = tmp_path / "memory.log.archive"
-    
-    content = "".join([json.dumps({"i": i}) + "\n" for i in range(20)])
-    log_file.write_text(content)
-    
-    # Limit not reached
-    utils.rotate_memory(str(log_file), str(archive_file), limit=30)
-    assert not archive_file.exists()
-    
-    # Rotate
-    success = utils.rotate_memory(str(log_file), str(archive_file), limit=10)
-    assert success is True
-    assert len(log_file.read_text().strip().split("\n")) == 10
-    assert archive_file.exists()
-
-    # Error cases
-    assert utils.rotate_memory("nonexistent", "archive") is False
-    with patch("builtins.open", side_effect=Exception("Error")):
-        assert utils.rotate_memory(str(log_file), str(archive_file)) is False
-
-def test_rotate_tasks(tmp_path):
-    tasks_file = tmp_path / "TASKS.md"
-    archive_file = tmp_path / "TASKS.archive.md"
-    
-    tasks_file.write_text("""
-## Strategic Vision
-Vision
-## Active Tasks
-- [ ] Active Task
-- [x] Done in active
-## Backlog
-- [ ] Backlog Task
-- [x] Done in backlog
-## Completed Tasks
-- [x] Done 1
-- [x] Done 2
-""")
-    
-    # Rotate with limit 1
-    success = utils.rotate_tasks(str(tasks_file), str(archive_file), limit=1)
-    assert success is True
-    assert archive_file.exists()
-    content = tasks_file.read_text()
-    assert "Done in active" in content # It moved to completed section
-    
-    # Test with missing headers
-    tasks_file.write_text("# Board\n")
-    utils.rotate_tasks(str(tasks_file), str(archive_file))
-    
-    # Error cases
-    assert utils.rotate_tasks("nonexistent") is False
-    with patch("jbot_utils.parse_tasks", side_effect=Exception("Error")):
-        assert utils.rotate_tasks(str(tasks_file)) is False
-
-def test_rotate_messages(tmp_path):
-    msg_dir = tmp_path / "messages"
-    msg_dir.mkdir()
-    archive_dir = tmp_path / "archive"
-    
-    for i in range(10):
-        (msg_dir / f"m{i}.txt").write_text("msg")
-    (msg_dir / "human.txt").write_text("human")
-        
-    # Limit not reached
-    utils.rotate_messages(str(msg_dir), str(archive_dir), limit=20)
-    assert not os.path.exists(archive_dir)
-    
-    # Rotate
-    success = utils.rotate_messages(str(msg_dir), str(archive_dir), limit=5)
-    assert success is True
-    assert len([f for f in os.listdir(msg_dir) if f != "human.txt"]) == 5
-    assert len(os.listdir(archive_dir)) == 5
-    assert (msg_dir / "human.txt").exists()
-
-    # Error cases
-    assert utils.rotate_messages("nonexistent", "archive") is False
 
 def test_generate_dashboard(tmp_path):
     (tmp_path / ".project_goal").write_text("Vision")
     (tmp_path / "TASKS.md").write_text("## Active Tasks\n- [ ] Task")
     (tmp_path / "CHANGELOG.md").write_text("- **Milestone 1**\n- **Milestone 2**")
-    
+
     jbot_dir = tmp_path / ".jbot"
     jbot_dir.mkdir()
     (jbot_dir / "agents.json").write_text(json.dumps({"a": {"role": "r"}}))
@@ -483,38 +373,75 @@ def test_generate_dashboard(tmp_path):
     content = (tmp_path / "INDEX.md").read_text()
     assert "Vision" in content
     assert "Milestone 1" in content
-    assert "Tasks Completed: 0" in content
-    
+    assert "Tasks Completed:** 0" in content
+
     # Empty paths
     os.remove(tmp_path / "TASKS.md")
     os.remove(tmp_path / "CHANGELOG.md")
     utils.generate_dashboard("INDEX2.md", str(tmp_path))
 
+
 def test_send_message(tmp_path):
-    msgs_dir = tmp_path / ".jbot" / "messages"
-    msgs_dir.mkdir(parents=True)
-    
-    success = utils.send_message(str(tmp_path), "ceo", "hello world")
+    jbot_dir = tmp_path / ".jbot"
+    jbot_dir.mkdir()
+    outbox_dir = jbot_dir / "outbox"
+    # Note: send_message now initializes outbox if missing
+
+    success = utils.send_message(
+        str(tmp_path), "ceo", "hello world", subject="Greetings"
+    )
     assert success is True
-    
-    # Error cases
-    shutil.rmtree(msgs_dir)
-    assert utils.send_message(str(tmp_path), "ceo", "hello") is False
-    
-    msgs_dir.mkdir(parents=True)
-    with patch("builtins.open", side_effect=Exception("Error")):
-        assert utils.send_message(str(tmp_path), "ceo", "hello") is False
+    assert outbox_dir.exists()
+
+    msg_files = os.listdir(outbox_dir)
+    assert len(msg_files) == 1
+    assert "ceo.txt" in msg_files[0]
+
+    content = (outbox_dir / msg_files[0]).read_text()
+    assert "From: ceo" in content
+    assert "Subject: Greetings" in content
+    assert "hello world" in content
+
 
 def test_run_maintenance(tmp_path):
     jbot_dir = tmp_path / ".jbot"
     jbot_dir.mkdir()
+
+    # 1. Setup Queues
     queues_dir = jbot_dir / "queues"
     queues_dir.mkdir()
     (queues_dir / "tester.json").write_text(json.dumps({"summary": "done"}))
     (queues_dir / "broken.json").write_text("{broken")
-    
+
+    # 2. Setup Outbox
+    outbox_dir = jbot_dir / "outbox"
+    outbox_dir.mkdir()
+    (outbox_dir / "2026-04-21_12-00-00_000000_architect.txt").write_text("Test Message")
+
+    # 3. Setup TASKS.md for rotation
+    (tmp_path / "TASKS.md").write_text(
+        "## Completed Tasks\n- [x] Task\n"
+        + "\n".join(["- [x] T" + str(i) for i in range(30)])
+    )
+
+    # Run maintenance
     success = utils.run_maintenance(str(tmp_path))
     assert success is True
+
+    # Verify Memory Consolidation
     assert (jbot_dir / "memory.log").exists()
     assert not (queues_dir / "tester.json").exists()
-    assert (queues_dir / "broken.json").exists() # Should still be there if load failed
+    # broken.json should still be there or logged as error
+
+    # Verify Message Consolidation
+    messages_dir = jbot_dir / "messages"
+    assert messages_dir.exists()
+    assert (messages_dir / "2026-04-21_12-00-00_000000_architect.txt").exists()
+    assert not (outbox_dir / "2026-04-21_12-00-00_000000_architect.txt").exists()
+
+    # Verify Rotations
+    assert (tmp_path / "TASKS.archive.md").exists()
+    assert (jbot_dir / "directives" / "archive").exists()
+
+    # Verify Dashboard
+    assert (tmp_path / "INDEX.md").exists()

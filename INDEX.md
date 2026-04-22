@@ -1,6 +1,6 @@
 # JBot Dashboard
 
-*Last Updated: 2026-04-21 06:05:58*
+*Last Updated: 2026-04-22 13:00:42*
 
 ## 🎯 Company Vision
 > Goal: Technical Excellence & Architectural Purity.
@@ -19,21 +19,18 @@ Focus Areas:
 | tester | QA Engineer | Verify architectural changes, run tests, and report regressions. |
 
 ## 🚀 Active Tasks
-- [ ] **Finalize and Verify Stateless Agent Execution Model** (Agent: architect) [In Progress]
 - [ ] **Audit codebase for 'Self-Documenting Code' compliance** (Agent: architect)
 - [ ] **Achieve 100% test coverage across all Python modules and Nix derivations** (Agent: tester)
-- [ ] **Integrate all standalone scripts into the JBot CLI** (Agent: lead) [Priority]
-- [ ] **Release JBot v1.0.0 (The Pure Release)** (Agent: lead)
 - [ ] **Formalize 'adr/', 'research/', and 'benchmarks/' structure in nb** (Agent: architect)
 
 ## 📈 Status & Progress
-- **Tasks Completed:** 10
-- **Milestones Achieved:** 11
+- **Tasks Completed:** 13
+- **Milestones Achieved:** 15
 
 ## 🏆 Recent Milestones
+- **Infrastructure CLI Integration:** Integrated `maintenance`, `purge`, `rotate`, `dashboard`, and `send-message` as subcommands in the `jbot` CLI.
+- **Modularized Infrastructure Logic:** Moved core logic for purging, rotation, and dashboard generation into `scripts/jbot_utils.py` for architectural purity.
+- **Consolidated Rotation Logic:** Unified memory, task, and message rotation under a single `jbot rotate` command.
+- **Centralized Maintenance:** Implemented `jbot maintenance` to orchestrate all infrastructure tasks.
 - **Centralized JBot CLI:** Developed and integrated a unified `jbot` CLI tool for monitoring the organization.
-- **Integrated Quality Gates:** Added `nixfmt`, `statix`, and `ruff` checks to `flake.nix` and pre-commit hooks.
-- **Git Hooks Configuration:** Fixed and verified automated pre-commit and commit-msg verification.
-- **Flat Organization Audit:** Completed full audit and pruning of hierarchical logic from core scripts.
-- **Memory Rotation:** Completed and integrated `jbot-rotate.py` for automated context cleanup.
 

@@ -71,7 +71,7 @@ let
   );
 
   jbot-cli = pkgs.writeShellScriptBin "jbot" ''
-    ${pkgs.python3}/bin/python3 ${./scripts}/jbot-cli.py "$@"
+    ${pkgs.python3}/bin/python3 ${./scripts}/jbot_cli.py "$@"
   '';
 
   corePackages = [
@@ -131,10 +131,23 @@ in
       *Automated Environment Audit generated from Nix configuration on $(date).*
 
       ## 🛠️ Comprehensive Toolstack
-      $(echo "${lib.concatStringsSep "\n" (map (p: "- **${p.pname or p.name}**: ${p.version or "Nix Managed"} (${lib.getBin p}/bin)") corePackages)}")
+      $(echo "${
+        lib.concatStringsSep "\n" (
+          map (
+            p: "- **${p.pname or p.name}**: ${p.version or "Nix Managed"} (${lib.getBin p}/bin)"
+          ) corePackages
+        )
+      }")
 
       ## 👥 Active Agent Registry
-      $(echo "${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: agent: "- **${name}**: ${agent.role} (Interval: ${agent.interval}, DependsOn: ${lib.concatStringsSep ", " agent.dependsOn})") cfg.agents)}")
+      $(echo "${
+        lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (
+            name: agent:
+            "- **${name}**: ${agent.role} (Interval: ${agent.interval}, DependsOn: ${lib.concatStringsSep ", " agent.dependsOn})"
+          ) cfg.agents
+        )
+      }")
 
       ## 🔒 Sandbox Architecture (bwrap)
       - **Runtime Isolation**: Full unshare (--unshare-all)
@@ -186,13 +199,7 @@ in
               MemoryMax = agent.memoryLimit;
               Delegate = true;
               Environment = [
-                "PATH=${
-                  lib.makeBinPath (
-                    corePackages
-                    ++ [ agent.geminiPackage ]
-                    ++ agent.extraPackages
-                  )
-                }"
+                "PATH=${lib.makeBinPath (corePackages ++ [ agent.geminiPackage ] ++ agent.extraPackages)}"
                 "SKIP_VM_TESTS=1"
               ];
               # Systemd sandboxing for extra security
@@ -264,7 +271,12 @@ in
                   --unshare-all \
                   --share-net \
                   --die-with-parent \
-                  ${pkgs.python3}/bin/python3 ${./scripts}/jbot-agent.py
+                  ${jbot-cli}/bin/jbot agent \
+                    --name "${name}" \
+                    --role "${agent.role}" \
+                    --desc "${agent.description}" \
+                    --prompt "${agent.promptFile}" \
+                    --gemini "${agent.geminiPackage}/bin/gemini"
               ''}";
 
               WorkingDirectory = agent.projectDir;
