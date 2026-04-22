@@ -59,16 +59,11 @@ def get_status(project_dir: str) -> None:
 
 
 def get_tasks(project_dir: str, show_all: bool = False) -> None:
-    """Lists tasks from the project task board."""
+    """Lists tasks from the nb task board."""
     os.chdir(project_dir)
-    tasks_path = "TASKS.md"
-    if not os.path.exists(tasks_path):
-        print("Error: TASKS.md not found.")
-        return
-
-    print("\n--- JBot Task Board ---")
+    print("\n--- JBot Task Board (nb) ---")
     if not show_all:
-        tasks_data = tasks.parse_tasks(tasks_path)
+        tasks_data = tasks.parse_tasks("")
         print("## Strategic Vision")
         print(tasks_data["vision"])
         print("\n## Active Tasks")
@@ -258,7 +253,6 @@ def main():
 
     args = parser.parse_args()
     project_root = core.get_project_root(args.dir)
-    tasks_path = os.path.join(project_root, "TASKS.md")
 
     if args.command == "status":
         get_status(project_root)
@@ -266,15 +260,15 @@ def main():
         if args.task_action == "list":
             get_tasks(project_root, args.all)
         elif args.task_action == "add":
-            if tasks.add_task(tasks_path, args.text, args.agent, args.backlog):
+            if tasks.add_task("", args.text, args.agent, args.backlog):
                 print(f"Added task: {args.text}")
         elif args.task_action == "update":
             if tasks.update_task(
-                tasks_path, args.search, args.text, args.agent, args.move
+                "", args.search, args.text, args.agent, args.move
             ):
                 print(f"Updated task: {args.search}")
         elif args.task_action == "done":
-            if tasks.complete_task(tasks_path, args.search):
+            if tasks.complete_task("", args.search):
                 print(f"Completed task: {args.search}")
         else:
             task_parser.print_help()
