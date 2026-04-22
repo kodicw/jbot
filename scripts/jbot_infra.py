@@ -63,22 +63,30 @@ def get_note_content(query: str) -> Optional[str]:
     import subprocess
 
     try:
-        # Use 'nb jbot:show <tag/title>' to get the content directly.
-        # This is more reliable than searching for IDs first.
-        tag = query.replace("type:", "").replace("input:", "")
-        selector = f"#{tag}" if ":" in query else query
-
+        # 1. Try direct retrieval by tag/title
+        # nb show returns the content of the note
         result = subprocess.run(
-            ["nb", "jbot:show", selector, "--print"],
+            ["nb", "jbot:show", query, "--print"],
             capture_output=True,
             text=True,
             env={**os.environ, "EDITOR": "cat"},
         )
-        if result.returncode == 0 and result.stdout.strip():
-            # If nb show returned something but it's "Not found", return None
-            if "! Not found" in result.stdout:
-                return None
+        if result.returncode == 0 and result.stdout.strip() and "! Not found" not in result.stdout:
             return result.stdout.strip()
+
+        # 2. Fallback: Search by title if it's the prompt
+        if query == "#prompt" or query == "prompt":
+            fallback_titles = ["Authoritative System Prompt", "System Prompt"]
+            for title in fallback_titles:
+                res = subprocess.run(
+                    ["nb", "jbot:show", title, "--print"],
+                    capture_output=True,
+                    text=True,
+                    env={**os.environ, "EDITOR": "cat"},
+                )
+                if res.returncode == 0 and res.stdout.strip() and "! Not found" not in res.stdout:
+                    return res.stdout.strip()
+
         return None
     except Exception as e:
         core.log(f"Error fetching note '{query}' from nb: {e}", "Infra")

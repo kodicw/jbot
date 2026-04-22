@@ -22,7 +22,7 @@ def assemble_context(
     """
     # 1. Base Operating System (Prompt)
     # Bootstrap: use local prompt_file if not in nb
-    nb_prompt = infra.get_note_content("type:prompt")
+    nb_prompt = infra.get_note_content("#prompt")
     if nb_prompt:
         core.log("Gathering system prompt from nb knowledge base.", agent_name)
         prompt_content = nb_prompt
