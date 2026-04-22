@@ -49,6 +49,16 @@ let
         default = [ ];
         description = "Other agents this agent depends on (systemd After/Wants).";
       };
+      cpuQuota = lib.mkOption {
+        type = lib.types.str;
+        default = "25%";
+        description = "Percentage of CPU time cap (systemd CPUQuota).";
+      };
+      memoryLimit = lib.mkOption {
+        type = lib.types.str;
+        default = "2G";
+        description = "Maximum memory usage (systemd MemoryMax).";
+      };
     };
   };
   agentsJson = pkgs.writeText "agents.json" (
@@ -132,6 +142,7 @@ in
       - **Shared Memory**: .nb bound to %h/.nb
       - **Identity persistence**: .gemini bound to %h/.gemini
       - **Credential Guard**: .config/gh (Read-Write), .gitconfig (Read-Only)
+      - **Resource Control**: CPUQuota (25%), MemoryMax (2G) [Standard PAO Policy]
 
       ## 🆔 Standardized Agent Environment
       - **GIT_NAME**: JBot ({AGENT_NAME})
@@ -171,6 +182,9 @@ in
               Wants = map (n: "jbot-agent-${n}.service") agent.dependsOn;
             };
             Service = {
+              CPUQuota = agent.cpuQuota;
+              MemoryMax = agent.memoryLimit;
+              Delegate = true;
               Environment = [
                 "PATH=${
                   lib.makeBinPath (
@@ -194,7 +208,8 @@ in
                 set -euo pipefail
 
                 PROJECT_DIR="${agent.projectDir}"
-                mkdir -p "$PROJECT_DIR/.jbot"
+                mkdir -p "$PROJECT_DIR/.jbot/queues"
+                mkdir -p "$PROJECT_DIR/.jbot/outbox"
 
                 # Provide the agent registry to the project directory
                 cp ${agentsJson} "$PROJECT_DIR/.jbot/agents.json"
@@ -233,6 +248,10 @@ in
                   --bind "$PROJECT_DIR" "$PROJECT_DIR" \
                   --ro-bind-try "$PROJECT_DIR/.jbot/memory.log" "$PROJECT_DIR/.jbot/memory.log" \
                   --ro-bind-try "$PROJECT_DIR/.jbot/agents.json" "$PROJECT_DIR/.jbot/agents.json" \
+                  --ro-bind-try "$PROJECT_DIR/.jbot/messages" "$PROJECT_DIR/.jbot/messages" \
+                  --ro-bind-try "$PROJECT_DIR/.jbot/directives" "$PROJECT_DIR/.jbot/directives" \
+                  --bind "$PROJECT_DIR/.jbot/queues" "$PROJECT_DIR/.jbot/queues" \
+                  --bind "$PROJECT_DIR/.jbot/outbox" "$PROJECT_DIR/.jbot/outbox" \
                   --bind "${config.home.homeDirectory}/.gemini" "${config.home.homeDirectory}/.gemini" \
                   --bind-try "${config.home.homeDirectory}/.config/gh" "${config.home.homeDirectory}/.config/gh" \
                   --ro-bind-try "${config.home.homeDirectory}/.gitconfig" "${config.home.homeDirectory}/.gitconfig" \
