@@ -304,15 +304,20 @@ in
                   --share-net \
                   --die-with-parent \
                   /bin/sh -c "
-                    # Create HOME directory in tmpfs to allow git config to write
+                    set -e
+                    # 1. Prepare Writable Home
                     mkdir -p \"$HOME\"
                     
-                    # Pre-initialize local git config to satisfy nb wizard
-                    git config --global user.name \"$GIT_AUTHOR_NAME\" || true
-                    git config --global user.email \"$GIT_AUTHOR_EMAIL\" || true
-                    git config --global core.pager cat || true
+                    # 2. Seed Identity to Bypass Wizards
+                    printf '[user]\n  name = JBot (${name})\n  email = jbot-${name}@internal.jbot\n[core]\n  pager = cat\n' > \"$HOME/.gitconfig\"
+                    printf 'export NB_DIR=\"$HOME/.nb\"\nexport NB_USER_NAME=\"JBot (${name})\"\nexport NB_USER_EMAIL=\"jbot-${name}@internal.jbot\"\n' > \"$HOME/.nbrc\"
                     
-                    echo \"[$(date)] Starting JBot Agent Runner...\"
+                    # 3. Link Project Knowledge Base
+                    mkdir -p \"$HOME/.nb\"
+                    ln -s \"$PROJECT_DIR/.nb\" \"$HOME/.nb/jbot\"
+                    
+                    # 4. Launch Agent
+                    echo \"[$(date)] Sandbox Initialized. Executing JBot Agent...\"
                     exec ${jbot-cli}/bin/jbot agent \
                       --name \"${name}\" \
                       --role \"${agent.role}\" \
