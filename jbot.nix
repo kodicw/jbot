@@ -282,6 +282,7 @@ in
                   --bind "${config.home.homeDirectory}/.gemini" "${config.home.homeDirectory}/.gemini" \
                   --bind-try "${config.home.homeDirectory}/.config/gh" "${config.home.homeDirectory}/.config/gh" \
                   --bind "${config.home.homeDirectory}/.nb" "${config.home.homeDirectory}/.nb" \
+                  --ro-bind-try "${config.home.homeDirectory}/.nbrc" "${config.home.homeDirectory}/.nbrc" \
                   --ro-bind-try "${config.home.homeDirectory}/.gitconfig" "${config.home.homeDirectory}/.gitconfig" \
                   --ro-bind-try "$HM_PROFILE" "$HM_PROFILE" \
                   --ro-bind "/run/user/$USER_ID/bus" "/run/user/$USER_ID/bus" \
@@ -295,17 +296,26 @@ in
                   --setenv GIT_COMMITTER_NAME "$GIT_COMMITTER_NAME" \
                   --setenv GIT_COMMITTER_EMAIL "$GIT_COMMITTER_EMAIL" \
                   --setenv EDITOR "cat" \
+                  --setenv TERM "dumb" \
+                  --setenv PAGER "cat" \
                   --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=/run/user/$USER_ID/bus" \
                   --chdir "$PROJECT_DIR" \
                   --unshare-all \
                   --share-net \
                   --die-with-parent \
-                  ${jbot-cli}/bin/jbot agent \
-                    --name "${name}" \
-                    --role "${agent.role}" \
-                    --desc "${agent.description}" \
-                    --prompt "${agent.promptFile}" \
-                    --gemini "${agent.geminiPackage}/bin/gemini"
+                  /bin/sh -c "
+                    # Pre-initialize local git config to satisfy nb wizard
+                    git config --global user.name \"$GIT_AUTHOR_NAME\"
+                    git config --global user.email \"$GIT_AUTHOR_EMAIL\"
+                    git config --global core.pager cat
+                    
+                    ${jbot-cli}/bin/jbot agent \
+                      --name \"${name}\" \
+                      --role \"${agent.role}\" \
+                      --desc \"${agent.description}\" \
+                      --prompt \"${agent.promptFile}\" \
+                      --gemini \"${agent.geminiPackage}/bin/gemini\"
+                  "
               ''}";
 
               WorkingDirectory = agent.projectDir;
