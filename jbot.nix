@@ -97,6 +97,7 @@ let
     pkgs.tealdeer
     pkgs.bat
     pkgs.ripgrep
+    pkgs.gum
     pkgs.pandoc
     pkgs.w3m
     pkgs.python3
