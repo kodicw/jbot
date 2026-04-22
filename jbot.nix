@@ -304,12 +304,16 @@ in
                   --share-net \
                   --die-with-parent \
                   /bin/sh -c "
-                    # Pre-initialize local git config to satisfy nb wizard
-                    git config --global user.name \"$GIT_AUTHOR_NAME\"
-                    git config --global user.email \"$GIT_AUTHOR_EMAIL\"
-                    git config --global core.pager cat
+                    # Create HOME directory in tmpfs to allow git config to write
+                    mkdir -p \"$HOME\"
                     
-                    ${jbot-cli}/bin/jbot agent \
+                    # Pre-initialize local git config to satisfy nb wizard
+                    git config --global user.name \"$GIT_AUTHOR_NAME\" || true
+                    git config --global user.email \"$GIT_AUTHOR_EMAIL\" || true
+                    git config --global core.pager cat || true
+                    
+                    echo \"[$(date)] Starting JBot Agent Runner...\"
+                    exec ${jbot-cli}/bin/jbot agent \
                       --name \"${name}\" \
                       --role \"${agent.role}\" \
                       --desc \"${agent.description}\" \
