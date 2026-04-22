@@ -2,7 +2,7 @@ import os
 import json
 import re
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import jbot_core as core
 import jbot_tasks as tasks
 import jbot_rotation
@@ -68,6 +68,7 @@ def get_note_content(query: str) -> Optional[str]:
             ["nb", "jbot:show", query, "--print"],
             capture_output=True,
             text=True,
+            env={**os.environ, "EDITOR": "cat"},
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
