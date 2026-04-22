@@ -345,7 +345,7 @@ in
               "NB_DIR=${config.home.homeDirectory}/.nb"
               "HOME=${config.home.homeDirectory}"
             ];
-            ExecStart = "${pkgs.nb}/bin/nb jbot:browse --daemon";
+            ExecStart = "${pkgs.nb}/bin/nb jbot:browse --serve";
             Restart = "always";
             RestartSec = "10";
             WorkingDirectory = config.home.homeDirectory;
