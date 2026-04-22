@@ -10,7 +10,7 @@ import jbot_agent
 
 
 def get_status(project_dir: str) -> None:
-    """Displays the high-level project vision and active tasks status."""
+    """Displays the high-level project vision, environment context, and active tasks."""
     os.chdir(project_dir)
     goal_path = ".project_goal"
     tasks_path = "TASKS.md"
@@ -20,6 +20,32 @@ def get_status(project_dir: str) -> None:
         with open(goal_path, "r") as f:
             print(f"\n🎯 Company Vision:\n> {f.read().strip()}")
 
+    # Real-time Environment Context
+    print("\n🌍 Environment Context:")
+    print(f"Git Status: {core.get_git_status(project_dir)}")
+    print(f"Nix Flake: {core.get_nix_metadata(project_dir)}")
+
+    # Knowledge Base Integration
+    print("\n🧠 Knowledge Base (nb):")
+    try:
+        # Link to the deep audit note
+        audit_note = subprocess.run(
+            ["nb", "jbot:ls", "Environment and Tool Registry"],
+            capture_output=True,
+            text=True,
+        )
+        if audit_note.returncode == 0 and audit_note.stdout.strip():
+            print(f"Latest Audit: {audit_note.stdout.strip()}")
+        else:
+            print("Latest Audit: No automated audit note found.")
+    except Exception:
+        print("Latest Audit: nb command unavailable.")
+
+    print("\n✍️ Human Interaction (nb):")
+    print("  - Feedback: `nb jbot:add --title \"Feedback\" --tags input:human` (Overwrites)")
+    print("  - New Ideas: `nb jbot:add --title \"Idea: <Title>\" --tags type:idea` (Appends)")
+    print("  - Re-Program: `nb jbot:add --title \"System Prompt\" --tags type:prompt` (High-Prio)")
+
     tasks_data = tasks.parse_tasks(tasks_path)
     print(f"\n🚀 Active Tasks ({len(tasks_data['active'])}):")
     for t in tasks_data["active"][:5]:
@@ -28,6 +54,7 @@ def get_status(project_dir: str) -> None:
         print(f"  ... and {len(tasks_data['active']) - 5} more.")
 
     print(f"\n📈 Overall Progress: {tasks_data['done_count']} tasks completed.")
+    print("\n💡 Tip: Use 'nb jbot:q <query>' to search technical memory.")
 
 
 def get_tasks(project_dir: str, show_all: bool = False) -> None:

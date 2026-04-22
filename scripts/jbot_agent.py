@@ -56,17 +56,45 @@ def assemble_context(
         except Exception:
             tree = "Error generating directory tree"
 
+    # 1. System Prompt (Knowledge Base First)
+    # Bootstrap: use local prompt_file if not in nb
+    nb_prompt = infra.get_note_content("type:prompt")
+    if nb_prompt:
+        core.log("Using system prompt from nb knowledge base.", agent_name)
+        prompt_content = nb_prompt
+    else:
+        core.log("Knowledge base prompt missing. Bootstrapping from local file.", agent_name)
+        prompt_content = core.read_file(prompt_file)
+
+    # 2. Human Input (Knowledge Base)
+    # Replaces .jbot/messages/human.txt
+    human_input = infra.get_note_content("input:human")
+    if human_input:
+        human_input_block = f"--- HUMAN FEEDBACK/DIRECTIVE (nb) ---\n{human_input}\n--- END HUMAN FEEDBACK ---"
+        core.log("Injected human feedback from nb.", agent_name)
+    else:
+        human_input_block = "No active human feedback in nb."
+
+    # 3. Ideas & Brainstorming (Knowledge Base)
+    fresh_ideas = infra.get_note_content("type:idea")
+    ideas_block = f"--- FRESH IDEAS FROM HUMAN (nb) ---\n{fresh_ideas or 'No new ideas recorded.'}\n--- END IDEAS ---"
+
+    # 4. Project Goal & Task Board
     goal = core.read_file(
         goal_path, "Maintain and improve the JBot project infrastructure."
     )
+    task_board = core.read_file(
+        tasks_path,
+        f"No Task Board found at {tasks_path}. Please initialize it if needed.",
+    )
 
-    # Real-time Environment Context
+    # 5. Real-time Environment Context
     git_status = core.get_git_status(project_dir)
     nix_metadata = core.get_nix_metadata(project_dir)
     env_context = f"**Git Status:**\n{git_status}\n\n**Nix Metadata:**\n{nix_metadata}"
 
-    # Memory / RAG (Shared History from nb)
-    logs = infra.get_recent_logs("", 10)  # Path is ignored in new implementation
+    # 6. Memory / RAG (Shared History from nb)
+    logs = infra.get_recent_logs("", 10)
     rag_entries = []
     seen_summaries = set()
     for entry in logs:
@@ -78,11 +106,6 @@ def assemble_context(
     rag_entries.reverse()
     rag_formatted = (
         "\n".join(rag_entries) if rag_entries else "No previous memory found in nb."
-    )
-
-    task_board = core.read_file(
-        tasks_path,
-        f"No Task Board found at {tasks_path}. Please initialize it if needed.",
     )
 
     # Team Registry
@@ -100,12 +123,6 @@ def assemble_context(
 
     # Messages (Agent-to-Agent)
     msgs_dir = os.path.join(project_dir, ".jbot/messages")
-    human_input = "No direct human feedback for this cycle."
-    human_file = os.path.join(msgs_dir, "human.txt")
-    if os.path.exists(human_file):
-        human_input = f"--- HUMAN FEEDBACK/DIRECTIVE ---\n{core.read_file(human_file)}\n--- END HUMAN FEEDBACK ---"
-        core.log("Injected human feedback from human.txt", agent_name)
-
     recent_msgs = infra.get_recent_messages(msgs_dir, 5)
     messages = (
         "\n".join(
@@ -126,7 +143,6 @@ def assemble_context(
     )
 
     # Prompt Preparation
-    prompt_content = core.read_file(prompt_file)
     replacements = {
         "{AGENT_NAME}": agent_name,
         "{AGENT_ROLE}": agent_role,
@@ -139,7 +155,7 @@ def assemble_context(
         "{TEAM_REGISTRY}": team_registry,
         "{MESSAGES}": messages,
         "{DIRECTIVES}": directives,
-        "{HUMAN_INPUT}": human_input,
+        "{HUMAN_INPUT}": human_input_block + "\n\n" + ideas_block,
     }
 
     for k, v in replacements.items():

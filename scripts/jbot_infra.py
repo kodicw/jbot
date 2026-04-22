@@ -58,6 +58,25 @@ def send_message(
     return core.write_file(file_path, message_content)
 
 
+def get_note_content(query: str) -> Optional[str]:
+    """Retrieves the full content of the first nb note matching the query."""
+    import subprocess
+
+    try:
+        # nb show returns the content of the note
+        result = subprocess.run(
+            ["nb", "jbot:show", query, "--print"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+        return None
+    except Exception as e:
+        core.log(f"Error fetching note '{query}' from nb: {e}", "Infra")
+        return None
+
+
 # --- Memory & Logs ---
 def get_recent_logs(log_path: str, count: int = 10) -> List[Dict[str, Any]]:
     """Retrieve recent entries from the nb knowledge base."""
