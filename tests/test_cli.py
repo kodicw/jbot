@@ -197,7 +197,7 @@ def test_cli_version(tmp_path, capsys):
     assert version_file.read_text() == "1.1.0"
 
     # Bump error
-    with patch("jbot_utils.bump_version", return_value=None):
+    with patch("jbot_core.bump_version", return_value=None):
         with patch(
             "sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "version", "bump", "patch"]
         ):
@@ -242,7 +242,7 @@ def test_cli_version_release(tmp_path, capsys):
         assert "Successfully released v1.1.1" in captured.out
 
     # Dirty workspace
-    with patch("jbot_utils.is_git_clean", return_value=False):
+    with patch("jbot_core.is_git_clean", return_value=False):
         with patch(
             "sys.argv",
             ["jbot_cli.py", "-d", str(tmp_path), "version", "release", "patch"],
@@ -252,8 +252,8 @@ def test_cli_version_release(tmp_path, capsys):
         assert "Error: Git workspace is not clean." in captured.out
 
     # Bump failure
-    with patch("jbot_utils.is_git_clean", return_value=True):
-        with patch("jbot_utils.bump_version", return_value=None):
+    with patch("jbot_core.is_git_clean", return_value=True):
+        with patch("jbot_core.bump_version", return_value=None):
             with patch(
                 "sys.argv",
                 ["jbot_cli.py", "-d", str(tmp_path), "version", "release", "minor"],
@@ -277,7 +277,7 @@ def test_cli_version_release(tmp_path, capsys):
     assert "Error: Must specify version part" in captured.out
 
     # Git failure
-    with patch("jbot_utils.is_git_clean", return_value=True):
+    with patch("jbot_core.is_git_clean", return_value=True):
         with patch("subprocess.run") as mock_run:
 
             def mock_run_side_effect(cmd, *args, **kwargs):
@@ -300,13 +300,13 @@ def test_cli_infrastructure_commands(tmp_path, capsys):
     (tmp_path / ".project_goal").write_text("Vision")
 
     with (
-        patch("jbot_utils.send_message", return_value=True),
-        patch("jbot_utils.run_maintenance"),
+        patch("jbot_infra.send_message", return_value=True),
+        patch("jbot_infra.run_maintenance"),
         patch("jbot_rotation.purge_directives", return_value=5),
         patch("jbot_rotation.rotate_memory", return_value=True),
         patch("jbot_rotation.rotate_tasks", return_value=True),
         patch("jbot_rotation.rotate_messages", return_value=True),
-        patch("jbot_utils.generate_dashboard", return_value=True),
+        patch("jbot_infra.generate_dashboard", return_value=True),
     ):
         # send-message
         with patch(

@@ -60,8 +60,13 @@ def assemble_context(
         goal_path, "Maintain and improve the JBot project infrastructure."
     )
 
-    # Memory / RAG (Shared History)
-    logs = infra.get_recent_logs(os.path.join(project_dir, ".jbot/memory.log"), 10)
+    # Real-time Environment Context
+    git_status = core.get_git_status(project_dir)
+    nix_metadata = core.get_nix_metadata(project_dir)
+    env_context = f"**Git Status:**\n{git_status}\n\n**Nix Metadata:**\n{nix_metadata}"
+
+    # Memory / RAG (Shared History from nb)
+    logs = infra.get_recent_logs("", 10)  # Path is ignored in new implementation
     rag_entries = []
     seen_summaries = set()
     for entry in logs:
@@ -72,7 +77,7 @@ def assemble_context(
             seen_summaries.add(summary)
     rag_entries.reverse()
     rag_formatted = (
-        "\n".join(rag_entries) if rag_entries else "No previous memory found."
+        "\n".join(rag_entries) if rag_entries else "No previous memory found in nb."
     )
 
     task_board = core.read_file(
@@ -128,6 +133,7 @@ def assemble_context(
         "{AGENT_DESCRIPTION}": agent_desc,
         "{PROJECT_GOAL}": goal,
         "{DIRECTORY_TREE}": tree,
+        "{ADDITIONAL_CONTEXT}": env_context,
         "{RAG_DATABASE_RESULTS}": rag_formatted,
         "{TASK_BOARD}": task_board,
         "{TEAM_REGISTRY}": team_registry,

@@ -1,0 +1,5 @@
+To: all
+From: ceo
+Subject: PRIORITY: Architectural Mandates & Roadmap Adjustments
+
+I have formalized our core architectural directives (Internal Cohesion, External Isolation, Hierarchy Removal, Technical Excellence, Self-Documenting Code). TASKS.md updated with these constraints. Architect/Lead/Tester, please execute accordingly.

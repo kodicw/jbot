@@ -60,24 +60,35 @@ def send_message(
 
 # --- Memory & Logs ---
 def get_recent_logs(log_path: str, count: int = 10) -> List[Dict[str, Any]]:
-    """Retrieve recent entries from the memory log."""
-    if not os.path.exists(log_path):
-        return []
+    """Retrieve recent entries from the nb knowledge base."""
+    import subprocess
 
-    entries = []
     try:
-        with open(log_path, "r") as f:
-            lines = f.readlines()
-            for line in reversed(lines):
-                if len(entries) >= count:
-                    break
-                try:
-                    entries.append(json.loads(line))
-                except Exception:
-                    pass
-    except Exception:
-        pass
-    return entries
+        # Get list of memory notes
+        # nb jbot:ls format: [jbot:ID] Memory: [Agent] - Summary
+        result = subprocess.run(
+            ["nb", "jbot:ls", "--tags", "memory", "--limit", str(count)],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return []
+
+        entries = []
+        lines = result.stdout.strip().split("\n")
+        for line in lines:
+            if not line:
+                continue
+            # Regex to extract agent and summary from title
+            match = re.search(r"Memory: \[(.*?)\] - (.*)", line)
+            if match:
+                agent = match.group(1)
+                summary = match.group(2)
+                entries.append({"agent": agent, "content": {"summary": summary}})
+        return entries
+    except Exception as e:
+        core.log(f"Error fetching logs from nb: {e}", "Infra")
+        return []
 
 
 # --- Directives ---
@@ -220,12 +231,13 @@ def consolidate_messages(project_dir: str) -> None:
 
 
 def consolidate_memory(project_dir: str) -> None:
-    """Aggregates agent memory queues into the central memory log."""
+    """Aggregates agent memory queues into the nb knowledge base."""
     queues_dir = os.path.join(project_dir, ".jbot/queues")
-    memory_log = os.path.join(project_dir, ".jbot/memory.log")
 
     if not os.path.exists(queues_dir):
         return
+
+    import subprocess
 
     for q_file in os.listdir(queues_dir):
         if q_file.endswith(".json"):
@@ -233,22 +245,41 @@ def consolidate_memory(project_dir: str) -> None:
             agent_name = q_file[:-5]
             try:
                 content = core.load_json(q_path)
-                with open(memory_log, "a") as f:
-                    f.write(
-                        json.dumps(
-                            {
-                                "agent": agent_name,
-                                "content": content,
-                                "timestamp": datetime.now().isoformat(),
-                            }
-                        )
-                        + "\n"
-                    )
+                summary = content.get("summary", "No summary")
+                # Truncate summary for title to prevent 'File name too long'
+                short_summary = (summary[:80] + "..") if len(summary) > 80 else summary
+                title = f"Memory: [{agent_name}] - {short_summary}"
+                tags = f"memory,agent:{agent_name}"
+
+                # Ensure NB environment variables for identity are respected
+                env = os.environ.copy()
+                if "NB_USER_NAME" not in env:
+                    env["NB_USER_NAME"] = "JBot System"
+                if "NB_USER_EMAIL" not in env:
+                    env["NB_USER_EMAIL"] = "system@internal.jbot"
+
+                # Execute nb add (non-interactively)
+                subprocess.run(
+                    [
+                        "nb",
+                        "jbot:add",
+                        "--title",
+                        title,
+                        "--tags",
+                        tags,
+                        "--content",
+                        json.dumps(content),
+                    ],
+                    check=True,
+                    capture_output=True,
+                    env=env,
+                )
                 os.remove(q_path)
-                core.log(f"Consolidated memory for {agent_name}", "Maintenance")
+                core.log(f"Consolidated memory for {agent_name} into nb", "Maintenance")
             except Exception as e:
                 core.log(
-                    f"Error consolidating memory for {agent_name}: {e}", "Maintenance"
+                    f"Error consolidating memory for {agent_name} to nb: {e}",
+                    "Maintenance",
                 )
 
 

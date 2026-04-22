@@ -103,6 +103,47 @@ def get_version(project_dir: str = ".") -> str:
     return read_file(version_path, default="0.0.0")
 
 
+# --- Environment Context ---
+def get_git_status(project_dir: str = ".") -> str:
+    """Retrieve a short summary of the git status."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", project_dir, "status", "--short"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip() if result.stdout.strip() else "Clean"
+    except Exception:
+        return "Not a git repository or git error."
+
+
+def get_nix_metadata(project_dir: str = ".") -> str:
+    """Retrieve Nix flake metadata."""
+    try:
+        result = subprocess.run(
+            [
+                "nix",
+                "--extra-experimental-features",
+                "nix-command flakes",
+                "flake",
+                "metadata",
+                "--json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=project_dir,
+        )
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            url = data.get("url", "Unknown")
+            rev = data.get("revision", "Dirty/Uncommitted")
+            return f"- **Flake URL**: {url}\n- **Revision**: {rev}"
+        return "Nix flake metadata unavailable."
+    except Exception:
+        return "Nix command failed."
+
+
 def bump_version(project_dir: str = ".", part: str = "patch") -> Optional[str]:
     """Increment the version (major, minor, patch)."""
     current_version = get_version(project_dir)

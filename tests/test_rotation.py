@@ -35,7 +35,7 @@ def test_purge_directives(tmp_path):
 
     # Error cases
     assert rotation.purge_directives("nonexistent", "archive") == 0
-    with patch("jbot_utils.read_file", side_effect=Exception("Error")):
+    with patch("jbot_core.read_file", side_effect=Exception("Error")):
         rotation.purge_directives(str(dir_path), str(archive_path))
 
 
@@ -94,7 +94,7 @@ Vision
 
     # Error cases
     assert rotation.rotate_tasks("nonexistent") is False
-    with patch("jbot_utils.parse_tasks", side_effect=Exception("Error")):
+    with patch("jbot_tasks.parse_tasks", side_effect=Exception("Error")):
         assert rotation.rotate_tasks(str(tasks_file)) is False
 
 

@@ -193,10 +193,7 @@ def perform_rotations(project_dir: str) -> None:
         os.path.join(project_dir, ".jbot/directives"),
         os.path.join(project_dir, ".jbot/directives/archive"),
     )
-    rotate_memory(
-        os.path.join(project_dir, ".jbot/memory.log"),
-        os.path.join(project_dir, ".jbot/memory.log.archive"),
-    )
+    # Memory is now handled by nb and doesn't require manual flat-file rotation.
     rotate_tasks(
         os.path.join(project_dir, "TASKS.md"),
         os.path.join(project_dir, "TASKS.archive.md"),

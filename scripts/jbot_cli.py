@@ -55,16 +55,15 @@ def get_tasks(project_dir: str, show_all: bool = False) -> None:
 
 
 def get_logs(project_dir: str, count: int = 10) -> None:
-    """Displays recent agent activity logs from the memory log."""
+    """Displays recent agent activity logs from the nb knowledge base."""
     os.chdir(project_dir)
-    log_path = ".jbot/memory.log"
-    logs = infra.get_recent_logs(log_path, count)
+    logs = infra.get_recent_logs("", count)
 
     if not logs:
-        print("No memory logs found.")
+        print("No memory logs found in nb.")
         return
 
-    print(f"\n--- Recent Activity (Last {len(logs)}) ---")
+    print(f"\n--- Recent Activity (nb) (Last {len(logs)}) ---")
     for data in reversed(logs):
         agent = data.get("agent", "unknown")
         summary = data.get("content", {}).get("summary", "No summary")
