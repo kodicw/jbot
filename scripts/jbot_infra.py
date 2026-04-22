@@ -63,33 +63,21 @@ def get_note_content(query: str) -> Optional[str]:
     import subprocess
 
     try:
-        # Use 'nb jbot q --tags <query>' to find the note reliably
-        # Then use 'nb jbot show' to get the content
+        # Use 'nb jbot:show <tag/title>' to get the content directly.
+        # This is more reliable than searching for IDs first.
         tag = query.replace("type:", "").replace("input:", "")
-        
-        # 1. Find the note ID
-        search_res = subprocess.run(
-            ["nb", "jbot", "q", "--tags", tag, "--limit", "1"],
-            capture_output=True, text=True, env={**os.environ, "EDITOR": "cat"}
-        )
-        if search_res.returncode != 0 or not search_res.stdout.strip():
-            return None
-            
-        # Extract ID (e.g. [jbot:47] -> 47)
-        import re
-        match = re.search(r"\[jbot:(\d+)\]", search_res.stdout)
-        if not match:
-            return None
-        note_id = match.group(1)
+        selector = f"#{tag}" if ":" in query else query
 
-        # 2. Show the content
         result = subprocess.run(
-            ["nb", "jbot", "show", note_id, "--print"],
+            ["nb", "jbot:show", selector, "--print"],
             capture_output=True,
             text=True,
             env={**os.environ, "EDITOR": "cat"},
         )
         if result.returncode == 0 and result.stdout.strip():
+            # If nb show returned something but it's "Not found", return None
+            if "! Not found" in result.stdout:
+                return None
             return result.stdout.strip()
         return None
     except Exception as e:
