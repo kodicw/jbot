@@ -165,17 +165,17 @@ def run_agent(
 
     core.log(f"Creating isolated workspace at {workspace_base}...", name)
     try:
-        # Prefer COW reflink, fallback to hardlinks
+        # Prefer COW reflink, fallback to hardlinks, and finally full copy
         try:
             subprocess.run(
-                ["cp", "-a", "--reflink=always", f"{project_dir}/.", workspace_base],
+                ["cp", "-a", "--reflink=auto", f"{project_dir}/.", workspace_base],
                 check=True,
                 capture_output=True,
             )
         except subprocess.CalledProcessError:
-            core.log("COW reflink failed, falling back to hardlinks...", name)
+            core.log("COW/Hardlink failed, falling back to recursive copy...", name)
             subprocess.run(
-                ["cp", "-al", f"{project_dir}/.", workspace_base], check=True
+                ["cp", "-rp", f"{project_dir}/.", workspace_base], check=True
             )
     except Exception as e:
         core.log(f"Error creating workspace: {e}", name)
