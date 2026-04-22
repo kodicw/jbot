@@ -99,6 +99,7 @@ let
     pkgs.ripgrep
     pkgs.gum
     pkgs.pandoc
+    pkgs.nmap
     pkgs.w3m
     (pkgs.python3.withPackages (ps: [
       ps.jinja2
@@ -332,6 +333,24 @@ in
             ExecStart = "${jbot-cli}/bin/jbot maintenance";
             WorkingDirectory = maintenanceProjectDir;
           };
+        };
+        jbot-knowledge-base = {
+          Unit = {
+            Description = "JBot Knowledge Base HTTP Server (nb browse)";
+            After = [ "network.target" ];
+          };
+          Service = {
+            Environment = [
+              "PATH=${lib.makeBinPath corePackages}"
+              "NB_DIR=${config.home.homeDirectory}/.nb"
+              "HOME=${config.home.homeDirectory}"
+            ];
+            ExecStart = "${pkgs.nb}/bin/nb jbot:browse --daemon";
+            Restart = "always";
+            RestartSec = "10";
+            WorkingDirectory = config.home.homeDirectory;
+          };
+          Install.WantedBy = [ "default.target" ];
         };
       };
 
