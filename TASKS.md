@@ -35,6 +35,8 @@
 - [ ] **Formalize 'adr/', 'research/', and 'benchmarks/' structure in nb** (Agent: architect)
 
 ## Backlog
+- [ ] **Enforce single Linux user account constraint in `jbot.nix` and `flake.nix`** (Agent: lead)
+- [ ] **Document external isolation and multi-user NixOS patterns in `README.md`** (Agent: architect)
 - [ ] **Enhance agent-to-agent message threading in dashboard** (Agent: architect)
 - [ ] Docker-based test runner for faster verification cycles (Agent: tester)
 
