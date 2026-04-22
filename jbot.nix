@@ -303,28 +303,12 @@ in
                   --unshare-all \
                   --share-net \
                   --die-with-parent \
-                  /bin/sh -c "
-                    set -e
-                    # 1. Prepare Writable Home
-                    mkdir -p \"$HOME\"
-                    
-                    # 2. Seed Identity to Bypass Wizards
-                    printf '[user]\n  name = JBot (${name})\n  email = jbot-${name}@internal.jbot\n[core]\n  pager = cat\n' > \"$HOME/.gitconfig\"
-                    printf 'export NB_DIR=\"$HOME/.nb\"\nexport NB_USER_NAME=\"JBot (${name})\"\nexport NB_USER_EMAIL=\"jbot-${name}@internal.jbot\"\n' > \"$HOME/.nbrc\"
-                    
-                    # 3. Link Project Knowledge Base
-                    mkdir -p \"$HOME/.nb\"
-                    ln -s \"$PROJECT_DIR/.nb\" \"$HOME/.nb/jbot\"
-                    
-                    # 4. Launch Agent
-                    echo \"[$(date)] Sandbox Initialized. Executing JBot Agent...\"
-                    exec ${jbot-cli}/bin/jbot agent \
-                      --name \"${name}\" \
-                      --role \"${agent.role}\" \
-                      --desc \"${agent.description}\" \
-                      --prompt \"${agent.promptFile}\" \
-                      --gemini \"${agent.geminiPackage}/bin/gemini\"
-                  "
+                  ${jbot-cli}/bin/jbot agent \
+                    --name "${name}" \
+                    --role "${agent.role}" \
+                    --desc "${agent.description}" \
+                    --prompt "${agent.promptFile}" \
+                    --gemini "${agent.geminiPackage}/bin/gemini"
               ''}";
 
               WorkingDirectory = agent.projectDir;

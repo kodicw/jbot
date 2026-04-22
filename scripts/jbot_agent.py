@@ -157,6 +157,28 @@ def run_agent(
 
     core.log(f"Starting SAEM execution loop as {role}...", name)
 
+    # 0. Initialize Non-interactive Environment (Identity & NB)
+    home_dir = os.environ.get("HOME")
+    if home_dir:
+        # Seed Git Identity
+        gitconfig_path = os.path.join(home_dir, ".gitconfig")
+        if not os.path.exists(gitconfig_path):
+            with open(gitconfig_path, "w") as f:
+                f.write(f"[user]\n  name = JBot ({name})\n  email = jbot-{name}@internal.jbot\n[core]\n  pager = cat\n")
+        
+        # Seed NB Config
+        nbrc_path = os.path.join(home_dir, ".nbrc")
+        if not os.path.exists(nbrc_path):
+            with open(nbrc_path, "w") as f:
+                f.write(f"export NB_DIR=\"{home_dir}/.nb\"\nexport NB_USER_NAME=\"JBot ({name})\"\nexport NB_USER_EMAIL=\"jbot-{name}@internal.jbot\"\n")
+        
+        # Link Project Knowledge Base
+        nb_home = os.path.join(home_dir, ".nb")
+        os.makedirs(nb_home, exist_ok=True)
+        jbot_link = os.path.join(nb_home, "jbot")
+        if not os.path.exists(jbot_link):
+            os.symlink(os.path.join(project_dir, ".nb"), jbot_link)
+
     # 1. Create Workspace (COW copy of project in tmpfs)
     workspace_base = os.path.join(tempfile.gettempdir(), f"jbot-workspace-{name}")
     if os.path.exists(workspace_base):
