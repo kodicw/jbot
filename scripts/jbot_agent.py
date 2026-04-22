@@ -89,6 +89,16 @@ def assemble_context(
     recent_msgs = infra.get_recent_messages(msgs_dir, 5)
     messages = "\n".join([f"--- Message {m['filename']} ---\n{m['content']}" for m in recent_msgs]) if recent_msgs else "No recent messages."
 
+    # 9. Available Notebooks
+    try:
+        nb_list_res = subprocess.run(
+            ["nb", "notebooks", "--names"],
+            capture_output=True, text=True, env={**os.environ, "EDITOR": "cat"}
+        )
+        notebooks = nb_list_res.stdout.strip().splitlines() if nb_list_res.returncode == 0 else ["jbot"]
+    except Exception:
+        notebooks = ["jbot"]
+
     # Final Prompt Assembly using Jinja2
     from jinja2 import Template
     
@@ -108,6 +118,7 @@ def assemble_context(
         "directives": directives,
         "human_input": human_input,
         "fresh_ideas": fresh_ideas,
+        "notebooks": notebooks,
     }
 
     try:
