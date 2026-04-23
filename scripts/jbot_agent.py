@@ -155,7 +155,7 @@ def run_agent(
         )
         sys.exit(1)
 
-    core.log(f"Starting SAEM execution loop as {role}...", name)
+    core.log(f"Starting execution loop for {role}...", name)
 
     # 0. Initialize Non-interactive Environment (Identity & NB)
     home_dir = os.environ.get("HOME")
@@ -179,49 +179,24 @@ def run_agent(
         if not os.path.exists(jbot_link):
             os.symlink(os.path.join(project_dir, ".nb"), jbot_link)
 
-    # 1. Create Workspace (COW copy of project in tmpfs)
-    workspace_base = os.path.join(tempfile.gettempdir(), f"jbot-workspace-{name}")
-    if os.path.exists(workspace_base):
-        shutil.rmtree(workspace_base)
-    os.makedirs(workspace_base)
-
-    core.log(f"Creating isolated workspace at {workspace_base}...", name)
-    try:
-        # Prefer COW reflink, fallback to hardlinks, and finally full copy
-        try:
-            subprocess.run(
-                ["cp", "-a", "--reflink=auto", f"{project_dir}/.", workspace_base],
-                check=True,
-                capture_output=True,
-            )
-        except subprocess.CalledProcessError:
-            core.log("COW/Hardlink failed, falling back to recursive copy...", name)
-            subprocess.run(
-                ["cp", "-rp", f"{project_dir}/.", workspace_base], check=True
-            )
-    except Exception as e:
-        core.log(f"Error creating workspace: {e}", name)
-        sys.exit(1)
-
-    os.chdir(workspace_base)
-
-    # 2. Prepare workspace infrastructure
+    # 1. Prepare Infrastructure
+    os.chdir(project_dir)
     queues_dir = ".jbot/queues"
     outbox_dir = ".jbot/outbox"
     os.makedirs(queues_dir, exist_ok=True)
     os.makedirs(outbox_dir, exist_ok=True)
 
-    # 3. Assemble context
+    # 2. Assemble Context
     prompt_content = assemble_context(
-        name, role, description, workspace_base, prompt_file
+        name, role, description, project_dir, prompt_file
     )
 
     # Set up memory output for gemini
-    os.environ["MEMORY_OUTPUT"] = f"{workspace_base}/{queues_dir}/{name}.json"
+    os.environ["MEMORY_OUTPUT"] = f"{project_dir}/{queues_dir}/{name}.json"
 
-    core.log("Invoking Gemini CLI in workspace...", name)
+    core.log("Invoking Gemini CLI in project directory...", name)
 
-    # 4. Execution
+    # 3. Execution
     try:
         process = subprocess.Popen(
             [gemini_pkg, "-y", "-d", "-p", prompt_content],
@@ -239,60 +214,23 @@ def run_agent(
             )
             sys.exit(process.returncode)
 
-        # 5. Verification
-        pre_commit_script = os.path.join(workspace_base, ".githooks/pre-commit")
-        verified = False
+        # 4. Verification (Optional but recommended)
+        pre_commit_script = os.path.join(project_dir, ".githooks/pre-commit")
         if os.path.exists(pre_commit_script):
             try:
-                core.log("Running workspace verification (pre-commit)...", name)
+                core.log("Running project verification (pre-commit)...", name)
                 subprocess.run(["bash", pre_commit_script], check=True)
-                verified = True
                 core.log("Verification SUCCESS.", name)
             except subprocess.CalledProcessError as e:
-                core.log(f"Verification FAILED: {e}", name)
-        else:
-            core.log("No verification script found, skipping...", name)
-            verified = True
-
-        # 6. Atomic Application
-        if verified:
-            core.log("Applying changes back to project directory...", name)
-            try:
-                subprocess.run(
-                    [
-                        "rsync",
-                        "-a",
-                        "--exclude",
-                        ".jbot/queues",
-                        "--exclude",
-                        ".jbot/outbox",
-                        f"{workspace_base}/",
-                        f"{project_dir}/",
-                    ],
-                    check=True,
-                )
-                # Move state files to the REAL project dir for maintenance
-                for d in [queues_dir, outbox_dir]:
-                    src_d = os.path.join(workspace_base, d)
-                    dst_d = os.path.join(project_dir, d)
-                    os.makedirs(dst_d, exist_ok=True)
-                    for f in os.listdir(src_d):
-                        shutil.move(os.path.join(src_d, f), os.path.join(dst_d, f))
-                core.log("Transactional commit SUCCESS.", name)
-            except Exception as e:
-                core.log(f"Error applying changes: {e}", name)
-                sys.exit(1)
-        else:
-            core.log("Changes discarded due to verification failure.", name)
+                core.log(f"Verification WARNING: {e}", name)
+        
+        core.log("Execution SUCCESS.", name)
 
     except Exception as e:
         core.log(f"Error: Execution failed: {e}", name)
         sys.exit(1)
-    finally:
-        core.log("Cleaning up workspace...", name)
-        shutil.rmtree(workspace_base, ignore_errors=True)
 
-    core.log("SAEM execution loop finished.", name)
+    core.log("Execution loop finished.", name)
 
 
 def main():
