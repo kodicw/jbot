@@ -12,70 +12,58 @@ import jbot_cli
 def test_get_status(tmp_path, capsys):
     goal_file = tmp_path / ".project_goal"
     goal_file.write_text("Company Vision")
-    tasks_file = tmp_path / "TASKS.md"
-    tasks_file.write_text(
-        "## Active Tasks\n- [ ] Task 1\n- [ ] Task 2\n- [ ] Task 3\n- [ ] Task 4\n- [ ] Task 5\n- [ ] Task 6\n- [x] Task 7"
-    )
 
-    jbot_cli.get_status(str(tmp_path))
-    captured = capsys.readouterr()
-    assert "Company Vision" in captured.out
-    assert "Task 1" in captured.out
-    assert "... and 1 more." in captured.out
-    assert "1 tasks completed" in captured.out
+    with patch(
+        "jbot_tasks.parse_tasks", return_value={"active": ["Task 1"], "done_count": 0}
+    ):
+        jbot_cli.get_status(str(tmp_path))
+        captured = capsys.readouterr()
+        assert "Company Vision" in captured.out
+        assert "Task 1" in captured.out
 
 
 def test_get_tasks(tmp_path, capsys):
-    tasks_file = tmp_path / "TASKS.md"
-    tasks_file.write_text(
-        "## Strategic Vision\nVision\n## Active Tasks\n- [ ] Task 1\n## Backlog\n- [ ] Backlog 1"
-    )
-
-    # Standard list
-    jbot_cli.get_tasks(str(tmp_path))
-    captured = capsys.readouterr()
-    assert "Vision" in captured.out
-    assert "Task 1" in captured.out
-    assert "Backlog 1" in captured.out
-
-    # Show all
-    jbot_cli.get_tasks(str(tmp_path), show_all=True)
-    captured = capsys.readouterr()
-    assert "## Strategic Vision" in captured.out
-
-    # Error case - now falls back to nb
-    os.remove(tasks_file)
     with patch(
-        "jbot_tasks.infra.get_note_content",
-        return_value="## Strategic Vision\nTechnical Excellence\n",
+        "jbot_tasks.parse_tasks",
+        return_value={
+            "vision": "Vision",
+            "active": ["Task 1"],
+            "backlog": ["Backlog 1"],
+            "sections": {
+                "header": [],
+                "vision": ["## Strategic Vision\n"],
+                "active": ["## Active Tasks\n"],
+                "backlog": ["## Backlog\n"],
+                "completed": [],
+            },
+        },
     ):
+        # Standard list
         jbot_cli.get_tasks(str(tmp_path))
-    captured = capsys.readouterr()
-    assert "JBot Task Board (nb)" in captured.out
-    assert "Technical Excellence" in captured.out
+        captured = capsys.readouterr()
+        assert "Vision" in captured.out
+        assert "Task 1" in captured.out
+        assert "Backlog 1" in captured.out
+
+        # Show all
+        jbot_cli.get_tasks(str(tmp_path), show_all=True)
+        captured = capsys.readouterr()
+        assert "## Strategic Vision" in captured.out
 
 
 def test_get_logs(tmp_path, capsys):
-    jbot_dir = tmp_path / ".jbot"
-    jbot_dir.mkdir()
-    log_file = jbot_dir / "memory.log"
-    log_file.write_text(
-        json.dumps({"agent": "tester", "content": {"summary": "Verified stuff"}}) + "\n"
-    )
-
-    jbot_cli.get_logs(str(tmp_path))
-    captured = capsys.readouterr()
-    assert "[tester] Verified stuff" in captured.out
-
-    # Error case - now falls back to nb
-    os.remove(log_file)
     with patch(
         "jbot_infra.get_recent_logs",
-        return_value=[{"agent": "tester", "content": {"summary": "Verified nb"}}],
+        return_value=[{"agent": "tester", "content": {"summary": "Verified stuff"}}],
     ):
         jbot_cli.get_logs(str(tmp_path))
         captured = capsys.readouterr()
-        assert "Activity (nb)" in captured.out or "Verified nb" in captured.out
+        assert "[tester] Verified stuff" in captured.out
+
+    with patch("jbot_infra.get_recent_logs", return_value=[]):
+        jbot_cli.get_logs(str(tmp_path))
+        captured = capsys.readouterr()
+        assert "No memory logs found" in captured.out
 
 
 def test_get_messages(tmp_path, capsys):
@@ -100,10 +88,12 @@ def test_get_messages(tmp_path, capsys):
 
 def test_cli_main_status(tmp_path, capsys):
     (tmp_path / ".project_goal").write_text("Vision")
-    (tmp_path / "TASKS.md").write_text("## Active Tasks\n- [ ] Task 1")
 
-    with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "status"]):
-        jbot_cli.main()
+    with patch(
+        "jbot_tasks.parse_tasks", return_value={"active": ["Task 1"], "done_count": 0}
+    ):
+        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "status"]):
+            jbot_cli.main()
 
     captured = capsys.readouterr()
     assert "Vision" in captured.out
@@ -111,79 +101,96 @@ def test_cli_main_status(tmp_path, capsys):
 
 
 def test_cli_main_add_task(tmp_path, capsys):
-    tasks_file = tmp_path / "TASKS.md"
-    tasks_file.write_text("## Active Tasks\n")
+    with patch("jbot_tasks.add_task", return_value=True) as mock_add:
+        # New command structure
+        with patch(
+            "sys.argv",
+            [
+                "jbot_cli.py",
+                "-d",
+                str(tmp_path),
+                "task",
+                "add",
+                "New Task",
+                "-a",
+                "lead",
+            ],
+        ):
+            jbot_cli.main()
 
-    # New command structure
-    with patch(
-        "sys.argv",
-        ["jbot_cli.py", "-d", str(tmp_path), "task", "add", "New Task", "-a", "lead"],
-    ):
-        jbot_cli.main()
+        captured = capsys.readouterr()
+        assert "Added task: New Task" in captured.out
+        mock_add.assert_called_with("New Task", "lead", False)
 
-    captured = capsys.readouterr()
-    assert "Added task: New Task" in captured.out
-    assert "- [ ] **New Task** (Agent: lead)" in tasks_file.read_text()
+        # Backlog Task
+        with patch(
+            "sys.argv",
+            ["jbot_cli.py", "-d", str(tmp_path), "task", "add", "Backlog Task", "-b"],
+        ):
+            jbot_cli.main()
 
-    # Backlog Task
-    with patch(
-        "sys.argv",
-        ["jbot_cli.py", "-d", str(tmp_path), "task", "add", "Backlog Task", "-b"],
-    ):
-        jbot_cli.main()
-
-    captured = capsys.readouterr()
-    assert "Added task: Backlog Task" in captured.out
-    assert "## Backlog" in tasks_file.read_text()
-    assert "- [ ] **Backlog Task**" in tasks_file.read_text()
+        captured = capsys.readouterr()
+        assert "Added task: Backlog Task" in captured.out
+        mock_add.assert_called_with("Backlog Task", None, True)
 
 
 def test_cli_task_list(tmp_path, capsys):
-    tasks_file = tmp_path / "TASKS.md"
-    tasks_file.write_text("## Active Tasks\n- [ ] Task A\n## Backlog\n- [ ] Task B")
+    with patch(
+        "jbot_tasks.parse_tasks",
+        return_value={
+            "vision": "Vision",
+            "active": ["Task A"],
+            "backlog": ["Task B"],
+            "sections": {
+                "header": [],
+                "vision": [],
+                "active": [],
+                "backlog": [],
+                "completed": [],
+            },
+        },
+    ):
+        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "task", "list"]):
+            jbot_cli.main()
 
-    with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "task", "list"]):
-        jbot_cli.main()
-
-    captured = capsys.readouterr()
-    assert "Task A" in captured.out
-    assert "Task B" in captured.out
+        captured = capsys.readouterr()
+        assert "Task A" in captured.out
+        assert "Task B" in captured.out
 
 
 def test_cli_task_update_and_done(tmp_path, capsys):
-    tasks_file = tmp_path / "TASKS.md"
-    tasks_file.write_text("## Active Tasks\n- [ ] **Initial Task**")
+    with patch("jbot_tasks.update_task", return_value=True) as mock_update:
+        # Update
+        with patch(
+            "sys.argv",
+            [
+                "jbot_cli.py",
+                "-d",
+                str(tmp_path),
+                "task",
+                "update",
+                "Initial",
+                "-t",
+                "Updated",
+            ],
+        ):
+            jbot_cli.main()
 
-    # Update
-    with patch(
-        "sys.argv",
-        [
-            "jbot_cli.py",
-            "-d",
-            str(tmp_path),
-            "task",
-            "update",
-            "Initial",
-            "-t",
-            "Updated",
-        ],
-    ):
-        jbot_cli.main()
+        captured = capsys.readouterr()
+        assert "Updated task: Initial" in captured.out
+        mock_update.assert_called_with("Initial", "Updated", None, None)
 
-    captured = capsys.readouterr()
-    assert "Updated task: Initial" in captured.out
-    assert "Updated" in tasks_file.read_text()
+    with patch("jbot_tasks.complete_task", return_value=True) as mock_complete:
+        # Done
+        with patch(
+            "sys.argv",
+            ["jbot_cli.py", "-d", str(tmp_path), "task", "done", "Updated"],
+        ):
+            jbot_cli.main()
 
-    # Done
-    with patch(
-        "sys.argv",
-        ["jbot_cli.py", "-d", str(tmp_path), "task", "done", "Updated"],
-    ):
-        jbot_cli.main()
-
-    captured = capsys.readouterr()
-    assert "Completed task: Updated" in captured.out
-    assert "- [x] **Updated**" in tasks_file.read_text()
+        captured = capsys.readouterr()
+        assert "Completed task: Updated" in captured.out
+        mock_complete.assert_called_with("Updated")
 
 
 def test_cli_human(tmp_path, capsys):
@@ -440,8 +447,6 @@ def test_cli_infrastructure_commands(tmp_path, capsys):
         patch("jbot_infra.send_message", return_value=True),
         patch("jbot_infra.run_maintenance"),
         patch("jbot_rotation.purge_directives", return_value=5),
-        patch("jbot_rotation.rotate_memory", return_value=True),
-        patch("jbot_rotation.rotate_tasks", return_value=True),
         patch("jbot_rotation.rotate_messages", return_value=True),
         patch("jbot_infra.generate_dashboard", return_value=True),
     ):
@@ -470,18 +475,6 @@ def test_cli_infrastructure_commands(tmp_path, capsys):
         with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "purge"]):
             jbot_cli.main()
         assert "Purged 5 expired directives." in capsys.readouterr().out
-
-        # rotate memory
-        with patch(
-            "sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "rotate", "memory"]
-        ):
-            jbot_cli.main()
-        assert "Memory log rotated." in capsys.readouterr().out
-
-        # rotate tasks
-        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "rotate", "tasks"]):
-            jbot_cli.main()
-        assert "Tasks rotated." in capsys.readouterr().out
 
         # rotate messages
         with patch(

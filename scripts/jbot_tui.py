@@ -41,7 +41,7 @@ def ai_refine_idea(rough_draft, project_dir):
     nix_metadata = core.get_nix_metadata(project_dir)
 
     # Get last 5 memory entries
-    logs = infra.get_recent_logs("", 5)
+    logs = infra.get_recent_logs(5)
     memory = "\n".join(
         [f"[{entry['agent']}] {entry['content']['summary']}" for entry in logs]
     )

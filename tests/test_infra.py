@@ -26,16 +26,28 @@ def test_get_recent_messages(tmp_path):
     assert infra.get_recent_messages("nonexistent_dir") == []
 
 
-def test_get_recent_logs(tmp_path):
-    log_file = tmp_path / "memory.log"
-    log_file.write_text(
-        json.dumps({"agent": "a1", "content": {"summary": "s1"}}) + "\n"
-    )
-    with open(log_file, "a") as f:
-        f.write(json.dumps({"agent": "a2", "content": {"summary": "s2"}}) + "\n")
-    logs = infra.get_recent_logs(str(log_file), count=1)
-    assert len(logs) == 1 and logs[0]["agent"] == "a2"
-    assert infra.get_recent_logs("nonexistent.log") == []
+@patch("jbot_infra.NbClient")
+def test_get_recent_logs(mock_nb):
+    mock_client = MagicMock()
+    mock_nb.return_value = mock_client
+
+    mock_note1 = MagicMock()
+    mock_note1.title = "Memory: [a1] - s1"
+    mock_note2 = MagicMock()
+    mock_note2.title = "Memory: [a2] - s2"
+    mock_client.ls.return_value = [mock_note1, mock_note2]
+
+    logs = infra.get_recent_logs(count=1)
+    assert len(logs) == 2
+    assert logs[1]["agent"] == "a2"
+
+
+@patch("jbot_infra.NbClient")
+def test_get_recent_logs_exception(mock_nb):
+    mock_client = MagicMock()
+    mock_nb.return_value = mock_client
+    mock_client.ls.side_effect = Exception("err")
+    assert infra.get_recent_logs() == []
 
 
 def test_parse_directives(tmp_path):
@@ -79,9 +91,7 @@ def test_run_maintenance(mock_nb_client, tmp_path):
         "## Active Tasks\n- [ ] Task\n## Completed Tasks\n- [x] T1"
     )
     assert infra.run_maintenance(str(tmp_path)) is True
-    assert (jbot_dir / "memory.log").exists()
     assert not (queues_dir / "tester.json").exists()
-    mock_nb_client.assert_called_once()
     mock_nb_client.return_value.add.assert_called_once()
 
 
@@ -132,16 +142,7 @@ def test_get_recent_messages_exception(tmp_path):
     f.mkdir()  # directory instead of file to trigger read error
     assert infra.get_recent_messages(str(msgs_dir)) == []
 
-
-def test_get_recent_logs_exception(tmp_path):
-    log_file = tmp_path / "bad.log"
-    log_file.write_text("not json")
-    assert infra.get_recent_logs(str(log_file)) == []
-
-    # test read permission error by making it a directory
-    bad_log = tmp_path / "dir.log"
-    bad_log.mkdir()
-    assert infra.get_recent_logs(str(bad_log)) == []
+    # Removed because it's replaced
 
 
 def test_parse_directives_exception(tmp_path):

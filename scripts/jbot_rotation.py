@@ -67,105 +67,6 @@ def purge_directives(dir_path: str, archive_path: str) -> int:
     return purged_count
 
 
-def rotate_memory(memory_log: str, archive_log: str, limit: int = 100) -> bool:
-    """Rotates the memory log, moving older entries to archive."""
-    if not os.path.exists(memory_log):
-        return False
-    try:
-        with open(memory_log, "r") as f:
-            lines = f.readlines()
-        if len(lines) <= limit:
-            return False
-        to_keep = lines[-limit:]
-        to_archive = lines[:-limit]
-        core.log(f"Rotating memory: Archiving {len(to_archive)} entries.", "Rotate")
-        with open(archive_log, "a") as f:
-            f.writelines(to_archive)
-        with open(memory_log, "w") as f:
-            f.writelines(to_keep)
-        return True
-    except Exception as e:
-        core.log(f"Error rotating memory log: {e}", "Rotate")
-        return False
-
-
-def rotate_tasks(
-    tasks_file: str = "TASKS.md",
-    archive_file: str = "TASKS.archive.md",
-    limit: int = 20,
-) -> bool:
-    """Rotates the task board, moving completed tasks to archive."""
-    if not os.path.exists(tasks_file):
-        return False
-    try:
-        tasks_data = tasks.parse_tasks(tasks_file)
-        sections = tasks_data["sections"]
-        if not sections["vision"]:
-            sections["vision"] = ["## Strategic Vision (CEO)\n"]
-        if not sections["active"]:
-            sections["active"] = ["## Active Tasks\n"]
-        if not sections["backlog"]:
-            sections["backlog"] = ["## Backlog\n"]
-        if not sections["completed"]:
-            sections["completed"] = ["## Completed Tasks\n"]
-
-        new_active = [sections["active"][0]]
-        new_backlog = [sections["backlog"][0]]
-        newly_completed = []
-        for line in sections["active"][1:]:
-            if "[x]" in line:
-                newly_completed.append(line)
-            elif line.strip() and line.strip() != "...":
-                new_active.append(line)
-        for line in sections["backlog"][1:]:
-            if "[x]" in line:
-                newly_completed.append(line)
-            elif line.strip() and line.strip() != "...":
-                new_backlog.append(line)
-
-        current_completed = [
-            line for line in sections["completed"][1:] if line.strip() != "..."
-        ]
-        all_completed = current_completed + newly_completed
-        to_keep = all_completed
-        to_archive = []
-        if len(all_completed) > limit:
-            to_keep = all_completed[-limit:]
-            to_archive = all_completed[:-limit]
-            core.log(f"Archiving {len(to_archive)} completed tasks.", "Rotate")
-
-        if to_archive:
-            if not os.path.exists(archive_file) or os.path.getsize(archive_file) == 0:
-                core.write_file(archive_file, "# JBot Task Archive\n\n")
-            with open(archive_file, "a") as f:
-                f.write(
-                    f"## Archived on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                )
-                f.writelines(to_archive)
-                f.write("\n")
-
-        with open(tasks_file, "w") as f:
-            f.writelines(
-                sections["header"] if sections["header"] else ["# JBot Task Board\n\n"]
-            )
-            f.writelines(sections["vision"])
-            f.write("\n")
-            f.writelines(new_active)
-            if not new_active[-1].endswith("\n"):
-                f.write("\n")
-            f.write("\n")
-            f.writelines(new_backlog)
-            if not new_backlog[-1].endswith("\n"):
-                f.write("\n")
-            f.write("\n")
-            f.writelines(sections["completed"][:1])
-            f.writelines(to_keep)
-        return True
-    except Exception as e:
-        core.log(f"Error rotating tasks: {e}", "Rotate")
-        return False
-
-
 def rotate_messages(msg_dir: str, archive_dir: str, limit: int = 50) -> bool:
     """Archives older messages from msg_dir to archive_dir."""
     if not os.path.exists(msg_dir):
@@ -193,11 +94,7 @@ def perform_rotations(project_dir: str) -> None:
         os.path.join(project_dir, ".jbot/directives"),
         os.path.join(project_dir, ".jbot/directives/archive"),
     )
-    # Memory is now handled by nb and doesn't require manual flat-file rotation.
-    rotate_tasks(
-        os.path.join(project_dir, "TASKS.md"),
-        os.path.join(project_dir, "TASKS.archive.md"),
-    )
+    # Memory and tasks are now handled by nb and don't require manual flat-file rotation.
     rotate_messages(
         os.path.join(project_dir, ".jbot/messages"),
         os.path.join(project_dir, ".jbot/messages/archive"),

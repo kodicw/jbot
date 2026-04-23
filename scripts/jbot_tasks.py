@@ -27,29 +27,9 @@ def _push_nb_tasks(content: str) -> bool:
         return False
 
 
-def parse_tasks(tasks_path: str = "") -> Dict[str, Any]:
-    """Parses the task board from a file or nb into sections and extracted data."""
-    if tasks_path:
-        if os.path.exists(tasks_path):
-            content = core.read_file(tasks_path)
-        else:
-            # If path was provided but doesn't exist, return empty board
-            return {
-                "active": [],
-                "done_count": 0,
-                "backlog": [],
-                "vision": "",
-                "sections": {
-                    "header": [],
-                    "vision": [],
-                    "active": [],
-                    "backlog": [],
-                    "completed": [],
-                },
-            }
-    else:
-        # Pull from nb if path is empty
-        content = _get_nb_tasks()
+def parse_tasks() -> Dict[str, Any]:
+    """Parses the task board from nb into sections and extracted data."""
+    content = _get_nb_tasks()
 
     data = {
         "active": [],
@@ -94,13 +74,10 @@ def parse_tasks(tasks_path: str = "") -> Dict[str, Any]:
 
 
 def add_task(
-    tasks_path: str, task_text: str, agent: Optional[str] = None, backlog: bool = False
+    task_text: str, agent: Optional[str] = None, backlog: bool = False
 ) -> bool:
-    """Adds a new task to the task board (local file or nb)."""
-    if tasks_path and os.path.exists(tasks_path):
-        content = core.read_file(tasks_path)
-    else:
-        content = _get_nb_tasks()
+    """Adds a new task to the nb task board."""
+    content = _get_nb_tasks()
 
     lines = content.splitlines(keepends=True)
 
@@ -124,24 +101,17 @@ def add_task(
         new_lines.append(task_entry)
 
     final_content = "".join(new_lines)
-    if tasks_path and os.path.exists(tasks_path):
-        return core.write_file(tasks_path, final_content)
-    else:
-        return _push_nb_tasks(final_content)
+    return _push_nb_tasks(final_content)
 
 
 def update_task(
-    tasks_path: str,
     task_text_search: str,
     new_text: Optional[str] = None,
     agent: Optional[str] = None,
     move_to: Optional[str] = None,
 ) -> bool:
-    """Updates a task in the task board (local file or nb)."""
-    if tasks_path and os.path.exists(tasks_path):
-        content = core.read_file(tasks_path)
-    else:
-        content = _get_nb_tasks()
+    """Updates a task in the nb task board."""
+    content = _get_nb_tasks()
 
     lines = content.splitlines(keepends=True)
 
@@ -196,18 +166,12 @@ def update_task(
         lines[task_line_index] = new_task_line
         final_content = "".join(lines)
 
-    if tasks_path and os.path.exists(tasks_path):
-        return core.write_file(tasks_path, final_content)
-    else:
-        return _push_nb_tasks(final_content)
+    return _push_nb_tasks(final_content)
 
 
-def complete_task(tasks_path: str, task_text_search: str) -> bool:
-    """Marks a task as completed in the task board (local file or nb)."""
-    if tasks_path and os.path.exists(tasks_path):
-        content = core.read_file(tasks_path)
-    else:
-        content = _get_nb_tasks()
+def complete_task(task_text_search: str) -> bool:
+    """Marks a task as completed in the nb task board."""
+    content = _get_nb_tasks()
 
     lines = content.splitlines(keepends=True)
 
@@ -237,7 +201,4 @@ def complete_task(tasks_path: str, task_text_search: str) -> bool:
         new_lines.append(completed_line)
 
     final_content = "".join(new_lines)
-    if tasks_path and os.path.exists(tasks_path):
-        return core.write_file(tasks_path, final_content)
-    else:
-        return _push_nb_tasks(final_content)
+    return _push_nb_tasks(final_content)

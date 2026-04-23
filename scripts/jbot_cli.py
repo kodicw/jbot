@@ -14,7 +14,6 @@ def get_status(project_dir: str) -> None:
     """Displays the high-level project vision, environment context, and active tasks."""
     os.chdir(project_dir)
     goal_path = ".project_goal"
-    tasks_path = "TASKS.md"
 
     print("\n--- JBot Organization Status ---")
     if os.path.exists(goal_path):
@@ -26,7 +25,7 @@ def get_status(project_dir: str) -> None:
     print(f"Git Status: {core.get_git_status(project_dir)}")
     print(f"Nix Flake: {core.get_nix_metadata(project_dir)}")
 
-    tasks_data = tasks.parse_tasks(tasks_path)
+    tasks_data = tasks.parse_tasks()
     print(f"\n🚀 Active Tasks ({len(tasks_data['active'])}):")
     for t in tasks_data["active"][:5]:
         print(f"  {t}")
@@ -40,8 +39,7 @@ def get_status(project_dir: str) -> None:
 def get_tasks(project_dir: str, show_all: bool = False) -> None:
     """Lists tasks from the nb task board."""
     os.chdir(project_dir)
-    tasks_path = "TASKS.md"
-    tasks_data = tasks.parse_tasks(tasks_path if os.path.exists(tasks_path) else "")
+    tasks_data = tasks.parse_tasks()
 
     print("\n--- JBot Task Board (nb) ---")
     if not show_all:
@@ -63,8 +61,7 @@ def get_tasks(project_dir: str, show_all: bool = False) -> None:
 def get_logs(project_dir: str, count: int = 10) -> None:
     """Displays recent agent activity logs."""
     os.chdir(project_dir)
-    log_path = ".jbot/memory.log"
-    logs = infra.get_recent_logs(log_path if os.path.exists(log_path) else "", count)
+    logs = infra.get_recent_logs(count)
 
     if not logs:
         print("No memory logs found.")
@@ -236,8 +233,6 @@ def main():
     subparsers.add_parser("purge", help="Archive expired directives")
     rotate_parser = subparsers.add_parser("rotate", help="Rotate data")
     rotate_sub = rotate_parser.add_subparsers(dest="rotate_target")
-    rotate_sub.add_parser("memory").add_argument("-l", "--limit", type=int, default=100)
-    rotate_sub.add_parser("tasks").add_argument("-l", "--limit", type=int, default=10)
     rotate_sub.add_parser("messages").add_argument(
         "-l", "--limit", type=int, default=50
     )
@@ -278,19 +273,16 @@ def main():
     if args.command == "status":
         get_status(project_root)
     elif args.command == "task":
-        tasks_path = os.path.join(project_root, "TASKS.md")
         if args.task_action == "list":
             get_tasks(project_root, args.all)
         elif args.task_action == "add":
-            if tasks.add_task(tasks_path, args.text, args.agent, args.backlog):
+            if tasks.add_task(args.text, args.agent, args.backlog):
                 print(f"Added task: {args.text}")
         elif args.task_action == "update":
-            if tasks.update_task(
-                tasks_path, args.search, args.text, args.agent, args.move
-            ):
+            if tasks.update_task(args.search, args.text, args.agent, args.move):
                 print(f"Updated task: {args.search}")
         elif args.task_action == "done":
-            if tasks.complete_task(tasks_path, args.search):
+            if tasks.complete_task(args.search):
                 print(f"Completed task: {args.search}")
         else:
             task_parser.print_help()
@@ -312,21 +304,7 @@ def main():
         )
         print(f"Purged {c} expired directives.")
     elif args.command == "rotate":
-        if args.rotate_target == "memory":
-            if jbot_rotation.rotate_memory(
-                os.path.join(project_root, ".jbot/memory.log"),
-                os.path.join(project_root, ".jbot/memory.log.archive"),
-                args.limit,
-            ):
-                print("Memory log rotated.")
-        elif args.rotate_target == "tasks":
-            if jbot_rotation.rotate_tasks(
-                os.path.join(project_root, "TASKS.md"),
-                os.path.join(project_root, "TASKS.archive.md"),
-                args.limit,
-            ):
-                print("Tasks rotated.")
-        elif args.rotate_target == "messages":
+        if args.rotate_target == "messages":
             if jbot_rotation.rotate_messages(
                 os.path.join(project_root, ".jbot/messages"),
                 os.path.join(project_root, ".jbot/messages/archive"),
