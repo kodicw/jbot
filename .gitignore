@@ -12,6 +12,9 @@ result
 *~
 .history/
 
+# JBot Knowledge Base (nb)
+.nb/
+
 # JBot Memory files
 .memory.log
 .memory_queue.json
