@@ -101,3 +101,74 @@ def test_ls_notes(mock_run, client):
     assert "memory" in args
     assert "--limit" in args
     assert "5" in args
+
+
+def test_client_default_env():
+    # Test without passing env and empty os.environ
+    with patch.dict(os.environ, {}, clear=True):
+        client = NbClient(notebook="jbot")
+        assert client.env["EDITOR"] == "cat"
+        assert client.env["PAGER"] == "cat"
+
+
+@patch("subprocess.run")
+def test_add_note_fail(mock_run, client):
+    # Test failed command
+    mock_result = MagicMock()
+    mock_result.returncode = 1
+    mock_result.stdout = ""
+    mock_run.return_value = mock_result
+
+    note_id = client.add("Test Title", "Test Content")
+    assert note_id is None
+
+    # Test unexpected output format
+    mock_result.returncode = 0
+    mock_result.stdout = "Created note"
+    note_id = client.add("Test Title", "Test Content")
+    assert note_id is None
+
+
+@patch("subprocess.run")
+def test_show_note_fail(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 1
+    mock_run.return_value = mock_result
+
+    assert client.show("123") is None
+
+
+@patch("subprocess.run")
+def test_query_notes_fail(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 1
+    mock_run.return_value = mock_result
+
+    assert client.query("Test") == []
+
+
+@patch("subprocess.run")
+def test_ls_notes_fail(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 1
+    mock_run.return_value = mock_result
+
+    assert client.ls() == []
+
+
+@patch("subprocess.run")
+def test_parse_ls_output_skip_lines(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = """
+-
+-------------------
+
+[jbot:42] Valid Note
+"""
+    mock_run.return_value = mock_result
+
+    notes = client.ls()
+    assert len(notes) == 1
+    assert notes[0].id == "42"
+    assert notes[0].title == "Valid Note"
