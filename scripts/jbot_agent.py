@@ -199,7 +199,7 @@ def run_agent(
     # 3. Execution
     try:
         process = subprocess.Popen(
-            [gemini_pkg, "-y", "-d", "-p", prompt_content],
+            [gemini_pkg, "-y", "-p", prompt_content],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
