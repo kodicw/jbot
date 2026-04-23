@@ -68,7 +68,7 @@ def get_note_content(query: str) -> Optional[str]:
         
         # 1. Search for the ID using 'nb jbot:q' which is the most reliable search
         search_res = subprocess.run(
-            ["nb", "jbot:q", f"#{tag}", "--limit", "1"],
+            ["nb", "jbot:q", f"#{tag}"],
             capture_output=True, text=True, env={**os.environ, "EDITOR": "cat"}
         )
         
