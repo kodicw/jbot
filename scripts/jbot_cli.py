@@ -177,19 +177,8 @@ def handle_system(project_root: str, action: str) -> None:
         if not infra.get_note_content("type:prompt"):
             print("Note: Creating new system prompt note in nb.")
             # Create a skeleton if empty
-            subprocess.run(
-                [
-                    "nb",
-                    "jbot:add",
-                    "--title",
-                    "System Prompt",
-                    "--tags",
-                    "type:prompt",
-                    "--content",
-                    "Initialize prompt here.",
-                ],
-                capture_output=True,
-            )
+            client = infra.NbClient()
+            client.add("System Prompt", "Initialize prompt here.", tags=["type:prompt"])
 
         # Use interactive nb edit
         subprocess.run(["nb", "jbot:edit", "type:prompt"])

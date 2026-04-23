@@ -148,25 +148,12 @@ def main():
     # 5. Push to NB
     title = f"{title_prefix}: {rough_draft[:30]}..."
 
-    env = os.environ.copy()
-    env["NB_USER_NAME"] = "Human"
-    env["EDITOR"] = "cat"
-
-    cmd = [
-        "nb",
-        "jbot:add",
-        "--title",
-        title,
-        "--tags",
-        tags,
-        "--content",
-        final_content,
-    ]
-    if "Feedback" in action or "Prompt" in action:
-        cmd.append("--overwrite")
-
+    client = infra.NbClient()
     print("\n[NB] Pushing to knowledge base...")
-    subprocess.run(cmd, env=env, check=True)
+    overwrite = "Feedback" in action or "Prompt" in action
+
+    tags_list = tags.split(",")
+    client.add(title, final_content, tags=tags_list, overwrite=overwrite)
 
     print(f"\n🚀 Contribution successfully recorded in nb as: {title}")
 

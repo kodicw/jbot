@@ -22,7 +22,9 @@ def test_add_note(mock_run, client):
     mock_result.stdout = 'Added: [123] 20260422.md "Test Title"\n'
     mock_run.return_value = mock_result
 
-    note_id = client.add("Test Title", "Test Content", tags=["tag1", "tag2"])
+    note_id = client.add(
+        "Test Title", "Test Content", tags=["tag1", "tag2"], overwrite=True
+    )
 
     assert note_id == "123"
     mock_run.assert_called_once()
@@ -35,6 +37,8 @@ def test_add_note(mock_run, client):
     assert "Test Content" in args
     assert "--tags" in args
     assert "tag1,tag2" in args
+    assert "--overwrite" in args
+    assert "--force" in args
 
 
 @patch("subprocess.run")

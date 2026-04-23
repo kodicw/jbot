@@ -87,9 +87,6 @@ def get_note_content(query: str) -> Optional[str]:
     except Exception as e:
         core.log(f"Error fetching note '{query}' from nb: {e}", "Infra")
         return None
-    except Exception as e:
-        core.log(f"Error fetching note '{query}' from nb: {e}", "Infra")
-        return None
 
 
 # --- Memory & Logs ---

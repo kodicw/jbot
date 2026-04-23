@@ -205,19 +205,92 @@ def test_agent_git_tree(agent_env):
         assert "file1" in prompt
 
 
-def test_agent_git_tree_error(agent_env):
-    with patch("subprocess.check_output") as mock_check:
-        mock_check.side_effect = subprocess.CalledProcessError(1, "git ls-files")
-
+def test_agent_main_with_home(agent_env):
+    tmp_path = agent_env
+    env = os.environ.copy()
+    env["HOME"] = str(tmp_path)
+    with patch.dict(os.environ, env):
         with patch("subprocess.Popen") as mock_popen:
             mock_process = MagicMock()
-            mock_process.stdout = ["Success\n"]
+            mock_process.stdout = ["Success response\n"]
             mock_process.wait.return_value = 0
             mock_process.returncode = 0
             mock_popen.return_value = mock_process
 
             jbot_agent.main()
 
+            # Verify files were created
+            assert (tmp_path / ".gitconfig").exists()
+            assert (tmp_path / ".nbrc").exists()
+            assert (tmp_path / ".nb" / "jbot").is_symlink()
+
+
+def test_agent_main_nb_prompt(agent_env):
+    def side_effect(query):
+        if query == "#prompt":
+            return "This is a prompt from nb."
+        return None
+
+    with patch("jbot_infra.get_note_content", side_effect=side_effect):
+        with patch("subprocess.Popen") as mock_popen:
+            mock_process = MagicMock()
+            mock_process.stdout = ["Success response\n"]
+            mock_process.wait.return_value = 0
+            mock_process.returncode = 0
+            mock_popen.return_value = mock_process
+
+            jbot_agent.main()
+            args, _ = mock_popen.call_args
+            prompt_arg = args[0][3]
+            assert "This is a prompt from nb." in prompt_arg
+
+
+def test_agent_git_tree_large(agent_env):
+    with patch("subprocess.check_output") as mock_tree:
+        # Generate > 50 lines
+        mock_tree.return_value = "\n".join([f"file{i}" for i in range(60)])
+        with patch("subprocess.Popen") as mock_popen:
+            mock_process = MagicMock()
+            mock_process.stdout = ["Success\n"]
+            mock_process.wait.return_value = 0
+            mock_process.returncode = 0
+            mock_popen.return_value = mock_process
+            jbot_agent.main()
             args, _ = mock_popen.call_args
             prompt = args[0][3]
-            assert "Error generating directory tree" in prompt
+            assert "file50" not in prompt
+            assert "(truncated)" in prompt
+
+
+def test_agent_template_error(agent_env):
+    with patch("jinja2.Template") as mock_template:
+        mock_template.side_effect = Exception("Template error")
+        with patch("subprocess.Popen") as mock_popen:
+            mock_process = MagicMock()
+            mock_process.stdout = ["Success\n"]
+            mock_process.wait.return_value = 0
+            mock_process.returncode = 0
+            mock_popen.return_value = mock_process
+            jbot_agent.main()
+            args, _ = mock_popen.call_args
+            prompt = args[0][3]
+            # Falls back to raw prompt content
+            assert "Hello {{ agent.name }}" in prompt
+
+
+def test_agent_popen_exception(agent_env):
+    with patch("subprocess.Popen") as mock_popen:
+        mock_popen.side_effect = Exception("Popen failed")
+        with pytest.raises(SystemExit) as e:
+            jbot_agent.main()
+        assert e.value.code == 1
+
+
+def test_main_block():
+    import runpy
+
+    script_path = os.path.join(
+        os.path.dirname(__file__), "..", "scripts", "jbot_agent.py"
+    )
+    with pytest.raises(SystemExit):
+        runpy.run_path(script_path, run_name="__main__")

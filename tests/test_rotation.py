@@ -24,8 +24,12 @@ def test_purge_directives(tmp_path):
     assert count == 2
     assert (archive_path / "001_2000-01-01_expired.txt").exists()
 
-    # Test directory skipping
-    (dir_path / "subdir").mkdir()
+    # Test directory skipping (must end with .txt to get past filter)
+    (dir_path / "subdir.txt").mkdir()
+    rotation.purge_directives(str(dir_path), str(archive_path))
+
+    # Test empty file
+    (dir_path / "empty.txt").write_text("")
     rotation.purge_directives(str(dir_path), str(archive_path))
 
     # Test collision in archive
@@ -73,12 +77,8 @@ Vision
 - [ ] Active Task
 - [x] Done in active
 ## Backlog
-- [ ] Backlog Task
 - [x] Done in backlog
-## Completed Tasks
-- [x] Done 1
-- [x] Done 2
-""")
+- [ ] Backlog Task without newline""")
 
     # Rotate with limit 1
     success = rotation.rotate_tasks(str(tasks_file), str(archive_file), limit=1)
@@ -88,8 +88,11 @@ Vision
     archive_content = archive_file.read_text()
     assert "Done in active" in archive_content
 
-    # Test with missing headers
-    tasks_file.write_text("# Board\n")
+    tasks_file.write_text("""
+## Strategic Vision
+Vision
+## Active Tasks
+- [ ] Active Task without newline""")
     rotation.rotate_tasks(str(tasks_file), str(archive_file))
 
     # Error cases

@@ -40,7 +40,11 @@ class NbClient:
         )
 
     def add(
-        self, title: str, content: str, tags: Optional[List[str]] = None
+        self,
+        title: str,
+        content: str,
+        tags: Optional[List[str]] = None,
+        overwrite: bool = False,
     ) -> Optional[str]:
         """
         Add a new note to the notebook.
@@ -49,6 +53,8 @@ class NbClient:
         args = [f"{self.notebook}:add", "--title", title, "--content", content]
         if tags:
             args.extend(["--tags", ",".join(tags)])
+        if overwrite:
+            args.extend(["--overwrite", "--force"])
 
         result = self._run(args)
         if result.returncode == 0 and result.stdout:

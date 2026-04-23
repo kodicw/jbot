@@ -183,7 +183,135 @@ def test_cli_task_update_and_done(tmp_path, capsys):
     assert "- [x] **Updated**" in tasks_file.read_text()
 
 
-def test_cli_version(tmp_path, capsys):
+def test_cli_human(tmp_path, capsys):
+    with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "human"]):
+        with patch("jbot_tui.main") as mock_tui:
+            jbot_cli.main()
+            mock_tui.assert_called_once()
+
+
+def test_cli_system(tmp_path, capsys):
+    with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "system", "show"]):
+        with patch("jbot_cli.handle_system") as mock_sys:
+            jbot_cli.main()
+            mock_sys.assert_called_once_with(str(tmp_path), "show")
+
+
+def test_handle_system(tmp_path, capsys):
+    (tmp_path / "jbot_prompt.txt").write_text("Bootstrap")
+
+    with patch("jbot_infra.get_note_content", return_value=None):
+        jbot_cli.handle_system(str(tmp_path), "show")
+        captured = capsys.readouterr()
+        assert "Bootstrap" in captured.out
+
+    with patch("jbot_infra.get_note_content", return_value="NB Prompt"):
+        jbot_cli.handle_system(str(tmp_path), "show")
+        captured = capsys.readouterr()
+        assert "NB Prompt" in captured.out
+
+
+@patch("subprocess.run")
+def test_handle_system_edit(mock_run, tmp_path):
+    with patch("jbot_infra.get_note_content", return_value=None):
+        with patch("jbot_infra.NbClient") as mock_nb:
+            jbot_cli.handle_system(str(tmp_path), "edit")
+            mock_nb.return_value.add.assert_called_once()
+            mock_run.assert_called_once()
+            assert "jbot:edit" in mock_run.call_args[0][0]
+
+    mock_run.reset_mock()
+    with patch("jbot_infra.get_note_content", return_value="Exists"):
+        with patch("jbot_infra.NbClient") as mock_nb:
+            jbot_cli.handle_system(str(tmp_path), "edit")
+            mock_nb.return_value.add.assert_not_called()
+            mock_run.assert_called_once()
+
+
+def test_cli_main_rotate(tmp_path, capsys):
+    with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "rotate"]):
+        jbot_cli.main()
+        captured = capsys.readouterr()
+        assert "usage" in captured.out
+
+
+def test_cli_main_task_error(tmp_path, capsys):
+    pass
+
+    with patch(
+        "sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "task", "add", "task1"]
+    ):
+        with patch("jbot_tasks.add_task", return_value=False):
+            jbot_cli.main()
+
+    with patch(
+        "sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "task", "update", "task1"]
+    ):
+        with patch("jbot_tasks.update_task", return_value=False):
+            jbot_cli.main()
+
+    with patch(
+        "sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "task", "done", "task1"]
+    ):
+        with patch("jbot_tasks.complete_task", return_value=False):
+            jbot_cli.main()
+
+
+def test_cli_main_no_args(tmp_path, capsys):
+    with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path)]):
+        jbot_cli.main()
+        captured = capsys.readouterr()
+        assert "usage" in captured.out
+
+
+def test_cli_main_misc_commands(tmp_path, capsys):
+    with patch("jbot_cli.get_logs") as mock_logs:
+        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "logs"]):
+            jbot_cli.main()
+            mock_logs.assert_called_once()
+
+    with patch("jbot_cli.get_messages") as mock_msgs:
+        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "messages"]):
+            jbot_cli.main()
+            mock_msgs.assert_called_once()
+
+    with patch("jbot_infra.send_message", return_value=False) as mock_send:
+        with patch(
+            "sys.argv",
+            [
+                "jbot_cli.py",
+                "-d",
+                str(tmp_path),
+                "send-message",
+                "-f",
+                "agent",
+                "-m",
+                "msg",
+            ],
+        ):
+            jbot_cli.main()
+            mock_send.assert_called_once()
+
+    with patch(
+        "jbot_infra.get_recent_logs",
+        return_value=[{"agent": "mock", "content": {"summary": "NB Logs"}}],
+    ):
+        jbot_cli.get_logs(str(tmp_path))
+        captured = capsys.readouterr()
+        assert "NB Logs" in captured.out
+
+
+def test_cli_main_name_main(tmp_path):
+    with patch("jbot_cli.main"):
+        with patch.object(jbot_cli, "__name__", "__main__"):
+            pass
+
+
+def test_cli_main_task_errors(tmp_path, capsys):
+    with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "task"]):
+        jbot_cli.main()
+        captured = capsys.readouterr()
+        assert "usage" in captured.out
     version_file = tmp_path / "VERSION"
     version_file.write_text("1.0.0")
 

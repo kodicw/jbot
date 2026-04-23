@@ -44,9 +44,10 @@ def test_load_json(tmp_path):
     assert core.load_json("nonexistent.json", default={"a": 1}) == {"a": 1}
 
 
-def test_load_json_error():
-    with patch("builtins.open", side_effect=Exception("Read Error")):
-        assert core.load_json("some.json", default={"err": 1}) == {"err": 1}
+def test_load_json_error(tmp_path):
+    json_file = tmp_path / "data.json"
+    json_file.write_text("invalid json")
+    assert core.load_json(str(json_file), default={"err": 1}) == {"err": 1}
 
 
 def test_save_json(tmp_path):
@@ -69,9 +70,11 @@ def test_read_file(tmp_path):
     assert core.read_file("nonexistent.txt", "Default") == "Default"
 
 
-def test_read_file_error():
+def test_read_file_error(tmp_path):
+    txt_file = tmp_path / "test.txt"
+    txt_file.write_text("Hello World")
     with patch("builtins.open", side_effect=Exception("Read Error")):
-        assert core.read_file("some.txt", "Fallback") == "Fallback"
+        assert core.read_file(str(txt_file), "Fallback") == "Fallback"
 
 
 def test_write_file(tmp_path):
@@ -92,6 +95,39 @@ def test_is_git_clean():
         assert core.is_git_clean() is False
 
 
+def test_get_git_status():
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(stdout=" M file.txt\n", returncode=0)
+        assert core.get_git_status() == "M file.txt"
+
+        mock_run.return_value = MagicMock(stdout="", returncode=0)
+        assert core.get_git_status() == "Clean"
+
+        mock_run.side_effect = Exception("git error")
+        assert core.get_git_status() == "Not a git repository or git error."
+
+
+def test_get_nix_metadata():
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(
+            stdout='{"url": "github:example/repo", "revision": "12345"}', returncode=0
+        )
+        metadata = core.get_nix_metadata()
+        assert "github:example/repo" in metadata
+        assert "12345" in metadata
+
+        mock_run.return_value = MagicMock(stdout="{}", returncode=0)
+        metadata = core.get_nix_metadata()
+        assert "Unknown" in metadata
+        assert "Dirty/Uncommitted" in metadata
+
+        mock_run.return_value = MagicMock(stdout="", returncode=1)
+        assert core.get_nix_metadata() == "Nix flake metadata unavailable."
+
+        mock_run.side_effect = Exception("nix error")
+        assert core.get_nix_metadata() == "Nix command failed."
+
+
 def test_versioning(tmp_path):
     version_file = tmp_path / "VERSION"
     version_file.write_text("1.0.0")
@@ -99,6 +135,8 @@ def test_versioning(tmp_path):
     assert core.bump_version(str(tmp_path), "patch") == "1.0.1"
     assert core.bump_version(str(tmp_path), "minor") == "1.1.0"
     assert core.bump_version(str(tmp_path), "major") == "2.0.0"
+    version_file.write_text("1.0")
+    assert core.bump_version(str(tmp_path), "patch") is None
     version_file.write_text("invalid")
     assert core.bump_version(str(tmp_path), "patch") is None
     version_file.write_text("1.0.0")

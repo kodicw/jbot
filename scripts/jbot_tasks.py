@@ -1,6 +1,5 @@
 import os
 import re
-import subprocess
 from typing import Dict, Any, Optional
 import jbot_core as core
 import jbot_infra as infra
@@ -16,28 +15,11 @@ def _get_nb_tasks() -> str:
 
 def _push_nb_tasks(content: str) -> bool:
     """Helper to push updated task board back to nb."""
-    env = os.environ.copy()
-    env["EDITOR"] = "cat"
-    if "NB_USER_NAME" not in env:
-        env["NB_USER_NAME"] = "System (CLI)"
+    client = infra.NbClient()
 
     try:
-        subprocess.run(
-            [
-                "nb",
-                "jbot:add",
-                "--title",
-                "Task Board",
-                "--tags",
-                "type:tasks",
-                "--content",
-                content,
-                "--overwrite",
-                "--force",
-            ],
-            check=True,
-            capture_output=True,
-            env=env,
+        client.add(
+            title="Task Board", content=content, tags=["type:tasks"], overwrite=True
         )
         return True
     except Exception as e:
