@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import argparse
 import subprocess
 import jbot_core as core
@@ -154,29 +155,24 @@ def handle_version(project_root: str, action: str, part: str = None) -> None:
             print(f"Error: Release failed during git operations - {e}")
 
 
-def handle_system(project_root: str, action: str) -> None:
+def handle_system(project_root: str, action: str, agent_name: str = None) -> None:
     """Handles viewing and editing the JBot system prompt."""
     os.chdir(project_root)
 
     if action == "show":
-        import jbot_tui
+        if not agent_name:
+            print("Error: Agent name is required for system show.")
+            sys.exit(1)
 
         registry = infra.get_team_registry(project_root)
         if not registry:
             print("No agents found in registry.")
             return
 
-        options = [
-            f"{name} ({info.get('role', 'Unknown')})" for name, info in registry.items()
-        ]
-        options.append("❌ Cancel")
-        choice = jbot_tui.get_gum_choose(
-            options, "Select an agent to preview the system prompt for:"
-        )
-        if not choice or choice == "❌ Cancel":
-            return
+        if agent_name not in registry:
+            print(f"Error: Agent '{agent_name}' not found in registry.")
+            sys.exit(1)
 
-        agent_name = choice.split(" ")[0]
         agent_info = registry.get(agent_name, {})
         prompt_file = os.path.join(project_root, "jbot_prompt.txt")
 
@@ -286,7 +282,8 @@ def main():
         "system", help="Manage organization 'operating system' (prompt)"
     )
     sys_sub = sys_parser.add_subparsers(dest="sys_action")
-    sys_sub.add_parser("show", help="Display the current system prompt")
+    show_parser = sys_sub.add_parser("show", help="Display the current system prompt")
+    show_parser.add_argument("agent", help="Name of the agent to show the prompt for")
     sys_sub.add_parser("edit", help="Edit the system prompt in nb")
 
     args = parser.parse_args()
@@ -369,7 +366,7 @@ def main():
     elif args.command == "human":
         jbot_tui.main()
     elif args.command == "system":
-        handle_system(project_root, args.sys_action)
+        handle_system(project_root, args.sys_action, getattr(args, "agent", None))
     elif args.command == "version":
         handle_version(project_root, args.action, getattr(args, "part", None))
     else:

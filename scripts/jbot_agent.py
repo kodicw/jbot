@@ -74,7 +74,7 @@ def assemble_context(
 """
 
     # 6. Collective Memory (Shared History from nb)
-    logs = infra.get_recent_logs("", 15)
+    logs = infra.get_recent_logs(15)
     rag_entries = []
     seen_summaries = set()
     for entry in logs:
