@@ -4,7 +4,6 @@ import shutil
 from datetime import datetime
 
 import jbot_core as core
-import jbot_tasks as tasks
 
 
 def purge_directives(dir_path: str, archive_path: str) -> int:

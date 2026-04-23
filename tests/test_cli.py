@@ -1,5 +1,4 @@
 import os
-import json
 from unittest.mock import patch, MagicMock
 import sys
 import subprocess
@@ -210,15 +209,26 @@ def test_cli_system(tmp_path, capsys):
 def test_handle_system(tmp_path, capsys):
     (tmp_path / "jbot_prompt.txt").write_text("Bootstrap")
 
-    with patch("jbot_infra.get_note_content", return_value=None):
+    with patch("jbot_infra.get_team_registry", return_value={}):
         jbot_cli.handle_system(str(tmp_path), "show")
         captured = capsys.readouterr()
-        assert "Bootstrap" in captured.out
+        assert "No agents found in registry" in captured.out
 
-    with patch("jbot_infra.get_note_content", return_value="NB Prompt"):
-        jbot_cli.handle_system(str(tmp_path), "show")
-        captured = capsys.readouterr()
-        assert "NB Prompt" in captured.out
+    with patch(
+        "jbot_infra.get_team_registry", return_value={"test-agent": {"role": "dev"}}
+    ):
+        with patch("jbot_tui.get_gum_choose", return_value="test-agent (dev)"):
+            with patch("jbot_agent.assemble_context", return_value="RESOLVED"):
+                jbot_cli.handle_system(str(tmp_path), "show")
+                captured = capsys.readouterr()
+                assert "RESOLVED SYSTEM PROMPT FOR [test-agent]" in captured.out
+                assert "RESOLVED" in captured.out
+
+        with patch("jbot_tui.get_gum_choose", return_value="❌ Cancel"):
+            jbot_cli.handle_system(str(tmp_path), "show")
+            captured = capsys.readouterr()
+            # Should just return
+            assert "RESOLVED" not in captured.out
 
 
 @patch("subprocess.run")

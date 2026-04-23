@@ -159,14 +159,36 @@ def handle_system(project_root: str, action: str) -> None:
     os.chdir(project_root)
 
     if action == "show":
-        nb_prompt = infra.get_note_content("type:prompt")
-        if nb_prompt:
-            print("\n--- SYSTEM PROMPT (nb knowledge base) ---")
-            print(nb_prompt)
-        else:
-            prompt_file = os.path.join(project_root, "jbot_prompt.txt")
-            print("\n--- SYSTEM PROMPT (Bootstrap file) ---")
-            print(core.read_file(prompt_file))
+        import jbot_tui
+
+        registry = infra.get_team_registry(project_root)
+        if not registry:
+            print("No agents found in registry.")
+            return
+
+        options = [
+            f"{name} ({info.get('role', 'Unknown')})" for name, info in registry.items()
+        ]
+        options.append("❌ Cancel")
+        choice = jbot_tui.get_gum_choose(
+            options, "Select an agent to preview the system prompt for:"
+        )
+        if not choice or choice == "❌ Cancel":
+            return
+
+        agent_name = choice.split(" ")[0]
+        agent_info = registry.get(agent_name, {})
+        prompt_file = os.path.join(project_root, "jbot_prompt.txt")
+
+        resolved_prompt = jbot_agent.assemble_context(
+            agent_name=agent_name,
+            agent_role=agent_info.get("role", "Unknown"),
+            agent_desc=agent_info.get("description", "Unknown"),
+            project_dir=project_root,
+            prompt_file=prompt_file,
+        )
+        print(f"\n--- RESOLVED SYSTEM PROMPT FOR [{agent_name}] ---")
+        print(resolved_prompt)
 
     elif action == "edit":
         print("\n[NB] Opening system prompt for editing...")
@@ -317,13 +339,32 @@ def main():
         if infra.generate_dashboard(project_dir=project_root):
             print("Dashboard regenerated.")
     elif args.command == "agent":
+        if not getattr(args, "name", None):
+            registry = infra.get_team_registry(project_root)
+            if not registry:
+                print("No agents found in registry.")
+                return
+            options = [
+                f"{name} ({info.get('role', 'Unknown')})"
+                for name, info in registry.items()
+            ]
+            options.append("❌ Cancel")
+            choice = jbot_tui.get_gum_choose(options, "Select an agent to run:")
+            if not choice or choice == "❌ Cancel":
+                return
+            args.name = choice.split(" ")[0]
+
+            agent_info = registry.get(args.name, {})
+            args.role = getattr(args, "role", None) or agent_info.get("role")
+            args.desc = getattr(args, "desc", None) or agent_info.get("description")
+
         jbot_agent.run_agent(
             name=args.name,
-            role=args.role,
-            description=args.desc,
+            role=getattr(args, "role", None),
+            description=getattr(args, "desc", None),
             project_dir=project_root,
-            prompt_file=args.prompt,
-            gemini_pkg=args.gemini,
+            prompt_file=getattr(args, "prompt", None),
+            gemini_pkg=getattr(args, "gemini", None),
         )
     elif args.command == "human":
         jbot_tui.main()
