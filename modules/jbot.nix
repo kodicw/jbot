@@ -7,6 +7,10 @@
 let
   cfg = config.programs.jbot;
 
+  # We expect the package to be passed in or use the one from corePackages
+  jbot-cli = pkgs.callPackage ../pkgs/jbot-cli.nix { scripts = ../scripts; };
+  jbotPython = jbot-cli.python;
+
   agentModule = _: {
     options = {
       enable = lib.mkEnableOption "this JBot agent";
@@ -36,7 +40,7 @@ let
       };
       promptFile = lib.mkOption {
         type = lib.types.path;
-        default = ./jbot_prompt.txt;
+        default = ../jbot_prompt.txt;
         description = "The base prompt file to use.";
       };
       extraPackages = lib.mkOption {
@@ -61,6 +65,7 @@ let
       };
     };
   };
+
   agentsJson = pkgs.writeText "agents.json" (
     builtins.toJSON (
       lib.mapAttrs (_name: agent: {
@@ -69,19 +74,6 @@ let
       }) cfg.agents
     )
   );
-
-  jbotPython = (
-    pkgs.python3.withPackages (ps: [
-      ps.jinja2
-      ps.pytest
-      ps.pytest-mock
-      ps.pytest-cov
-    ])
-  );
-
-  jbot-cli = pkgs.writeShellScriptBin "jbot" ''
-    ${jbotPython}/bin/python3 ${./scripts}/jbot_cli.py "$@"
-  '';
 
   corePackages = [
     pkgs.coreutils
@@ -135,6 +127,7 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = [
       jbot-cli
+      jbotPython
       pkgs.nb
       pkgs.gum
       pkgs.tealdeer
@@ -166,27 +159,6 @@ in
           ) cfg.agents
         )
       }")
-
-      ## 🔒 Sandbox Architecture (bwrap)
-      - **Runtime Isolation**: Full unshare (--unshare-all)
-      - **Networking**: Enabled (--share-net)
-      - **Shared Memory**: .nb bound to %h/.nb
-      - **Identity persistence**: .gemini bound to %h/.gemini
-      - **Credential Guard**: .config/gh (Read-Write), .gitconfig (Read-Only)
-      - **Resource Control**: CPUQuota (25%), MemoryMax (2G) [Standard PAO Policy]
-
-      ## 🆔 Standardized Agent Environment
-      - **GIT_NAME**: JBot ({AGENT_NAME})
-      - **AGENT_ROOT**: {PROJECT_DIR}
-      - **CONTEXT_FILE**: {PROMPT_FILE}
-      - **MEMORY_INGESTION**: {MEMORY_OUTPUT}
-
-      ## 📖 Quick Reference (tldr)
-      - **Audit**: \`just audit\`
-      - **Search Memory**: \`nb jbot:q <query>\`
-      - **Check Purity**: \`just prune\`
-      - **Run Tests**: \`just test\`
-      - **Command Help**: \`tldr <command>\`
 
       ## 📜 Architectural Directives
       1. **Technical Purity**: 100% test coverage and zero technical debt.

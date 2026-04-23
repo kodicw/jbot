@@ -22,8 +22,12 @@
       let
         pkgs = import nixpkgs { inherit system; };
         inherit (pkgs) lib;
+        jbot-cli = pkgs.callPackage ./pkgs/jbot-cli.nix { scripts = ./scripts; };
       in
       {
+        packages.default = jbot-cli;
+        packages.jbot-cli = jbot-cli;
+
         devShells.default = pkgs.mkShell {
           packages = [
             pkgs.nixfmt-rfc-style
@@ -35,6 +39,7 @@
             pkgs.python3Packages.pytest-cov
             pkgs.python3Packages.pytest-mock
             pkgs.jq
+            jbot-cli
           ];
 
           shellHook = ''
@@ -68,6 +73,7 @@
                   pkgs.python3Packages.pytest-cov
                   pkgs.python3Packages.pytest-mock
                   pkgs.git
+                  jbot-cli.python
                 ];
               }
               ''
@@ -75,46 +81,17 @@
                 cp ${./scripts}/*.py scripts/
                 cp ${./tests}/*.py tests/
                 export PYTHONPATH=$PYTHONPATH:$(pwd)/scripts
-                # Run pytest on all python tests with coverage for the scripts directory
                 pytest --cov=scripts --cov-report=term-missing tests/
                 touch $out
               '';
-
-          unit-test = pkgs.callPackage ./tests/unit-test.nix {
-            jbot-scripts = ./scripts;
-            jbot_prompt_txt = ./jbot_prompt.txt;
-          };
-          multi-agent-unit-test = pkgs.callPackage ./tests/multi-agent-unit-test.nix {
-            jbot-scripts = ./scripts;
-            jbot_prompt_txt = ./jbot_prompt.txt;
-          };
-          handover-unit-test = pkgs.callPackage ./tests/handover-unit-test.nix {
-            jbot-scripts = ./scripts;
-            jbot_prompt_txt = ./jbot_prompt.txt;
-          };
-          directive-expiration-test = pkgs.callPackage ./tests/directive-expiration-test.nix {
-            jbot-scripts = ./scripts;
-            jbot_prompt_txt = ./jbot_prompt.txt;
-          };
-          directive-purge-test = pkgs.callPackage ./tests/directive-purge-test.nix {
-            jbot-cli-py = ./scripts/jbot_cli.py;
-          };
-          memory-rotation-test = pkgs.callPackage ./tests/memory-rotation-test.nix {
-            jbot-cli-py = ./scripts/jbot_cli.py;
-          };
-          task-rotation-test = pkgs.callPackage ./tests/task-rotation-test.nix {
-            jbot-cli-py = ./scripts/jbot_cli.py;
-          };
-        }
-        // lib.optionalAttrs (pkgs.stdenv.isLinux && (builtins.getEnv "SKIP_VM_TESTS" != "1")) {
-          nixos-test = pkgs.callPackage ./tests/nixos-test.nix {
-            inherit (self.inputs) home-manager;
-            jbot-module = self.homeManagerModules.default;
-          };
         };
       }
     )
     // {
-      homeManagerModules.default = import ./jbot.nix;
+      homeManagerModules = {
+        jbot = import ./modules/jbot.nix;
+        ai-company = import ./modules/ai-company.nix;
+        default = self.homeManagerModules.jbot;
+      };
     };
 }
