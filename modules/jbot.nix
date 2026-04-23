@@ -305,7 +305,9 @@ in
                   pkgs.python3
                   pkgs.findutils
                   pkgs.gnused
+                  pkgs.gnugrep
                   pkgs.gawk
+                  pkgs.which
                   jbot-cli
                 ]
               }"

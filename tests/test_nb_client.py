@@ -1,0 +1,103 @@
+import os
+import sys
+import pytest
+from unittest.mock import patch, MagicMock
+
+# Ensure scripts directory is in sys.path
+sys.path.append(os.path.join(os.getcwd(), "scripts"))
+from nb_client import NbClient
+
+
+@pytest.fixture
+def client():
+    # Use a custom env to avoid host pollution
+    env = {"EDITOR": "cat", "PAGER": "cat", "NB_USER_NAME": "Test User"}
+    return NbClient(notebook="jbot", env=env)
+
+
+@patch("subprocess.run")
+def test_add_note(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = 'Added: [123] 20260422.md "Test Title"\n'
+    mock_run.return_value = mock_result
+
+    note_id = client.add("Test Title", "Test Content", tags=["tag1", "tag2"])
+
+    assert note_id == "123"
+    mock_run.assert_called_once()
+    args = mock_run.call_args[0][0]
+    assert "nb" in args
+    assert "jbot:add" in args
+    assert "--title" in args
+    assert "Test Title" in args
+    assert "--content" in args
+    assert "Test Content" in args
+    assert "--tags" in args
+    assert "tag1,tag2" in args
+
+
+@patch("subprocess.run")
+def test_show_note(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = "Test Content\nLine 2"
+    mock_run.return_value = mock_result
+
+    content = client.show("123")
+
+    assert content == "Test Content\nLine 2"
+    mock_run.assert_called_once()
+    args = mock_run.call_args[0][0]
+    assert "jbot:show" in args
+    assert "123" in args
+    assert "--print" in args
+
+
+@patch("subprocess.run")
+def test_query_notes(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = """
+[jbot:1] 🔖 Test Bookmark
+[jbot:2] Regular Note Title
+[3] Another Note
+"""
+    mock_run.return_value = mock_result
+
+    notes = client.query("Test")
+
+    assert len(notes) == 3
+    assert notes[0].id == "1"
+    assert notes[0].title == "Test Bookmark"
+    assert notes[1].id == "2"
+    assert notes[1].title == "Regular Note Title"
+    assert notes[2].id == "3"
+    assert notes[2].title == "Another Note"
+
+    mock_run.assert_called_once()
+    args = mock_run.call_args[0][0]
+    assert "jbot:q" in args
+    assert "Test" in args
+
+
+@patch("subprocess.run")
+def test_ls_notes(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = "[jbot:42] Memory: [agent1] - Summary"
+    mock_run.return_value = mock_result
+
+    notes = client.ls(tags=["memory"], limit=5)
+
+    assert len(notes) == 1
+    assert notes[0].id == "42"
+    assert notes[0].title == "Memory: [agent1] - Summary"
+
+    mock_run.assert_called_once()
+    args = mock_run.call_args[0][0]
+    assert "jbot:ls" in args
+    assert "--tags" in args
+    assert "memory" in args
+    assert "--limit" in args
+    assert "5" in args

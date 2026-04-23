@@ -15,13 +15,12 @@
       self,
       nixpkgs,
       flake-utils,
-      home-manager,
+      ...
     }:
     flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ] (
       system:
       let
         pkgs = import nixpkgs { inherit system; };
-        inherit (pkgs) lib;
         jbot-cli = pkgs.callPackage ./pkgs/jbot-cli.nix { scripts = ./scripts; };
       in
       {
@@ -38,7 +37,10 @@
             pkgs.python3Packages.pytest
             pkgs.python3Packages.pytest-cov
             pkgs.python3Packages.pytest-mock
+            pkgs.python3Packages.jinja2
             pkgs.jq
+            pkgs.gnugrep
+            pkgs.which
             jbot-cli
           ];
 

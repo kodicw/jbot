@@ -1,8 +1,6 @@
 import os
 import sys
 import subprocess
-import tempfile
-import shutil
 from typing import Optional
 
 import jbot_core as core
@@ -27,12 +25,16 @@ def assemble_context(
         core.log("Gathering system prompt from nb knowledge base.", agent_name)
         prompt_content = nb_prompt
     else:
-        core.log("Knowledge base prompt missing. Bootstrapping from local file.", agent_name)
+        core.log(
+            "Knowledge base prompt missing. Bootstrapping from local file.", agent_name
+        )
         prompt_content = core.read_file(prompt_file)
 
     # 2. Operational Directives & Command Registry
-    directives = infra.get_note_content("type:directives") or "No formal directives in nb."
-    
+    directives = (
+        infra.get_note_content("type:directives") or "No formal directives in nb."
+    )
+
     # 3. Project Goal & Roadmap
     goal = infra.get_note_content("type:goal") or "No project goal defined in nb."
     task_board = infra.get_note_content("type:tasks") or "No task board found in nb."
@@ -42,13 +44,18 @@ def assemble_context(
     fresh_ideas = infra.get_note_content("type:idea") or "No new ideas recorded."
 
     # 5. Environment & Tooling (Dynamic Context)
-    env_audit = infra.get_note_content("ADR: Environment and Tool Registry") or "No environment audit available."
+    env_audit = (
+        infra.get_note_content("ADR: Environment and Tool Registry")
+        or "No environment audit available."
+    )
     git_status = core.get_git_status(project_dir)
     nix_metadata = core.get_nix_metadata(project_dir)
-    
+
     # Directory Tree (Git-aware)
     try:
-        tree = subprocess.check_output(["git", "-C", project_dir, "ls-files"], text=True).strip()
+        tree = subprocess.check_output(
+            ["git", "-C", project_dir, "ls-files"], text=True
+        ).strip()
         lines = tree.split("\n")
         if len(lines) > 50:
             tree = "\n".join(lines[:50]) + "\n... (truncated)"
@@ -77,31 +84,43 @@ def assemble_context(
             rag_entries.append(f"[{agent}] {summary}")
             seen_summaries.add(summary)
     rag_entries.reverse()
-    rag_formatted = "\n".join(rag_entries) if rag_entries else "No previous memory found in nb."
+    rag_formatted = (
+        "\n".join(rag_entries) if rag_entries else "No previous memory found in nb."
+    )
 
     # 7. Team Registry
     agents = infra.get_team_registry(project_dir)
-    registry_lines = [f"- {name}: {info.get('role')} ({info.get('description')})" for name, info in agents.items() if name != agent_name]
-    team_registry = "\n".join(registry_lines) if registry_lines else "No other agents in visibility."
 
     # 8. Inter-Agent Messaging
     msgs_dir = os.path.join(project_dir, ".jbot/messages")
     recent_msgs = infra.get_recent_messages(msgs_dir, 5)
-    messages = "\n".join([f"--- Message {m['filename']} ---\n{m['content']}" for m in recent_msgs]) if recent_msgs else "No recent messages."
+    messages = (
+        "\n".join(
+            [f"--- Message {m['filename']} ---\n{m['content']}" for m in recent_msgs]
+        )
+        if recent_msgs
+        else "No recent messages."
+    )
 
     # 9. Available Notebooks
     try:
         nb_list_res = subprocess.run(
             ["nb", "notebooks", "--names"],
-            capture_output=True, text=True, env={**os.environ, "EDITOR": "cat"}
+            capture_output=True,
+            text=True,
+            env={**os.environ, "EDITOR": "cat"},
         )
-        notebooks = nb_list_res.stdout.strip().splitlines() if nb_list_res.returncode == 0 else ["jbot"]
+        notebooks = (
+            nb_list_res.stdout.strip().splitlines()
+            if nb_list_res.returncode == 0
+            else ["jbot"]
+        )
     except Exception:
         notebooks = ["jbot"]
 
     # Final Prompt Assembly using Jinja2
     from jinja2 import Template
-    
+
     template_data = {
         "agent": {
             "name": agent_name,
@@ -113,7 +132,7 @@ def assemble_context(
         "shared_history": rag_formatted,
         "realtime_state": realtime_context,
         "tasks": task_board,
-        "team": agents, # Full registry dict
+        "team": agents,  # Full registry dict
         "messages": messages,
         "directives": directives,
         "human_input": human_input,
@@ -125,7 +144,9 @@ def assemble_context(
         template = Template(prompt_content)
         return template.render(**template_data)
     except Exception as e:
-        core.log(f"Jinja2 rendering failed: {e}. Falling back to raw content.", agent_name)
+        core.log(
+            f"Jinja2 rendering failed: {e}. Falling back to raw content.", agent_name
+        )
         return prompt_content
 
 
@@ -164,14 +185,18 @@ def run_agent(
         gitconfig_path = os.path.join(home_dir, ".gitconfig")
         if not os.path.exists(gitconfig_path):
             with open(gitconfig_path, "w") as f:
-                f.write(f"[user]\n  name = JBot ({name})\n  email = jbot-{name}@internal.jbot\n[core]\n  pager = cat\n")
-        
+                f.write(
+                    f"[user]\n  name = JBot ({name})\n  email = jbot-{name}@internal.jbot\n[core]\n  pager = cat\n"
+                )
+
         # Seed NB Config
         nbrc_path = os.path.join(home_dir, ".nbrc")
         if not os.path.exists(nbrc_path):
             with open(nbrc_path, "w") as f:
-                f.write(f"export NB_DIR=\"{home_dir}/.nb\"\nexport NB_USER_NAME=\"JBot ({name})\"\nexport NB_USER_EMAIL=\"jbot-{name}@internal.jbot\"\n")
-        
+                f.write(
+                    f'export NB_DIR="{home_dir}/.nb"\nexport NB_USER_NAME="JBot ({name})"\nexport NB_USER_EMAIL="jbot-{name}@internal.jbot"\n'
+                )
+
         # Link Project Knowledge Base
         nb_home = os.path.join(home_dir, ".nb")
         os.makedirs(nb_home, exist_ok=True)
@@ -187,9 +212,7 @@ def run_agent(
     os.makedirs(outbox_dir, exist_ok=True)
 
     # 2. Assemble Context
-    prompt_content = assemble_context(
-        name, role, description, project_dir, prompt_file
-    )
+    prompt_content = assemble_context(name, role, description, project_dir, prompt_file)
 
     # Set up memory output for gemini
     os.environ["MEMORY_OUTPUT"] = f"{project_dir}/{queues_dir}/{name}.json"
@@ -223,7 +246,7 @@ def run_agent(
                 core.log("Verification SUCCESS.", name)
             except subprocess.CalledProcessError as e:
                 core.log(f"Verification WARNING: {e}", name)
-        
+
         core.log("Execution SUCCESS.", name)
 
     except Exception as e:

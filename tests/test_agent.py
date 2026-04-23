@@ -42,20 +42,26 @@ def agent_env(tmp_path):
     }
     with patch.dict(os.environ, env):
         # Mock infra calls to avoid nb dependency
-        with patch("jbot_infra.get_note_content") as mock_get_note, \
-             patch("jbot_infra.get_recent_logs", return_value=[]), \
-             patch("jbot_infra.get_recent_messages", return_value=[]):
-            
+        with (
+            patch("jbot_infra.get_note_content") as mock_get_note,
+            patch("jbot_infra.get_recent_logs", return_value=[]),
+            patch("jbot_infra.get_recent_messages", return_value=[]),
+        ):
+
             def side_effect(query):
                 if query == "type:goal":
                     return "Maintain JBot"
                 if query == "input:human":
-                    if os.path.exists(os.path.join(str(tmp_path), ".jbot/messages/human.txt")):
-                        with open(os.path.join(str(tmp_path), ".jbot/messages/human.txt"), "r") as f:
+                    if os.path.exists(
+                        os.path.join(str(tmp_path), ".jbot/messages/human.txt")
+                    ):
+                        with open(
+                            os.path.join(str(tmp_path), ".jbot/messages/human.txt"), "r"
+                        ) as f:
                             return f.read()
                     return "No active human feedback."
                 return None
-            
+
             mock_get_note.side_effect = side_effect
             yield tmp_path
 
@@ -103,9 +109,9 @@ def test_agent_with_rag_and_human(agent_env):
         with patch("jbot_infra.get_recent_logs") as mock_logs:
             mock_logs.return_value = [
                 {"agent": "ceo", "content": {"summary": "Vision set"}},
-                {"agent": "lead", "content": {"summary": "Code done"}}
+                {"agent": "lead", "content": {"summary": "Code done"}},
             ]
-            
+
             mock_process = MagicMock()
             mock_process.stdout = ["Success\n"]
             mock_process.wait.return_value = 0
@@ -152,7 +158,7 @@ def test_agent_with_pre_commit_success(agent_env):
 
         jbot_agent.main()
 
-        # Check if pre-commit was called. 
+        # Check if pre-commit was called.
         pre_commit_called = any(
             "pre-commit" in str(call.args[0]) for call in mock_run.call_args_list
         )
@@ -173,20 +179,19 @@ def test_agent_with_pre_commit_failure(agent_env):
         mock_process.wait.return_value = 0
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
-        
+
         mock_run.side_effect = subprocess.CalledProcessError(1, "pre-commit")
 
         jbot_agent.main()
 
 
 def test_agent_git_tree(agent_env):
-    tmp_path = agent_env
-
-    with patch("subprocess.Popen") as mock_popen, \
-         patch("subprocess.check_output") as mock_tree:
-        
+    with (
+        patch("subprocess.Popen") as mock_popen,
+        patch("subprocess.check_output") as mock_tree,
+    ):
         mock_tree.return_value = "file1\nfile2"
-        
+
         mock_process = MagicMock()
         mock_process.stdout = ["Success\n"]
         mock_process.wait.return_value = 0
@@ -201,8 +206,6 @@ def test_agent_git_tree(agent_env):
 
 
 def test_agent_git_tree_error(agent_env):
-    tmp_path = agent_env
-
     with patch("subprocess.check_output") as mock_check:
         mock_check.side_effect = subprocess.CalledProcessError(1, "git ls-files")
 

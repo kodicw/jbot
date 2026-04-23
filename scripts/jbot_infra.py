@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 import jbot_core as core
 import jbot_tasks as tasks
 import jbot_rotation
+from nb_client import NbClient
 
 
 # --- Team & Registry ---
@@ -60,46 +61,31 @@ def send_message(
 
 def get_note_content(query: str) -> Optional[str]:
     """Retrieves the full content of the first nb note matching the query."""
-    import subprocess
-    import re
 
     try:
         tag = query.replace("type:", "").replace("input:", "").replace("#", "")
-        
+        client = NbClient()
+
         # 1. Search for the ID using 'nb jbot:q' which is the most reliable search
-        search_res = subprocess.run(
-            ["nb", "jbot:q", f"#{tag}"],
-            capture_output=True, text=True, env={**os.environ, "EDITOR": "cat"}
-        )
-        
+        notes = client.query(f"#{tag}")
+
         note_id = None
-        if search_res.returncode == 0 and search_res.stdout.strip():
-            match = re.search(r"\[jbot:(\d+)\]", search_res.stdout)
-            if match:
-                note_id = match.group(1)
-        
+        if notes:
+            note_id = notes[0].id
+
         # 2. Fallback to title search if tag search failed
         if not note_id and tag == "prompt":
-            search_res = subprocess.run(
-                ["nb", "jbot:ls", "Authoritative System Prompt"],
-                capture_output=True, text=True, env={**os.environ, "EDITOR": "cat"}
-            )
-            if search_res.returncode == 0 and search_res.stdout.strip():
-                match = re.search(r"\[jbot:(\d+)\]", search_res.stdout)
-                if match:
-                    note_id = match.group(1)
+            notes = client.query("Authoritative System Prompt")
+            if notes:
+                note_id = notes[0].id
 
         # 3. Get the actual content using the ID
         if note_id:
-            result = subprocess.run(
-                ["nb", "jbot:show", note_id, "--print"],
-                capture_output=True,
-                text=True,
-                env={**os.environ, "EDITOR": "cat"},
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                return result.stdout.strip()
+            return client.show(note_id)
 
+        return None
+    except Exception as e:
+        core.log(f"Error fetching note '{query}' from nb: {e}", "Infra")
         return None
     except Exception as e:
         core.log(f"Error fetching note '{query}' from nb: {e}", "Infra")
@@ -127,25 +113,15 @@ def get_recent_logs(log_path: str = "", count: int = 10) -> List[Dict[str, Any]]
         else:
             return []
 
-    import subprocess
     try:
         # Get list of memory notes
-        # nb jbot:ls format: [jbot:ID] Memory: [Agent] - Summary
-        result = subprocess.run(
-            ["nb", "jbot:ls", "--tags", "memory", "--limit", str(count)],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            return []
+        client = NbClient()
+        notes = client.ls(tags=["memory"], limit=count)
 
         entries = []
-        lines = result.stdout.strip().split("\n")
-        for line in lines:
-            if not line:
-                continue
+        for note in notes:
             # Regex to extract agent and summary from title
-            match = re.search(r"Memory: \[(.*?)\] - (.*)", line)
+            match = re.search(r"Memory: \[(.*?)\] - (.*)", note.title)
             if match:
                 agent = match.group(1)
                 summary = match.group(2)
@@ -302,7 +278,14 @@ def consolidate_memory(project_dir: str) -> None:
     if not os.path.exists(queues_dir):
         return
 
-    import subprocess
+    # Ensure NB environment variables for identity are respected
+    env = os.environ.copy()
+    if "NB_USER_NAME" not in env:
+        env["NB_USER_NAME"] = "JBot System"
+    if "NB_USER_EMAIL" not in env:
+        env["NB_USER_EMAIL"] = "system@internal.jbot"
+
+    client = NbClient(env=env)
 
     for q_file in os.listdir(queues_dir):
         if q_file.endswith(".json"):
@@ -314,36 +297,23 @@ def consolidate_memory(project_dir: str) -> None:
                 # Truncate summary for title to prevent 'File name too long'
                 short_summary = (summary[:80] + "..") if len(summary) > 80 else summary
                 title = f"Memory: [{agent_name}] - {short_summary}"
-                tags = f"memory,agent:{agent_name}"
+                tags = ["memory", f"agent:{agent_name}"]
 
-                # Ensure NB environment variables for identity are respected
-                env = os.environ.copy()
-                if "NB_USER_NAME" not in env:
-                    env["NB_USER_NAME"] = "JBot System"
-                if "NB_USER_EMAIL" not in env:
-                    env["NB_USER_EMAIL"] = "system@internal.jbot"
+                client.add(title=title, content=json.dumps(content), tags=tags)
 
-                # Execute nb add (non-interactively)
-                subprocess.run(
-                    [
-                        "nb",
-                        "jbot:add",
-                        "--title",
-                        title,
-                        "--tags",
-                        tags,
-                        "--content",
-                        json.dumps(content),
-                    ],
-                    check=True,
-                    capture_output=True,
-                    env=env,
-                )
-                
                 # Also append to local transaction log for redundancy and testability
                 log_path = os.path.join(project_dir, ".jbot", "memory.log")
                 with open(log_path, "a") as f:
-                    f.write(json.dumps({"agent": agent_name, "content": content, "timestamp": datetime.now().isoformat()}) + "\n")
+                    f.write(
+                        json.dumps(
+                            {
+                                "agent": agent_name,
+                                "content": content,
+                                "timestamp": datetime.now().isoformat(),
+                            }
+                        )
+                        + "\n"
+                    )
 
                 os.remove(q_path)
                 core.log(f"Consolidated memory for {agent_name} into nb", "Maintenance")

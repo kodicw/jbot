@@ -15,7 +15,6 @@ def get_status(project_dir: str) -> None:
     os.chdir(project_dir)
     goal_path = ".project_goal"
     tasks_path = "TASKS.md"
-    log_path = ".jbot/memory.log"
 
     print("\n--- JBot Organization Status ---")
     if os.path.exists(goal_path):
@@ -43,7 +42,7 @@ def get_tasks(project_dir: str, show_all: bool = False) -> None:
     os.chdir(project_dir)
     tasks_path = "TASKS.md"
     tasks_data = tasks.parse_tasks(tasks_path if os.path.exists(tasks_path) else "")
-    
+
     print("\n--- JBot Task Board (nb) ---")
     if not show_all:
         print("## Strategic Vision")
@@ -269,7 +268,9 @@ def main():
     v_sub.add_parser("show")
     v_sub.add_parser("bump").add_argument("part", choices=["major", "minor", "patch"])
     v_sub.add_parser("tag")
-    v_sub.add_parser("release").add_argument("part", choices=["major", "minor", "patch"])
+    v_sub.add_parser("release").add_argument(
+        "part", choices=["major", "minor", "patch"]
+    )
 
     # Human Interaction
     subparsers.add_parser("human", help="Interact with the organization (TUI)")

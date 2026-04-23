@@ -4,14 +4,12 @@
   scripts,
 }:
 let
-  jbotPython = (
-    pkgs.python3.withPackages (ps: [
-      ps.jinja2
-      ps.pytest
-      ps.pytest-mock
-      ps.pytest-cov
-    ])
-  );
+  jbotPython = pkgs.python3.withPackages (ps: [
+    ps.jinja2
+    ps.pytest
+    ps.pytest-mock
+    ps.pytest-cov
+  ]);
 in
 pkgs.stdenv.mkDerivation {
   pname = "jbot-cli";

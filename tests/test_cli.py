@@ -45,7 +45,11 @@ def test_get_tasks(tmp_path, capsys):
 
     # Error case - now falls back to nb
     os.remove(tasks_file)
-    jbot_cli.get_tasks(str(tmp_path))
+    with patch(
+        "jbot_tasks.infra.get_note_content",
+        return_value="## Strategic Vision\nTechnical Excellence\n",
+    ):
+        jbot_cli.get_tasks(str(tmp_path))
     captured = capsys.readouterr()
     assert "JBot Task Board (nb)" in captured.out
     assert "Technical Excellence" in captured.out

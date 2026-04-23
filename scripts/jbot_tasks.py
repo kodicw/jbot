@@ -1,16 +1,17 @@
 import os
 import re
 import subprocess
-import json
-import tempfile
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 import jbot_core as core
 import jbot_infra as infra
 
 
 def _get_nb_tasks() -> str:
     """Helper to fetch task board content from nb."""
-    return infra.get_note_content("type:tasks") or "# JBot Task Board\n\n## Strategic Vision\n- Goal: Technical Excellence\n\n## Active Tasks\n\n## Backlog\n\n## Completed Tasks\n"
+    return (
+        infra.get_note_content("type:tasks")
+        or "# JBot Task Board\n\n## Strategic Vision\n- Goal: Technical Excellence\n\n## Active Tasks\n\n## Backlog\n\n## Completed Tasks\n"
+    )
 
 
 def _push_nb_tasks(content: str) -> bool:
@@ -19,11 +20,24 @@ def _push_nb_tasks(content: str) -> bool:
     env["EDITOR"] = "cat"
     if "NB_USER_NAME" not in env:
         env["NB_USER_NAME"] = "System (CLI)"
-    
+
     try:
         subprocess.run(
-            ["nb", "jbot:add", "--title", "Task Board", "--tags", "type:tasks", "--content", content, "--overwrite", "--force"],
-            check=True, capture_output=True, env=env
+            [
+                "nb",
+                "jbot:add",
+                "--title",
+                "Task Board",
+                "--tags",
+                "type:tasks",
+                "--content",
+                content,
+                "--overwrite",
+                "--force",
+            ],
+            check=True,
+            capture_output=True,
+            env=env,
         )
         return True
     except Exception as e:
@@ -54,7 +68,7 @@ def parse_tasks(tasks_path: str = "") -> Dict[str, Any]:
     else:
         # Pull from nb if path is empty
         content = _get_nb_tasks()
-    
+
     data = {
         "active": [],
         "done_count": 0,
@@ -105,7 +119,7 @@ def add_task(
         content = core.read_file(tasks_path)
     else:
         content = _get_nb_tasks()
-    
+
     lines = content.splitlines(keepends=True)
 
     new_lines = []
@@ -146,7 +160,7 @@ def update_task(
         content = core.read_file(tasks_path)
     else:
         content = _get_nb_tasks()
-    
+
     lines = content.splitlines(keepends=True)
 
     new_lines = []
@@ -212,7 +226,7 @@ def complete_task(tasks_path: str, task_text_search: str) -> bool:
         content = core.read_file(tasks_path)
     else:
         content = _get_nb_tasks()
-    
+
     lines = content.splitlines(keepends=True)
 
     task_line_index = -1

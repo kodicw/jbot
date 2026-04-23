@@ -2,6 +2,7 @@ import os
 import json
 import sys
 from datetime import datetime
+from unittest.mock import patch
 
 # Ensure scripts directory is in sys.path
 sys.path.append(os.path.join(os.getcwd(), "scripts"))
@@ -67,7 +68,8 @@ def test_send_message(tmp_path):
     assert len(msg_files) == 1 and "ceo.txt" in msg_files[0]
 
 
-def test_run_maintenance(tmp_path):
+@patch("jbot_infra.NbClient")
+def test_run_maintenance(mock_nb_client, tmp_path):
     jbot_dir = tmp_path / ".jbot"
     jbot_dir.mkdir()
     queues_dir = jbot_dir / "queues"
@@ -79,3 +81,5 @@ def test_run_maintenance(tmp_path):
     assert infra.run_maintenance(str(tmp_path)) is True
     assert (jbot_dir / "memory.log").exists()
     assert not (queues_dir / "tester.json").exists()
+    mock_nb_client.assert_called_once()
+    mock_nb_client.return_value.add.assert_called_once()
