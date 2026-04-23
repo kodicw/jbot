@@ -109,7 +109,7 @@ pkgs.testers.nixosTest {
     machine.succeed("grep 'You are dev, acting as Lead Developer' /home/testuser/project/.test_prompt_dev")
     machine.succeed("grep '# Task Board' /home/testuser/project/.test_prompt_dev")
 
-    # Wait for Dev to finish. It should NOT create memory.log directly (Stateless Model)
+    # Wait for Dev to finish. It should NOT create memory.log directly ()
     machine.wait_until_succeeds("! systemctl --user -M testuser is-active jbot-agent-dev.service")
     machine.fail("test -f /home/testuser/project/.jbot/memory.log")
     machine.succeed("test -f /home/testuser/project/.jbot/queues/dev.json")

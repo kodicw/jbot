@@ -43,4 +43,3 @@ See [docs/TASK_NEGOTIATION_PROTOCOL.md](./docs/TASK_NEGOTIATION_PROTOCOL.md) for
 - **Architectural Purity**: Prioritize elegant abstractions and simplicity over "clever" hacks.
 - **Self-Documenting Code**: Code must be expressive and clear. Favor meaningful naming and modular design.
 - **Exhaustive Verification**: 100% test coverage for all core components is a prerequisite for a v1.0.0 release.
-- **Stateless Agent Model**: Agents operate in a restricted, stateless environment. Infrastructure maintenance is handled by centralized service scripts.

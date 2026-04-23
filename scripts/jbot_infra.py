@@ -107,10 +107,27 @@ def get_note_content(query: str) -> Optional[str]:
 
 
 # --- Memory & Logs ---
-def get_recent_logs(log_path: str, count: int = 10) -> List[Dict[str, Any]]:
-    """Retrieve recent entries from the nb knowledge base."""
-    import subprocess
+def get_recent_logs(log_path: str = "", count: int = 10) -> List[Dict[str, Any]]:
+    """Retrieve recent entries from a log file or the nb knowledge base."""
+    if log_path:
+        if os.path.exists(log_path):
+            try:
+                with open(log_path, "r") as f:
+                    lines = f.readlines()
+                entries = []
+                for line in lines[-count:]:
+                    try:
+                        entries.append(json.loads(line))
+                    except Exception:
+                        pass
+                return entries
+            except Exception as e:
+                core.log(f"Error reading local logs from {log_path}: {e}", "Infra")
+                return []
+        else:
+            return []
 
+    import subprocess
     try:
         # Get list of memory notes
         # nb jbot:ls format: [jbot:ID] Memory: [Agent] - Summary
@@ -322,6 +339,12 @@ def consolidate_memory(project_dir: str) -> None:
                     capture_output=True,
                     env=env,
                 )
+                
+                # Also append to local transaction log for redundancy and testability
+                log_path = os.path.join(project_dir, ".jbot", "memory.log")
+                with open(log_path, "a") as f:
+                    f.write(json.dumps({"agent": agent_name, "content": content, "timestamp": datetime.now().isoformat()}) + "\n")
+
                 os.remove(q_path)
                 core.log(f"Consolidated memory for {agent_name} into nb", "Maintenance")
             except Exception as e:

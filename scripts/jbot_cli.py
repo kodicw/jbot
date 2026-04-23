@@ -15,6 +15,7 @@ def get_status(project_dir: str) -> None:
     os.chdir(project_dir)
     goal_path = ".project_goal"
     tasks_path = "TASKS.md"
+    log_path = ".jbot/memory.log"
 
     print("\n--- JBot Organization Status ---")
     if os.path.exists(goal_path):
@@ -26,28 +27,7 @@ def get_status(project_dir: str) -> None:
     print(f"Git Status: {core.get_git_status(project_dir)}")
     print(f"Nix Flake: {core.get_nix_metadata(project_dir)}")
 
-    # Knowledge Base Integration
-    print("\n🧠 Knowledge Base (nb):")
-    try:
-        # Link to the deep audit note
-        audit_note = subprocess.run(
-            ["nb", "jbot:ls", "Environment and Tool Registry"],
-            capture_output=True,
-            text=True,
-        )
-        if audit_note.returncode == 0 and audit_note.stdout.strip():
-            print(f"Latest Audit: {audit_note.stdout.strip()}")
-        else:
-            print("Latest Audit: No automated audit note found.")
-    except Exception:
-        print("Latest Audit: nb command unavailable.")
-
-    print("\n✍️ Human Interaction (nb):")
-    print("  - Feedback: `nb jbot:add --title \"Feedback\" --tags input:human` (Overwrites)")
-    print("  - New Ideas: `nb jbot:add --title \"Idea: <Title>\" --tags type:idea` (Appends)")
-    print("  - Re-Program: `nb jbot:add --title \"System Prompt\" --tags type:prompt` (High-Prio)")
-
-    tasks_data = tasks.parse_tasks("")
+    tasks_data = tasks.parse_tasks(tasks_path)
     print(f"\n🚀 Active Tasks ({len(tasks_data['active'])}):")
     for t in tasks_data["active"][:5]:
         print(f"  {t}")
@@ -61,9 +41,11 @@ def get_status(project_dir: str) -> None:
 def get_tasks(project_dir: str, show_all: bool = False) -> None:
     """Lists tasks from the nb task board."""
     os.chdir(project_dir)
+    tasks_path = "TASKS.md"
+    tasks_data = tasks.parse_tasks(tasks_path if os.path.exists(tasks_path) else "")
+    
     print("\n--- JBot Task Board (nb) ---")
     if not show_all:
-        tasks_data = tasks.parse_tasks("")
         print("## Strategic Vision")
         print(tasks_data["vision"])
         print("\n## Active Tasks")
@@ -73,21 +55,24 @@ def get_tasks(project_dir: str, show_all: bool = False) -> None:
         for t in tasks_data["backlog"]:
             print(t)
     else:
-        # We don't have a path, so we just print the raw content from nb
-        print(infra.get_note_content("type:tasks"))
+        sections = tasks_data["sections"]
+        for section in ["header", "vision", "active", "backlog", "completed"]:
+            for line in sections[section]:
+                print(line, end="")
 
 
 def get_logs(project_dir: str, count: int = 10) -> None:
-    """Displays recent agent activity logs from the nb knowledge base."""
+    """Displays recent agent activity logs."""
     os.chdir(project_dir)
-    logs = infra.get_recent_logs("", count)
+    log_path = ".jbot/memory.log"
+    logs = infra.get_recent_logs(log_path if os.path.exists(log_path) else "", count)
 
     if not logs:
-        print("No memory logs found in nb.")
+        print("No memory logs found.")
         return
 
     print(f"\n--- Recent Activity (nb) (Last {len(logs)}) ---")
-    for data in reversed(logs):
+    for data in logs:
         agent = data.get("agent", "unknown")
         summary = data.get("content", {}).get("summary", "No summary")
         print(f"[{agent}] {summary}")
@@ -303,18 +288,19 @@ def main():
     if args.command == "status":
         get_status(project_root)
     elif args.command == "task":
+        tasks_path = os.path.join(project_root, "TASKS.md")
         if args.task_action == "list":
             get_tasks(project_root, args.all)
         elif args.task_action == "add":
-            if tasks.add_task("", args.text, args.agent, args.backlog):
+            if tasks.add_task(tasks_path, args.text, args.agent, args.backlog):
                 print(f"Added task: {args.text}")
         elif args.task_action == "update":
             if tasks.update_task(
-                "", args.search, args.text, args.agent, args.move
+                tasks_path, args.search, args.text, args.agent, args.move
             ):
                 print(f"Updated task: {args.search}")
         elif args.task_action == "done":
-            if tasks.complete_task("", args.search):
+            if tasks.complete_task(tasks_path, args.search):
                 print(f"Completed task: {args.search}")
         else:
             task_parser.print_help()
@@ -326,7 +312,7 @@ def main():
         if infra.send_message(
             project_root, args.from_agent, args.message, args.subject
         ):
-            print("Message sent.")
+            print("Message sent successfully.")
     elif args.command == "maintenance":
         infra.run_maintenance(project_root)
     elif args.command == "purge":
@@ -334,7 +320,7 @@ def main():
             os.path.join(project_root, ".jbot/directives"),
             os.path.join(project_root, ".jbot/directives/archive"),
         )
-        print(f"Purged {c} directives.")
+        print(f"Purged {c} expired directives.")
     elif args.command == "rotate":
         if args.rotate_target == "memory":
             if jbot_rotation.rotate_memory(
@@ -342,7 +328,7 @@ def main():
                 os.path.join(project_root, ".jbot/memory.log.archive"),
                 args.limit,
             ):
-                print("Memory rotated.")
+                print("Memory log rotated.")
         elif args.rotate_target == "tasks":
             if jbot_rotation.rotate_tasks(
                 os.path.join(project_root, "TASKS.md"),

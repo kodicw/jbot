@@ -32,9 +32,28 @@ def _push_nb_tasks(content: str) -> bool:
 
 
 def parse_tasks(tasks_path: str = "") -> Dict[str, Any]:
-    """Parses the task board from nb into sections and extracted data."""
-    # tasks_path is ignored, we pull from nb
-    content = _get_nb_tasks()
+    """Parses the task board from a file or nb into sections and extracted data."""
+    if tasks_path:
+        if os.path.exists(tasks_path):
+            content = core.read_file(tasks_path)
+        else:
+            # If path was provided but doesn't exist, return empty board
+            return {
+                "active": [],
+                "done_count": 0,
+                "backlog": [],
+                "vision": "",
+                "sections": {
+                    "header": [],
+                    "vision": [],
+                    "active": [],
+                    "backlog": [],
+                    "completed": [],
+                },
+            }
+    else:
+        # Pull from nb if path is empty
+        content = _get_nb_tasks()
     
     data = {
         "active": [],
@@ -81,8 +100,12 @@ def parse_tasks(tasks_path: str = "") -> Dict[str, Any]:
 def add_task(
     tasks_path: str, task_text: str, agent: Optional[str] = None, backlog: bool = False
 ) -> bool:
-    """Adds a new task to the nb task board."""
-    content = _get_nb_tasks()
+    """Adds a new task to the task board (local file or nb)."""
+    if tasks_path and os.path.exists(tasks_path):
+        content = core.read_file(tasks_path)
+    else:
+        content = _get_nb_tasks()
+    
     lines = content.splitlines(keepends=True)
 
     new_lines = []
@@ -104,7 +127,11 @@ def add_task(
         new_lines.append(f"\n{target_section}\n")
         new_lines.append(task_entry)
 
-    return _push_nb_tasks("".join(new_lines))
+    final_content = "".join(new_lines)
+    if tasks_path and os.path.exists(tasks_path):
+        return core.write_file(tasks_path, final_content)
+    else:
+        return _push_nb_tasks(final_content)
 
 
 def update_task(
@@ -114,8 +141,12 @@ def update_task(
     agent: Optional[str] = None,
     move_to: Optional[str] = None,
 ) -> bool:
-    """Updates a task in the nb task board."""
-    content = _get_nb_tasks()
+    """Updates a task in the task board (local file or nb)."""
+    if tasks_path and os.path.exists(tasks_path):
+        content = core.read_file(tasks_path)
+    else:
+        content = _get_nb_tasks()
+    
     lines = content.splitlines(keepends=True)
 
     new_lines = []
@@ -128,7 +159,7 @@ def update_task(
             break
 
     if task_line_index == -1:
-        core.log(f"Task matching '{task_text_search}' not found in nb.", "Tasks")
+        core.log(f"Task matching '{task_text_search}' not found.", "Tasks")
         return False
 
     # Parse current task line
@@ -169,12 +200,19 @@ def update_task(
         lines[task_line_index] = new_task_line
         final_content = "".join(lines)
 
-    return _push_nb_tasks(final_content)
+    if tasks_path and os.path.exists(tasks_path):
+        return core.write_file(tasks_path, final_content)
+    else:
+        return _push_nb_tasks(final_content)
 
 
 def complete_task(tasks_path: str, task_text_search: str) -> bool:
-    """Marks a task as completed in the nb task board."""
-    content = _get_nb_tasks()
+    """Marks a task as completed in the task board (local file or nb)."""
+    if tasks_path and os.path.exists(tasks_path):
+        content = core.read_file(tasks_path)
+    else:
+        content = _get_nb_tasks()
+    
     lines = content.splitlines(keepends=True)
 
     task_line_index = -1
@@ -184,7 +222,7 @@ def complete_task(tasks_path: str, task_text_search: str) -> bool:
             break
 
     if task_line_index == -1:
-        core.log(f"Task matching '{task_text_search}' not found in nb.", "Tasks")
+        core.log(f"Task matching '{task_text_search}' not found.", "Tasks")
         return False
 
     task_line = lines.pop(task_line_index)
@@ -202,4 +240,8 @@ def complete_task(tasks_path: str, task_text_search: str) -> bool:
         new_lines.append("\n## Completed Tasks\n")
         new_lines.append(completed_line)
 
-    return _push_nb_tasks("".join(new_lines))
+    final_content = "".join(new_lines)
+    if tasks_path and os.path.exists(tasks_path):
+        return core.write_file(tasks_path, final_content)
+    else:
+        return _push_nb_tasks(final_content)

@@ -60,7 +60,7 @@ pkgs.runCommand "jbot-unit-test"
 
     python3 scripts/jbot-cli.py agent
 
-    # Verifications for Stateless Agent
+    # Verifications for 
     if ! grep -q "You are dev, acting as Lead" .prompt_received; then
       echo "Error: Prompt did not contain agent identity"
       exit 1
@@ -77,7 +77,7 @@ pkgs.runCommand "jbot-unit-test"
     fi
 
     if [ -f INDEX.md ]; then
-      echo "Error: INDEX.md was created by agent (not stateless!)"
+      echo "Error: INDEX.md was created by agent (stateful execution!)"
       exit 1
     fi
 

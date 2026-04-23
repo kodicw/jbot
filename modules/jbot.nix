@@ -86,6 +86,7 @@ let
     pkgs.curl
     pkgs.findutils
     pkgs.gnused
+    pkgs.gnugrep
     pkgs.gawk
     pkgs.bc
     pkgs.jq
@@ -103,6 +104,7 @@ let
     pkgs.nmap
     pkgs.w3m
     jbotPython
+    jbot-cli
   ];
 
   # Pick a representative project directory for maintenance if multiple exist
