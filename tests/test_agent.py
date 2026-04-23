@@ -39,6 +39,7 @@ def agent_env(tmp_path):
         "PROMPT_FILE": str(prompt_file),
         "GEMINI_PACKAGE": "echo",
         "NB_DIR": str(tmp_path / ".nb"),
+        "HOME": str(tmp_path),
     }
     with patch.dict(os.environ, env):
         # Mock infra calls to avoid nb dependency

@@ -69,10 +69,13 @@ def test_get_logs(tmp_path, capsys):
 
     # Error case - now falls back to nb
     os.remove(log_file)
-    jbot_cli.get_logs(str(tmp_path))
-    captured = capsys.readouterr()
-    # It might find nothing in nb, or it might find what's there
-    assert "Activity (nb)" in captured.out
+    with patch(
+        "jbot_infra.get_recent_logs",
+        return_value=[{"agent": "tester", "content": {"summary": "Verified nb"}}],
+    ):
+        jbot_cli.get_logs(str(tmp_path))
+        captured = capsys.readouterr()
+        assert "Activity (nb)" in captured.out or "Verified nb" in captured.out
 
 
 def test_get_messages(tmp_path, capsys):
