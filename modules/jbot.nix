@@ -38,6 +38,16 @@ let
         default = pkgs.gemini-cli;
         description = "The Gemini CLI package to use for this agent.";
       };
+      opencodePackage = lib.mkOption {
+        type = lib.types.package;
+        default = pkgs.hello; # Placeholder until provided or used
+        description = "The OpenCode CLI package to use for this agent.";
+      };
+      cliType = lib.mkOption {
+        type = lib.types.enum [ "gemini" "opencode" ];
+        default = "gemini";
+        description = "The type of AI CLI interface to use.";
+      };
       promptFile = lib.mkOption {
         type = lib.types.path;
         default = ../jbot_prompt.txt;
@@ -192,7 +202,7 @@ in
               MemoryMax = agent.memoryLimit;
               Delegate = true;
               Environment = [
-                "PATH=${lib.makeBinPath (corePackages ++ [ agent.geminiPackage ] ++ agent.extraPackages)}"
+                "PATH=${lib.makeBinPath (corePackages ++ [ agent.geminiPackage agent.opencodePackage ] ++ agent.extraPackages)}"
                 "SKIP_VM_TESTS=1"
               ];
               # Systemd sandboxing for extra security
@@ -223,7 +233,8 @@ in
                 export AGENT_DESCRIPTION="${agent.description}"
                 export PROJECT_DIR="$PROJECT_DIR"
                 export PROMPT_FILE="${agent.promptFile}"
-                export GEMINI_PACKAGE="${agent.geminiPackage}/bin/gemini"
+                export CLI_BIN="${if agent.cliType == "gemini" then "${agent.geminiPackage}/bin/gemini" else "${agent.opencodePackage}/bin/opencode"}"
+                export CLI_TYPE="${agent.cliType}"
 
                 # Pre-configure identity to bypass nb/git interactive setup
                 export NB_DIR="${config.home.homeDirectory}/.nb"
@@ -269,6 +280,8 @@ in
                   --setenv GIT_AUTHOR_EMAIL "$GIT_AUTHOR_EMAIL" \
                   --setenv GIT_COMMITTER_NAME "$GIT_COMMITTER_NAME" \
                   --setenv GIT_COMMITTER_EMAIL "$GIT_COMMITTER_EMAIL" \
+                  --setenv CLI_BIN "$CLI_BIN" \
+                  --setenv CLI_TYPE "$CLI_TYPE" \
                   --setenv EDITOR "cat" \
                   --setenv TERM "dumb" \
                   --setenv PAGER "cat" \
@@ -282,7 +295,8 @@ in
                     --role "${agent.role}" \
                     --desc "${agent.description}" \
                     --prompt "${agent.promptFile}" \
-                    --gemini "${agent.geminiPackage}/bin/gemini"
+                    --cli-bin "$CLI_BIN" \
+                    --cli-type "$CLI_TYPE"
               ''}";
 
               WorkingDirectory = agent.projectDir;
