@@ -164,6 +164,8 @@ in
       # ADR: Technical Environment & Tool Registry (Deep Audit)
       *Automated Environment Audit generated from Nix configuration on $(date).*
 
+      #type:adr
+
       ## 🛠️ Comprehensive Toolstack
       $(echo "${
         lib.concatStringsSep "\n" (
@@ -196,7 +198,7 @@ in
       if [ -x "$NB_BIN" ]; then
         export EDITOR=cat
         export PATH="$PATH:${lib.makeBinPath [ pkgs.git ]}"
-        echo "$AUDIT_CONTENT" | NB_USER_NAME="System" NB_USER_EMAIL="root@nixos" "$NB_BIN" jbot:add --title "ADR: Environment and Tool Registry" --overwrite --force || true
+        echo "$AUDIT_CONTENT" | NB_USER_NAME="System" NB_USER_EMAIL="root@nixos" "$NB_BIN" jbot:add --title "ADR: Environment and Tool Registry" --tags "type:adr,type:audit" --overwrite --force || true
       fi
     '';
 
@@ -213,9 +215,23 @@ in
             Service = {
               CPUQuota = agent.cpuQuota;
               MemoryMax = agent.memoryLimit;
+              TimeoutStartSec = "30min";
+              TimeoutStopSec = "5min";
+              KillMode = "mixed";
               Delegate = true;
               Environment = [
-                "PATH=${lib.makeBinPath (corePackages ++ [ pkgs.bubblewrap pkgs.coreutils agent.geminiPackage agent.opencodePackage ] ++ agent.extraPackages)}"
+                "PATH=${
+                  lib.makeBinPath (
+                    corePackages
+                    ++ [
+                      pkgs.bubblewrap
+                      pkgs.coreutils
+                      agent.geminiPackage
+                      agent.opencodePackage
+                    ]
+                    ++ agent.extraPackages
+                  )
+                }"
                 "SKIP_VM_TESTS=1"
               ];
 
