@@ -207,18 +207,10 @@ in
               MemoryMax = agent.memoryLimit;
               Delegate = true;
               Environment = [
-                "PATH=${
-                  lib.makeBinPath (
-                    corePackages
-                    ++ [
-                      agent.geminiPackage
-                      agent.opencodePackage
-                    ]
-                    ++ agent.extraPackages
-                  )
-                }"
+                "PATH=${lib.makeBinPath (corePackages ++ [ pkgs.bubblewrap pkgs.coreutils agent.geminiPackage agent.opencodePackage ] ++ agent.extraPackages)}"
                 "SKIP_VM_TESTS=1"
               ];
+
               # Systemd sandboxing for extra security
               ProtectSystem = "strict";
               ProtectHome = "read-only";
