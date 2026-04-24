@@ -276,7 +276,7 @@ in
                   --ro-bind /etc/hosts /etc/hosts \
                   --ro-bind /etc/ssl/certs /etc/ssl/certs \
                   --ro-bind-try /etc/static/charsets /etc/static/charsets \
-                  --file "$FAKE_PASSWD" /etc/passwd \
+                  --ro-bind "$FAKE_PASSWD" /etc/passwd \
                   --dev /dev \
                   --proc /proc \
                   --tmpfs /tmp \
