@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import time
 from abc import ABC, abstractmethod
 from typing import Optional, List
 import jbot_core as core
@@ -17,7 +18,28 @@ class AiInterface(ABC):
         pass
 
     def run(self, prompt: str, agent_name: str) -> int:
-        """Executes the AI CLI and streams output."""
+        """Executes the AI CLI and streams output with a mandatory 2s cooldown."""
+        # 1. Enforce Global Rate Limit (2s between requests)
+        project_root = os.getcwd()
+        lock_dir = os.path.join(project_root, ".jbot/locks")
+        os.makedirs(lock_dir, exist_ok=True)
+        lock_file = os.path.join(lock_dir, "api.lock")
+        
+        try:
+            now = time.time()
+            if os.path.exists(lock_file):
+                with open(lock_file, "r") as f:
+                    last_time = float(f.read().strip() or 0)
+                
+                elapsed = now - last_time
+                if elapsed < 2.0:
+                    wait_time = 2.0 - elapsed
+                    core.log(f"Rate limiting active. Throttling for {wait_time:.2f}s...", agent_name)
+                    time.sleep(wait_time)
+        except Exception as e:
+            core.log(f"Rate limit check failed: {e}", agent_name)
+
+        # 2. Execute command
         cmd = self.get_command(prompt)
         core.log(f"Invoking AI CLI: {' '.join(cmd)}", agent_name)
         
@@ -31,6 +53,14 @@ class AiInterface(ABC):
             for line in process.stdout:
                 print(line, end="", flush=True)
             process.wait()
+            
+            # 3. Update last run time (record when it *finished*)
+            try:
+                with open(lock_file, "w") as f:
+                    f.write(str(time.time()))
+            except Exception:
+                pass
+                
             return process.returncode
         except Exception as e:
             core.log(f"Error executing AI CLI: {e}", agent_name)
