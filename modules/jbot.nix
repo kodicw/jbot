@@ -44,7 +44,10 @@ let
         description = "The OpenCode CLI package to use for this agent.";
       };
       cliType = lib.mkOption {
-        type = lib.types.enum [ "gemini" "opencode" ];
+        type = lib.types.enum [
+          "gemini"
+          "opencode"
+        ];
         default = "gemini";
         description = "The type of AI CLI interface to use.";
       };
@@ -204,7 +207,16 @@ in
               MemoryMax = agent.memoryLimit;
               Delegate = true;
               Environment = [
-                "PATH=${lib.makeBinPath (corePackages ++ [ agent.geminiPackage agent.opencodePackage ] ++ agent.extraPackages)}"
+                "PATH=${
+                  lib.makeBinPath (
+                    corePackages
+                    ++ [
+                      agent.geminiPackage
+                      agent.opencodePackage
+                    ]
+                    ++ agent.extraPackages
+                  )
+                }"
                 "SKIP_VM_TESTS=1"
               ];
               # Systemd sandboxing for extra security
@@ -235,7 +247,12 @@ in
                 export AGENT_DESCRIPTION="${agent.description}"
                 export PROJECT_DIR="$PROJECT_DIR"
                 export PROMPT_FILE="${agent.promptFile}"
-                export CLI_BIN="${if agent.cliType == "gemini" then "${agent.geminiPackage}/bin/gemini" else "${agent.opencodePackage}/bin/opencode"}"
+                export CLI_BIN="${
+                  if agent.cliType == "gemini" then
+                    "${agent.geminiPackage}/bin/gemini"
+                  else
+                    "${agent.opencodePackage}/bin/opencode"
+                }"
                 export CLI_TYPE="${agent.cliType}"
 
                 # Pre-configure identity to bypass nb/git interactive setup
@@ -247,6 +264,10 @@ in
                 export NB_USER_NAME="$GIT_AUTHOR_NAME"
                 export NB_USER_EMAIL="$GIT_AUTHOR_EMAIL"
 
+                # Create a minimal fake passwd file to satisfy Node.js os.userInfo()
+                FAKE_PASSWD=$(mktemp)
+                echo "${name}:x:$USER_ID:$USER_ID:JBot Agent:${config.home.homeDirectory}:/bin/bash" > "$FAKE_PASSWD"
+
                 echo "[$(date)] JBot (${name}): Launching agent runner in sandbox..."
 
                 timeout 30m bwrap \
@@ -255,6 +276,7 @@ in
                   --ro-bind /etc/hosts /etc/hosts \
                   --ro-bind /etc/ssl/certs /etc/ssl/certs \
                   --ro-bind-try /etc/static/charsets /etc/static/charsets \
+                  --file "$FAKE_PASSWD" /etc/passwd \
                   --dev /dev \
                   --proc /proc \
                   --tmpfs /tmp \
