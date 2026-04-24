@@ -11,6 +11,14 @@ let
   jbot-cli = pkgs.callPackage ../pkgs/jbot-cli.nix { scripts = ../scripts; };
   jbotPython = jbot-cli.python;
 
+  bwrap = "${pkgs.bubblewrap}/bin/bwrap";
+  timeout = "${pkgs.coreutils}/bin/timeout";
+  mkdir = "${pkgs.coreutils}/bin/mkdir";
+  cp = "${pkgs.coreutils}/bin/cp";
+  id = "${pkgs.coreutils}/bin/id";
+  date = "${pkgs.coreutils}/bin/date";
+  mktemp = "${pkgs.coreutils}/bin/mktemp";
+
   agentModule = _: {
     options = {
       enable = lib.mkEnableOption "this JBot agent";
@@ -224,15 +232,15 @@ in
                 set -euo pipefail
 
                 PROJECT_DIR="${agent.projectDir}"
-                mkdir -p "$PROJECT_DIR/.jbot/queues"
-                mkdir -p "$PROJECT_DIR/.jbot/outbox"
+                ${mkdir} -p "$PROJECT_DIR/.jbot/queues"
+                ${mkdir} -p "$PROJECT_DIR/.jbot/outbox"
 
                 # Provide the agent registry to the project directory
-                cp ${agentsJson} "$PROJECT_DIR/.jbot/agents.json"
+                ${cp} ${agentsJson} "$PROJECT_DIR/.jbot/agents.json"
 
                 # Calculate home manager profile path for Nix commands inside sandbox
                 HM_PROFILE="${config.home.homeDirectory}/.nix-profile"
-                USER_ID=$(id -u)
+                USER_ID=$(${id} -u)
 
                 export AGENT_NAME="${name}"
                 export AGENT_ROLE="${agent.role}"
@@ -257,12 +265,12 @@ in
                 export NB_USER_EMAIL="$GIT_AUTHOR_EMAIL"
 
                 # Create a minimal fake passwd file to satisfy Node.js os.userInfo()
-                FAKE_PASSWD=$(mktemp)
+                FAKE_PASSWD=$(${mktemp})
                 echo "${name}:x:$USER_ID:$USER_ID:JBot Agent:${config.home.homeDirectory}:/bin/bash" > "$FAKE_PASSWD"
 
-                echo "[$(date)] JBot (${name}): Launching agent runner in sandbox..."
+                echo "[$(${date})] JBot (${name}): Launching agent runner in sandbox..."
 
-                timeout 30m bwrap \
+                ${timeout} 30m ${bwrap} \
                   --ro-bind /nix/store /nix/store \
                   --ro-bind /etc/resolv.conf /etc/resolv.conf \
                   --ro-bind /etc/hosts /etc/hosts \
