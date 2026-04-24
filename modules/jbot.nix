@@ -34,6 +34,7 @@ let
       };
       projectDir = lib.mkOption {
         type = lib.types.path;
+        default = cfg.projectDir;
         description = "The project directory to manage.";
       };
       interval = lib.mkOption {
@@ -61,7 +62,7 @@ let
       };
       promptFile = lib.mkOption {
         type = lib.types.path;
-        default = ../jbot_prompt.txt;
+        default = cfg.promptFile;
         description = "The base prompt file to use.";
       };
       extraPackages = lib.mkOption {
@@ -83,6 +84,21 @@ let
         type = lib.types.str;
         default = "2G";
         description = "Maximum memory usage (systemd MemoryMax).";
+      };
+      timeoutStartSec = lib.mkOption {
+        type = lib.types.str;
+        default = "30min";
+        description = "Systemd TimeoutStartSec for this agent.";
+      };
+      timeoutStopSec = lib.mkOption {
+        type = lib.types.str;
+        default = "5min";
+        description = "Systemd TimeoutStopSec for this agent.";
+      };
+      killMode = lib.mkOption {
+        type = lib.types.str;
+        default = "mixed";
+        description = "Systemd KillMode for this agent.";
       };
     };
   };
@@ -135,6 +151,16 @@ in
 {
   options.programs.jbot = {
     enable = lib.mkEnableOption "JBot AI Agent Scheduler";
+    projectDir = lib.mkOption {
+      type = lib.types.path;
+      default = config.home.homeDirectory + "/code/jbot";
+      description = "The default project directory for all agents.";
+    };
+    promptFile = lib.mkOption {
+      type = lib.types.path;
+      default = ../jbot_prompt.txt;
+      description = "The default base prompt file for all agents.";
+    };
     maintenanceInterval = lib.mkOption {
       type = lib.types.str;
       default = "hourly";
@@ -215,9 +241,9 @@ in
             Service = {
               CPUQuota = agent.cpuQuota;
               MemoryMax = agent.memoryLimit;
-              TimeoutStartSec = "30min";
-              TimeoutStopSec = "5min";
-              KillMode = "mixed";
+              TimeoutStartSec = agent.timeoutStartSec;
+              TimeoutStopSec = agent.timeoutStopSec;
+              KillMode = agent.killMode;
               Delegate = true;
               Environment = [
                 "PATH=${
