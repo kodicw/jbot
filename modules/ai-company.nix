@@ -1,36 +1,30 @@
 _: {
   programs.jbot = {
     enable = true;
+    projectDir = "/home/kodicw/code/jbot";
+    
     agents = {
       ceo = {
         enable = true;
         role = "Technical Founder (CEO)";
         description = "Set product vision, prioritize the roadmap in TASKS.md, and ensure architectural decisions align with long-term goals.";
-        projectDir = "/home/kodicw/code/jbot";
-        interval = "hourly";
       };
       architect = {
         enable = true;
         role = "Principal Architect";
-        description = "Critique architectural decisions, advocate for simplicity, and challenge over-engineering. Your goal is to keep the codebase lean and maintainable.";
-        projectDir = "/home/kodicw/code/jbot";
-        interval = "hourly";
+        description = "Critique architectural decisions, advocate for simplicity, challenge over-engineering, and keep the codebase lean.";
         dependsOn = [ "ceo" ];
       };
       lead = {
         enable = true;
         role = "Lead Developer";
-        description = "Main autonomous agent managing the JBot project infrastructure.";
-        projectDir = "/home/kodicw/code/jbot";
-        interval = "hourly";
+        description = "Main autonomous agent managing the JBot project infrastructure and implementation.";
         dependsOn = [ "architect" ];
       };
       tester = {
         enable = true;
         role = "QA Engineer";
-        description = "Verify architectural changes, run tests, and report regressions.";
-        projectDir = "/home/kodicw/code/jbot";
-        interval = "hourly";
+        description = "Verify architectural changes, run tests, and report regressions to the team.";
         dependsOn = [ "lead" ];
       };
     };
