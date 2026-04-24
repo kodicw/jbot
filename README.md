@@ -1,66 +1,80 @@
-# JBot
+# JBot: The Recursive PAO
 
-Autonomous AI agent scheduler for NixOS.
+**A Proof-of-Concept for Self-Managed Repositories.**
 
-## Overview
+JBot is not a chatbot; it is a **Stateful Autonomous Organization (PAO)** embedded directly within the filesystem. It transforms a static repository into a **Living Entity** that possesses its own cognitive capacity, long-term memory, and the hands to build its own future.
 
-JBot is a Home Manager module that defines the `programs.jbot` namespace to schedule the Gemini CLI via `systemd.user`. It provides a hard-sandboxed environment for an AI developer agent to operate within your project directory, utilizing a specialized system prompt and RAG-based context injection.
+## 🧠 Philosophy: Repo-as-Entity
 
-## Getting Started
+Most AI tools are "visitors" to a codebase. JBot agents are **residents**. 
+*   **Infrastructure-as-Brain**: The Nix configuration defines not just the environment, but the CPU, RAM, and "patience" (timeouts) of each team member.
+*   **Git-Backed Consciousness**: Using `nb`, the "thinking" of the CEO and the "verifications" of the Tester are stored in the same version-controlled history as the code.
+*   **Recursive Evolution**: The agents are empowered to refine their own "operating system" (the JBot Nix modules and Python scripts) to achieve higher technical purity.
 
-1.  Include `jbot.nix` in your Home Manager configuration.
-2.  Enable JBot and define your agents:
-    ```nix
-    programs.jbot = {
+## 🏗️ Architectural Pillars
+
+1.  **Nix-Native Reproducibility**: The entire organization is a Nix Flake. A "Company" can be shipped, cloned, and deployed with byte-for-byte consistency across any machine.
+2.  **Stateful Development Model**: Agents operate directly on the project directory inside a **`bubblewrap`** sandbox. No "stateless" chat overhead; just real-time, stateful engineering.
+3.  **Engine-Agnostic Core**: Standardized `AiInterface` support allows declaratively swapping between **Gemini** and **OpenCode** on a per-agent basis.
+4.  **Security via Isolation**: Agents run under `systemd.user` with strict `ProtectHome=read-only` and `ProtectSystem=strict` mandates, reaching out only through a minimal, fake identity to satisfy token-based authentication.
+
+## 🚀 Getting Started
+
+### 1. Define Your Team
+Include JBot in your Home Manager configuration and declaratively assemble your autonomous team:
+
+```nix
+programs.jbot = {
+  enable = true;
+  projectDir = "/home/user/code/my-project"; # Global default
+
+  agents = {
+    ceo = {
       enable = true;
-      agents.main = {
-        enable = true;
-        role = "Lead Developer";
-        description = "Maintain and improve the JBot codebase.";
-        projectDir = "/path/to/your/project";
-        interval = "hourly";
-      };
-      agents.qa = {
-        enable = true;
-        role = "QA Specialist";
-        description = "Review code changes and run tests.";
-        projectDir = "/path/to/your/project";
-        interval = "daily";
-        dependsOn = [ "main" ]; # Run after 'main'
-        extraPackages = [ pkgs.gh ]; # Add GitHub CLI for PR reviews
-      };
+      role = "Technical Founder";
+      description = "Set product vision and prioritize the roadmap.";
     };
-    ```
-3.  Enter the development environment:
-    ```bash
-    nix develop
-    ```
+    lead = {
+      enable = true;
+      role = "Lead Developer";
+      dependsOn = [ "ceo" ]; # Sequential coordination
+    };
+    tester = {
+      enable = true;
+      role = "QA Engineer";
+      cliType = "opencode"; # Choose your engine per-agent
+      dependsOn = [ "lead" ];
+    };
+  };
+};
+```
 
-## Architectural Requirements
+### 2. Enter the Loop
+```bash
+# Update the organization
+home-manager switch --flake .
 
-JBot follows strict architectural principles to ensure security and scalability:
+# Check the dashboard
+jbot status
 
-- **Multi-User Project Isolation (Mandatory):** Entirely different projects MUST be isolated using separate Linux user accounts via NixOS/Home Manager (e.g., Project A runs under User A, Project B runs under User B). Keep each organization's internal components cohesive under its designated user account.
-- **Backend-Only Budgeting:** All budget, cost enforcement, and usage limiting logic MUST be handled exclusively by the backend API providers. JBot agents are forbidden from implementing local resource policing.
-- **Reproducibility:** All agent environments must be defined declaratively in Nix.
-- **Sandboxing:** Agents must always run within a `bubblewrap` container, even when running under a dedicated user.
+# Inspect the "Collective Memory"
+nb jbot:q "architecture"
+```
 
-## Project Team
+## 👥 The PAO Team
 
-JBot operates as a **Flat Organization** with the following specialized agents:
+*   **CEO (Technical Founder)**: Visionary lead; prioritizes `TASKS.md`.
+*   **Architect**: Guardian of simplicity; challenges over-engineering via ADRs.
+*   **Lead Developer**: The hands of the project; manages infrastructure and implementation.
+*   **Tester (QA Engineer)**: The voice of truth; mandates 100% test coverage and formal verification.
 
-- **CEO (Technical Founder)**: Sets product vision, prioritizes the roadmap, and ensures architectural alignment.
-- **Architect (Principal Architect)**: Reviews architectural decisions, advocates for simplicity, and maintains standards.
-- **Lead (Lead Developer)**: Manages core infrastructure, implements features, and coordinates releases.
-- **Tester (QA Engineer)**: Verifies changes, runs tests, and ensures 100% test coverage.
+## 🛠️ Toolstack
 
-Detailed governance rules and coordination protocols can be found in [GOVERNANCE.md](./GOVERNANCE.md).
+*   **`jbot` CLI**: The organizational multi-tool for status, tasks, and maintenance.
+*   **`nb`**: Git-backed knowledge base for long-term technical memory.
+*   **`bubblewrap`**: Secure sandbox for stateful agent execution.
+*   **`systemd`**: The organizational heart, managing schedules and resource quotas.
 
-## Features
+---
 
-- **Multi-Agent Support**: Define multiple agents with specialized roles and descriptions (e.g., Lead Developer, QA, CEO).
-- **Autonomous Scheduling**: Runs Gemini CLI for each agent at regular intervals via systemd user timers.
-- **Strict Sandboxing**: Isolated execution environment with `bubblewrap` and systemd sandboxing (read-only home, restricted paths).
-- **Context Injection**: Automatically injects project goals, directory structure, Task Board (`TASKS.md`), and agent-specific role/description into the prompt.
-- **Shared Memory**: Agents working on the same project directory can collaborate through a shared memory log.
-- **Task Board (Blackboard)**: Dedicated `TASKS.md` manager for agents to claim, update, and track work status across different roles.
+*JBot is a laboratory for decentralized AI engineering. It is a repo that knows what it is, and has the hands to build itself.*
