@@ -5,6 +5,7 @@ from typing import Optional
 
 import jbot_core as core
 import jbot_infra as infra
+import jbot_agent_interface as interface
 
 
 def assemble_context(
@@ -156,11 +157,12 @@ def run_agent(
     description: Optional[str] = None,
     project_dir: Optional[str] = None,
     prompt_file: Optional[str] = None,
-    gemini_pkg: Optional[str] = "gemini",
+    cli_bin: Optional[str] = None,
+    cli_type: Optional[str] = None,
 ) -> None:
     """
-    Main execution logic for a JBot Agent using the Stateless Agent Execution Model (SAEM).
-    Uses a temporary workspace to ensure transactional and atomic updates.
+    Main execution logic for a JBot Agent.
+    Operates directly on the project directory for stateful development within a sandbox.
     """
     # Fallback to environment variables if parameters not provided
     name = name or os.environ.get("AGENT_NAME")
@@ -168,7 +170,13 @@ def run_agent(
     description = description or os.environ.get("AGENT_DESCRIPTION")
     project_dir = project_dir or os.environ.get("PROJECT_DIR")
     prompt_file = prompt_file or os.environ.get("PROMPT_FILE")
-    gemini_pkg = gemini_pkg or os.environ.get("GEMINI_PACKAGE", "gemini")
+    cli_bin = (
+        cli_bin
+        or os.environ.get("GEMINI_PACKAGE")
+        or os.environ.get("CLI_BIN")
+        or "gemini"
+    )
+    cli_type = cli_type or os.environ.get("CLI_TYPE")
 
     if not all([name, role, project_dir, prompt_file]):
         print(
@@ -204,7 +212,7 @@ def run_agent(
         if not os.path.exists(jbot_link):
             os.symlink(os.path.join(project_dir, ".nb"), jbot_link)
 
-    # 1. Prepare Infrastructure
+    # 1. Change to project directory
     os.chdir(project_dir)
     queues_dir = ".jbot/queues"
     outbox_dir = ".jbot/outbox"
@@ -214,45 +222,28 @@ def run_agent(
     # 2. Assemble Context
     prompt_content = assemble_context(name, role, description, project_dir, prompt_file)
 
-    # Set up memory output for gemini
+    # Set up memory output for gemini (some interfaces might use this)
     os.environ["MEMORY_OUTPUT"] = f"{project_dir}/{queues_dir}/{name}.json"
 
-    core.log("Invoking Gemini CLI in project directory...", name)
+    # 3. Execution via Modular Interface
+    ai = interface.get_interface(cli_type or "", cli_bin)
+    exit_code = ai.run(prompt_content, name)
 
-    # 3. Execution
-    try:
-        process = subprocess.Popen(
-            [gemini_pkg, "-y", "-p", prompt_content],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        for line in process.stdout:
-            print(line, end="", flush=True)
-        process.wait()
+    if exit_code != 0:
+        core.log(f"Error: AI CLI failed with exit code {exit_code}", name)
+        sys.exit(exit_code)
 
-        if process.returncode != 0:
-            core.log(
-                f"Error: Gemini CLI failed with exit code {process.returncode}", name
-            )
-            sys.exit(process.returncode)
+    # 4. Verification (Optional but recommended)
+    pre_commit_script = os.path.join(project_dir, ".githooks/pre-commit")
+    if os.path.exists(pre_commit_script):
+        try:
+            core.log("Running project verification (pre-commit)...", name)
+            subprocess.run(["bash", pre_commit_script], check=True)
+            core.log("Verification SUCCESS.", name)
+        except subprocess.CalledProcessError as e:
+            core.log(f"Verification WARNING: {e}", name)
 
-        # 4. Verification (Optional but recommended)
-        pre_commit_script = os.path.join(project_dir, ".githooks/pre-commit")
-        if os.path.exists(pre_commit_script):
-            try:
-                core.log("Running project verification (pre-commit)...", name)
-                subprocess.run(["bash", pre_commit_script], check=True)
-                core.log("Verification SUCCESS.", name)
-            except subprocess.CalledProcessError as e:
-                core.log(f"Verification WARNING: {e}", name)
-
-        core.log("Execution SUCCESS.", name)
-
-    except Exception as e:
-        core.log(f"Error: Execution failed: {e}", name)
-        sys.exit(1)
-
+    core.log("Execution SUCCESS.", name)
     core.log("Execution loop finished.", name)
 
 
