@@ -181,8 +181,10 @@ in
 
       # Push to nb (Overwrite existing if any)
       NB_BIN="${pkgs.nb}/bin/nb"
+      GIT_BIN="${pkgs.git}/bin/git"
       if [ -x "$NB_BIN" ]; then
         export EDITOR=cat
+        export PATH="$PATH:${lib.makeBinPath [ pkgs.git ]}"
         echo "$AUDIT_CONTENT" | NB_USER_NAME="System" NB_USER_EMAIL="root@nixos" "$NB_BIN" jbot:add --title "ADR: Environment and Tool Registry" --overwrite --force || true
       fi
     '';
