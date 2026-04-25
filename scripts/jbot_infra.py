@@ -220,9 +220,10 @@ def get_recent_adrs(count: int = 5) -> List[Dict[str, str]]:
 def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") -> bool:
     """Generates a markdown dashboard summarizing the project status.
 
-    Context: [[nb:jbot:adr-193]] - Aligned with Authoritative Task Board
+    Context: [[nb:jbot:adr-193]], [[nb:jbot:adr-200]]
     """
     import jbot_tasks as tasks
+    import glob
 
     dashboard_content = "# JBot Dashboard\n\n"
     dashboard_content += (
@@ -292,6 +293,24 @@ def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") ->
         dashboard_content += "\n"
     else:
         dashboard_content += "No ADRs found.\n\n"
+
+    dashboard_content += "## 📊 Architectural Diagrams\n"
+    mermaid_files = glob.glob(os.path.join(project_dir, "scripts/*.mermaid"))
+    if mermaid_files:
+        for mermaid_file in sorted(mermaid_files):
+            title = (
+                os.path.basename(mermaid_file)
+                .replace(".mermaid", "")
+                .replace("_", " ")
+                .title()
+            )
+            content = core.read_file(mermaid_file)
+            dashboard_content += f"### {title}\n"
+            dashboard_content += "```mermaid\n"
+            dashboard_content += content + "\n"
+            dashboard_content += "```\n\n"
+    else:
+        dashboard_content += "No diagrams found.\n\n"
 
     dashboard_content += "## 📈 Status & Progress\n"
     milestone_count = 0

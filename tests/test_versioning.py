@@ -3,7 +3,7 @@ import sys
 from datetime import datetime
 
 # Ensure scripts directory is in sys.path
-sys.path.append(os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
 import jbot_core as core
 
 

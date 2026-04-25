@@ -5,7 +5,7 @@ from datetime import datetime
 from unittest.mock import patch, MagicMock
 
 # Ensure scripts directory is in sys.path
-sys.path.append(os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
 import jbot_infra as infra
 
 

@@ -6,7 +6,7 @@ import pytest
 import subprocess
 
 # Ensure scripts directory is in sys.path
-sys.path.append(os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
 import jbot_agent
 
 

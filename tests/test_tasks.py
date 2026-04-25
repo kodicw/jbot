@@ -3,7 +3,7 @@ import sys
 from unittest.mock import patch, MagicMock
 
 # Ensure scripts directory is in sys.path
-sys.path.append(os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
 import jbot_tasks as tasks
 
 
@@ -139,3 +139,27 @@ def test_complete_task_nb(mock_push, mock_get_note):
     mock_push.assert_called_once()
     assert "- [x] **Finish Me**" in mock_push.call_args[0][0]
     assert "Completed Tasks" in mock_push.call_args[0][0]
+
+
+def test_push_nb_tasks_error():
+    with patch("nb_client.NbClient.ls", side_effect=Exception("NB Error")):
+        assert tasks._push_nb_tasks("content") is False
+
+
+@patch("jbot_infra.get_note_content")
+@patch("jbot_tasks._push_nb_tasks", return_value=True)
+def test_update_task_no_bold(mock_push, mock_get_note):
+    # Test task without bold formatting
+    mock_get_note.return_value = "## Active Tasks\n- [ ] Plain Task\n"
+    assert tasks.update_task("Plain Task", "New Task") is True
+    assert "- [ ] **New Task**" in mock_push.call_args[0][0]
+
+
+@patch("jbot_infra.get_note_content")
+@patch("jbot_tasks._push_nb_tasks", return_value=True)
+def test_update_task_move_to_missing_section(mock_push, mock_get_note):
+    # Test move_to when target section is missing
+    mock_get_note.return_value = "## Active Tasks\n- [ ] **Move Me**\n"
+    assert tasks.update_task("Move Me", move_to="backlog") is True
+    assert "## Backlog" in mock_push.call_args[0][0]
+    assert "- [ ] **Move Me**" in mock_push.call_args[0][0]

@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 # Ensure scripts directory is in sys.path
-sys.path.append(os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
 from nb_client import NbClient
 
 
@@ -101,10 +101,8 @@ def test_ls_notes(mock_run, client):
     mock_run.assert_called_once()
     args = mock_run.call_args[0][0]
     assert "jbot:ls" in args
-    assert "--tags" in args
-    assert "memory" in args
-    assert "--limit" in args
-    assert "5" in args
+    assert "#memory" in args
+    assert "--5" in args
 
 
 def test_client_default_env():

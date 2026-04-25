@@ -3,7 +3,7 @@ import sys
 import pytest
 from unittest.mock import patch, MagicMock
 
-sys.path.append(os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
 import jbot_tui as tui
 
 
