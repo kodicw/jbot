@@ -131,6 +131,8 @@ let
     pkgs.statix
     pkgs.ruff
     pkgs.deadnix
+    pkgs.shellcheck
+    pkgs.bats
     pkgs.just
     pkgs.nb
     pkgs.tealdeer
@@ -274,21 +276,11 @@ in
               ExecStart = "${pkgs.writeShellScript "jbot-launcher-${name}" ''
                 set -euo pipefail
 
-                PROJECT_DIR="${agent.projectDir}"
-                ${mkdir} -p "$PROJECT_DIR/.jbot/queues"
-                ${mkdir} -p "$PROJECT_DIR/.jbot/outbox"
-
-                # Provide the agent registry to the project directory
-                ${cp} ${agentsJson} "$PROJECT_DIR/.jbot/agents.json"
-
-                # Calculate home manager profile path for Nix commands inside sandbox
-                HM_PROFILE="${config.home.homeDirectory}/.nix-profile"
-                USER_ID=$(${id} -u)
-
+                # Export all required environment variables for the standalone launcher
                 export AGENT_NAME="${name}"
                 export AGENT_ROLE="${agent.role}"
                 export AGENT_DESCRIPTION="${agent.description}"
-                export PROJECT_DIR="$PROJECT_DIR"
+                export PROJECT_DIR="${agent.projectDir}"
                 export PROMPT_FILE="${agent.promptFile}"
                 export CLI_BIN="${
                   if agent.cliType == "gemini" then
@@ -297,9 +289,24 @@ in
                     "${agent.opencodePackage}/bin/opencode"
                 }"
                 export CLI_TYPE="${agent.cliType}"
+                export AGENTS_JSON="${agentsJson}"
+                export JBOT_CLI_BIN="${jbot-cli}/bin/jbot"
 
-                # Pre-configure identity to bypass nb/git interactive setup
+                # Binaries
+                export MKDIR_BIN="${mkdir}"
+                export CP_BIN="${cp}"
+                export ID_BIN="${id}"
+                export DATE_BIN="${date}"
+                export MKTEMP_BIN="${mktemp}"
+                export TIMEOUT_BIN="${timeout}"
+                export BWRAP_BIN="${bwrap}"
+
+                # Environment paths
+                export HM_PROFILE="${config.home.homeDirectory}/.nix-profile"
+                export USER_ID=$(${id} -u)
                 export NB_DIR="${config.home.homeDirectory}/.nb"
+
+                # Standard Identity
                 export GIT_AUTHOR_NAME="JBot (${name})"
                 export GIT_AUTHOR_EMAIL="jbot-${name}@internal.jbot"
                 export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
@@ -307,63 +314,8 @@ in
                 export NB_USER_NAME="$GIT_AUTHOR_NAME"
                 export NB_USER_EMAIL="$GIT_AUTHOR_EMAIL"
 
-                # Create a minimal fake passwd file to satisfy Node.js os.userInfo()
-                FAKE_PASSWD=$(${mktemp})
-                echo "${name}:x:$USER_ID:$USER_ID:JBot Agent:${config.home.homeDirectory}:/bin/bash" > "$FAKE_PASSWD"
-
-                echo "[$(${date})] JBot (${name}): Launching agent runner in sandbox..."
-
-                ${timeout} 30m ${bwrap} \
-                  --ro-bind /nix/store /nix/store \
-                  --ro-bind /etc/resolv.conf /etc/resolv.conf \
-                  --ro-bind /etc/hosts /etc/hosts \
-                  --ro-bind /etc/ssl/certs /etc/ssl/certs \
-                  --ro-bind-try /etc/static/charsets /etc/static/charsets \
-                  --ro-bind "$FAKE_PASSWD" /etc/passwd \
-                  --dev /dev \
-                  --proc /proc \
-                  --tmpfs /tmp \
-                  --tmpfs /home \
-                  --bind "$PROJECT_DIR" "$PROJECT_DIR" \
-                  --ro-bind-try "$PROJECT_DIR/.jbot/memory.log" "$PROJECT_DIR/.jbot/memory.log" \
-                  --ro-bind-try "$PROJECT_DIR/.jbot/agents.json" "$PROJECT_DIR/.jbot/agents.json" \
-                  --ro-bind-try "$PROJECT_DIR/.jbot/messages" "$PROJECT_DIR/.jbot/messages" \
-                  --ro-bind-try "$PROJECT_DIR/.jbot/directives" "$PROJECT_DIR/.jbot/directives" \
-                  --bind "$PROJECT_DIR/.jbot/queues" "$PROJECT_DIR/.jbot/queues" \
-                  --bind "$PROJECT_DIR/.jbot/outbox" "$PROJECT_DIR/.jbot/outbox" \
-                  --bind "${config.home.homeDirectory}/.gemini" "${config.home.homeDirectory}/.gemini" \
-                  --bind-try "${config.home.homeDirectory}/.config/gh" "${config.home.homeDirectory}/.config/gh" \
-                  --bind "${config.home.homeDirectory}/.nb" "${config.home.homeDirectory}/.nb" \
-                  --ro-bind-try "${config.home.homeDirectory}/.nbrc" "${config.home.homeDirectory}/.nbrc" \
-                  --ro-bind-try "${config.home.homeDirectory}/.gitconfig" "${config.home.homeDirectory}/.gitconfig" \
-                  --ro-bind-try "$HM_PROFILE" "$HM_PROFILE" \
-                  --ro-bind "/run/user/$USER_ID/bus" "/run/user/$USER_ID/bus" \
-                  --setenv HOME "${config.home.homeDirectory}" \
-                  --setenv PATH "$PATH" \
-                  --setenv NB_DIR "$NB_DIR" \
-                  --setenv NB_USER_NAME "$NB_USER_NAME" \
-                  --setenv NB_USER_EMAIL "$NB_USER_EMAIL" \
-                  --setenv GIT_AUTHOR_NAME "$GIT_AUTHOR_NAME" \
-                  --setenv GIT_AUTHOR_EMAIL "$GIT_AUTHOR_EMAIL" \
-                  --setenv GIT_COMMITTER_NAME "$GIT_COMMITTER_NAME" \
-                  --setenv GIT_COMMITTER_EMAIL "$GIT_COMMITTER_EMAIL" \
-                  --setenv CLI_BIN "$CLI_BIN" \
-                  --setenv CLI_TYPE "$CLI_TYPE" \
-                  --setenv EDITOR "cat" \
-                  --setenv TERM "dumb" \
-                  --setenv PAGER "cat" \
-                  --setenv DBUS_SESSION_BUS_ADDRESS "unix:path=/run/user/$USER_ID/bus" \
-                  --chdir "$PROJECT_DIR" \
-                  --unshare-all \
-                  --share-net \
-                  --die-with-parent \
-                  ${jbot-cli}/bin/jbot agent \
-                    --name "${name}" \
-                    --role "${agent.role}" \
-                    --desc "${agent.description}" \
-                    --prompt "${agent.promptFile}" \
-                    --cli-bin "$CLI_BIN" \
-                    --cli-type "$CLI_TYPE"
+                # Call the formally verified standalone launcher
+                exec "${jbot-cli}/scripts/jbot-launcher.sh"
               ''}";
 
               WorkingDirectory = agent.projectDir;

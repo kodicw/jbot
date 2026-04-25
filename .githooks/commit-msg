@@ -37,7 +37,7 @@ if ! echo "$FIRST_LINE" | grep -qE "$PATTERN"; then
 fi
 
 # Subject must not start with a capital letter
-SUBJECT=$(echo "$FIRST_LINE" | sed 's/^[^:]*: //')
+SUBJECT="${FIRST_LINE#*: }"
 FIRST_CHAR=$(echo "$SUBJECT" | cut -c1)
 if echo "$FIRST_CHAR" | grep -qE "[A-Z]"; then
   echo ""

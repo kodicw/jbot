@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import subprocess
 from datetime import datetime
@@ -187,17 +188,23 @@ def update_changelog(project_dir: str, new_version: str) -> bool:
     with open(changelog_path, "r") as f:
         lines = f.readlines()
 
-    unreleased_header = "## [Unreleased]"
+    # Robust regex for section matching as per ADR [[nb:jbot:adr-193]]
+    re_unreleased = re.compile(r"^##.*unreleased", re.IGNORECASE)
+    re_version_header = re.compile(r"^##\s*\[", re.IGNORECASE)
+
     unreleased_index = -1
     next_version_index = -1
     today_date = datetime.now().strftime("%Y-%m-%d")
 
     # Locate the [Unreleased] section and the start of the next version section
     for i, line in enumerate(lines):
-        if unreleased_header in line:
+        stripped = line.strip()
+        if re_unreleased.match(stripped):
             unreleased_index = i
         elif (
-            unreleased_index != -1 and line.startswith("## [") and i > unreleased_index
+            unreleased_index != -1
+            and re_version_header.match(stripped)
+            and i > unreleased_index
         ):
             next_version_index = i
             break

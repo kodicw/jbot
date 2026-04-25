@@ -32,6 +32,8 @@
             pkgs.nixfmt-rfc-style
             pkgs.statix
             pkgs.ruff
+            pkgs.shellcheck
+            pkgs.bats
             pkgs.gemini-cli
             pkgs.python3
             pkgs.python3Packages.pytest
@@ -51,6 +53,12 @@
         };
 
         checks = {
+          shellcheck = pkgs.runCommand "shellcheck" { nativeBuildInputs = [ pkgs.shellcheck ]; } ''
+            shellcheck ${./scripts}/*.sh
+            shellcheck ${./.githooks}/*
+            touch $out
+          '';
+
           python-tests =
             pkgs.runCommand "python-tests"
               {
@@ -72,6 +80,25 @@
                 cp ${./tests}/*.py tests/
                 export PYTHONPATH=$PYTHONPATH:$(pwd)/scripts
                 pytest --cov=scripts --cov-report=term-missing tests/
+                touch $out
+              '';
+          bash-tests =
+            pkgs.runCommand "bash-tests"
+              {
+                nativeBuildInputs = [
+                  pkgs.shellcheck
+                  pkgs.bats
+                ];
+              }
+              ''
+                echo "Running ShellCheck..."
+                shellcheck ${./scripts}/*.sh ${./.githooks}/*
+                
+                echo "Running BATS tests..."
+                # Only run if tests exist
+                if [ -d ${./tests} ] && ls ${./tests}/*.bats >/dev/null 2>&1; then
+                  bats ${./tests}/*.bats
+                fi
                 touch $out
               '';
         };

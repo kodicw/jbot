@@ -13,6 +13,7 @@ format:
 lint:
     statix check .
     ruff check .
+    shellcheck scripts/*.sh .githooks/*
 
 # Prune unused Nix code and dead files
 prune:
@@ -25,6 +26,7 @@ prune:
 test:
     nix --extra-experimental-features "nix-command flakes" flake check --no-build
     pytest --cov=scripts tests/
+    if [ -f tests/*.bats ]; then bats tests/*.bats; fi
 
 # Synchronize long-term memory to nb
 sync-memory:

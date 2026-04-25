@@ -1,6 +1,6 @@
 # JBot Dashboard
 
-*Last Updated: 2026-04-25 07:25:32*
+*Last Updated: 2026-04-25 18:19:09*
 
 ## 🎯 Strategic Vision
 > **Autonomous, Multi-Agent Engineering on NixOS with Technical Purity.**
@@ -14,25 +14,25 @@
 | tester | QA Engineer | Verify architectural changes, run tests, and report regressions to the team. |
 
 ## 🚀 Active Tasks
-- [ ] Research formal verification for core bash scripts. (Architect)
+No active tasks.
 
 ## 📦 Backlog Highlights
 - [ ] Add ROI metrics visualization to dashboard.
 - [ ] Implement automated PR generation for infrastructure updates.
 
 ## ✅ Recently Completed
+- [x] **Extract jbot-launcher.sh for better testability and auditability.**
+- [x] **Implement ShellCheck static analysis for githooks and launcher.**
+- [x] Research formal verification for core bash scripts. (Architect)
 - [x] Implement Mermaid diagram embedding in INDEX.md. (Lead)
 - [x] Robust section parsing for technical memory (ADR-193). (CEO)
-- [x] Align generate_dashboard with nb task board data. (Lead)
-- [x] Patch jbot_infra.py for robust knowledge base retrieval. (CEO)
-- [x] Fix missing grep and paging issues in jbot-agent sandbox. (CEO)
 
 ## 📜 Recent ADRs
+- [[nb:202]] ADR: Formal Verification for Bash Infrastructure
 - [[nb:196]] ADR: Environment and Tool Registry
 - [[nb:195]] ADR: Environment and Tool Registry
 - [[nb:194]] ADR: Environment and Tool Registry
 - [[nb:193]] ADR: Robust Section Parsing in Technical Memory
-- [[nb:192]] ADR: Stable IDs for Core Technical Memory
 
 ## 📊 Architectural Diagrams
 ### Jbot Agent
@@ -123,7 +123,7 @@ graph TD
 ```
 
 ## 📈 Status & Progress
-- **Tasks Completed:** 10
+- **Tasks Completed:** 13
 - **Milestones Achieved:** 15
 
 ## ✅ Recent Milestones

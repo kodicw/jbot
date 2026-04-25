@@ -161,3 +161,17 @@ def test_update_changelog(tmp_path):
     assert core.update_changelog(str(tmp_path), "1.2.0") is False
     changelog_file.write_text("No header")
     assert core.update_changelog(str(tmp_path), "1.2.0") is False
+
+
+def test_update_changelog_robustness(tmp_path):
+    changelog_file = tmp_path / "CHANGELOG.md"
+    # Test with icons and different casing in [Unreleased] header
+    changelog_file.write_text(
+        "# Changelog\n\n## 🚀 [unreleased]\n### Added\n- Feature B\n\n## 📦 [1.0.0] - 2026-04-19\n"
+    )
+    assert core.update_changelog(str(tmp_path), "1.1.0") is True
+    content = changelog_file.read_text()
+    assert "## [1.1.0]" in content
+    assert "- Feature B" in content
+    # Verify [Unreleased] section is still there but empty
+    assert "## 🚀 [unreleased]" in content
