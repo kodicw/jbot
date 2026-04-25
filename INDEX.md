@@ -1,8 +1,8 @@
 # JBot Dashboard
 
-*Last Updated: 2026-04-24 08:09:38*
+*Last Updated: 2026-04-25 06:34:11*
 
-## 🎯 Company Vision
+## 🎯 Strategic Vision
 > **Autonomous, Multi-Agent Engineering on NixOS with Technical Purity.**
 
 ## 👥 Team Roster
@@ -14,24 +14,31 @@
 | tester | QA Engineer | Verify architectural changes, run tests, and report regressions to the team. |
 
 ## 🚀 Active Tasks
-- [ ] Align `generate_dashboard` with `nb` task board data. (Lead)
+No active tasks.
 
-### 📦 Backlog Highlights
+## 📦 Backlog Highlights
 - [ ] Add Mermaid diagram support to dashboard.
 - [ ] Integrate formal verification for core infrastructure scripts.
 
+## ✅ Recently Completed
+- [x] Align `generate_dashboard` with `nb` task board data. (Lead)
+- [x] Patch `jbot_infra.py` for robust knowledge base retrieval. (CEO)
+- [x] Fix missing `grep` and paging issues in `jbot-agent` sandbox. (CEO)
+- [x] Implement automated rotation of old Task Board notes in `nb`. (Architect)
+- [x] Standardize Architectural Directives as ADRs in `nb`. (CEO)
+
 ## 📜 Recent ADRs
+- [[nb:196]] ADR: Environment and Tool Registry
+- [[nb:195]] ADR: Environment and Tool Registry
+- [[nb:194]] ADR: Environment and Tool Registry
+- [[nb:193]] ADR: Robust Section Parsing in Technical Memory
 - [[nb:192]] ADR: Stable IDs for Core Technical Memory
-- [[nb:191]] ADR: Environment and Tool Registry
-- [[nb:190]] ADR: Environment and Tool Registry
-- [[nb:189]] ADR: Environment and Tool Registry
-- [[nb:178]] ADR: Multi-Agent Coordination Protocol (TNPP)
 
 ## 📈 Status & Progress
-- **Tasks Completed:** 0
+- **Tasks Completed:** 10
 - **Milestones Achieved:** 15
 
-## 🏆 Recent Milestones
+## ✅ Recent Milestones
 - **Infrastructure CLI Integration:** Integrated `maintenance`, `purge`, `rotate`, `dashboard`, and `send-message` as subcommands in the `jbot` CLI.
 - **Modularized Infrastructure Logic:** Moved core logic for purging, rotation, and dashboard generation into `scripts/jbot_utils.py` for architectural purity.
 - **Consolidated Rotation Logic:** Unified memory, task, and message rotation under a single `jbot rotate` command.

@@ -68,6 +68,52 @@ def test_rotate_messages(tmp_path):
     assert rotation.rotate_messages("nonexistent", "archive") is False
 
 
+def test_rotate_nb_notes():
+    from nb_client import NbNote
+
+    mock_notes = [
+        NbNote(id="1", title="Oldest", tags=[]),
+        NbNote(id="2", title="Older", tags=[]),
+        NbNote(id="3", title="Middle", tags=[]),
+        NbNote(id="4", title="Newer", tags=[]),
+        NbNote(id="5", title="Newest", tags=[]),
+    ]
+
+    with patch("nb_client.NbClient") as mock_client_class:
+        mock_client = mock_client_class.return_value
+        mock_client.ls.return_value = mock_notes
+        mock_client.delete.return_value = True
+
+        # Limit 3, should delete 2 (id 1 and 2)
+        count = rotation.rotate_nb_notes("test", limit=3)
+
+        assert count == 2
+        assert mock_client.delete.call_count == 2
+        # Highest IDs are newest, so it should delete 1 and 2
+        mock_client.delete.assert_any_call("1")
+        mock_client.delete.assert_any_call("2")
+
+
+def test_rotate_nb_notes_preserve():
+    from nb_client import NbNote
+
+    mock_notes = [
+        NbNote(id="1", title="Oldest", tags=[]),
+        NbNote(id="5", title="Newest", tags=[]),
+    ]
+
+    with patch("nb_client.NbClient") as mock_client_class:
+        mock_client = mock_client_class.return_value
+        mock_client.ls.return_value = mock_notes
+        mock_client.delete.return_value = True
+
+        # Limit 1, should delete 1, but we preserve it.
+        count = rotation.rotate_nb_notes("test", limit=1, preserve_ids=["1"])
+
+        assert count == 0
+        mock_client.delete.assert_not_called()
+
+
 def test_perform_rotations(tmp_path):
     jbot_dir = tmp_path / ".jbot"
     jbot_dir.mkdir()

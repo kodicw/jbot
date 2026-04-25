@@ -14,12 +14,17 @@ import jbot_tui
 def get_status(project_dir: str) -> None:
     """Displays the high-level project vision, environment context, and active tasks."""
     os.chdir(project_dir)
-    goal_path = ".project_goal"
 
     print("\n--- JBot Organization Status ---")
-    if os.path.exists(goal_path):
-        with open(goal_path, "r") as f:
-            print(f"\n🎯 Company Vision:\n> {f.read().strip()}")
+
+    tasks_data = tasks.parse_tasks()
+    if tasks_data.get("vision"):
+        print(f"\n🎯 Strategic Vision:\n> {tasks_data['vision']}")
+    else:
+        goal_path = ".project_goal"
+        if os.path.exists(goal_path):
+            with open(goal_path, "r") as f:
+                print(f"\n🎯 Company Vision:\n> {f.read().strip()}")
 
     # Real-time Environment Context
     print("\n🌍 Environment Context:")
@@ -247,13 +252,27 @@ def main():
     send_msg_parser.add_argument("-m", "--message", required=True)
 
     # Infra
-    subparsers.add_parser("maintenance", help="Run maintenance")
+    m_parser = subparsers.add_parser("maintenance", help="Run maintenance")
+    m_sub = m_parser.add_subparsers(dest="m_action")
+    m_sub.add_parser("run", help="Run full maintenance loop")
+    push_note_parser = m_sub.add_parser(
+        "push-note", help="Stably push/update an nb note"
+    )
+    push_note_parser.add_argument("--title", required=True)
+    push_note_parser.add_argument("--tags", required=True, help="Comma-separated tags")
+    push_note_parser.add_argument(
+        "--file", help="File to read content from (defaults to stdin)"
+    )
+
     subparsers.add_parser("purge", help="Archive expired directives")
+
     rotate_parser = subparsers.add_parser("rotate", help="Rotate data")
     rotate_sub = rotate_parser.add_subparsers(dest="rotate_target")
     rotate_sub.add_parser("messages").add_argument(
         "-l", "--limit", type=int, default=50
     )
+    rotate_sub.add_parser("nb")
+    rotate_sub.add_parser("all")
     subparsers.add_parser("dashboard", help="Regenerate dashboard")
 
     # Agent
@@ -262,7 +281,10 @@ def main():
     agent_parser.add_argument("--role")
     agent_parser.add_argument("--desc")
     agent_parser.add_argument("--prompt")
-    agent_parser.add_argument("--gemini")
+    agent_parser.add_argument("--cli-bin", help="Path to the AI CLI binary")
+    agent_parser.add_argument(
+        "--cli-type", choices=["gemini", "opencode"], help="Type of AI CLI"
+    )
 
     # Versioning
     v_parser = subparsers.add_parser("version", help="Manage versioning")
@@ -315,7 +337,23 @@ def main():
         ):
             print("Message sent successfully.")
     elif args.command == "maintenance":
-        infra.run_maintenance(project_root)
+        if args.m_action == "push-note":
+            content = ""
+            if args.file:
+                with open(args.file, "r") as f:
+                    content = f.read()
+            else:
+                content = sys.stdin.read()
+
+            tags = args.tags.split(",")
+            if infra.update_note_stably(args.title, content, tags):
+                print(f"Successfully pushed stable note: {args.title}")
+            else:
+                print(f"Failed to push note: {args.title}")
+                sys.exit(1)
+        else:
+            # Default to full maintenance run if no action or 'run'
+            infra.run_maintenance(project_root)
     elif args.command == "purge":
         c = jbot_rotation.purge_directives(
             os.path.join(project_root, ".jbot/directives"),
@@ -330,6 +368,12 @@ def main():
                 args.limit,
             ):
                 print("Messages rotated.")
+        elif args.rotate_target == "nb":
+            jbot_rotation.perform_rotations(project_root)
+            print("NB notes rotated.")
+        elif args.rotate_target == "all":
+            jbot_rotation.perform_rotations(project_root)
+            print("Full data rotation performed.")
         else:
             rotate_parser.print_help()
     elif args.command == "dashboard":
@@ -361,7 +405,8 @@ def main():
             description=getattr(args, "desc", None),
             project_dir=project_root,
             prompt_file=getattr(args, "prompt", None),
-            gemini_pkg=getattr(args, "gemini", None),
+            cli_bin=getattr(args, "cli_bin", None),
+            cli_type=getattr(args, "cli_type", None),
         )
     elif args.command == "human":
         jbot_tui.main()

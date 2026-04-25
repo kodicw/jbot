@@ -176,3 +176,19 @@ def test_parse_ls_output_skip_lines(mock_run, client):
     assert len(notes) == 1
     assert notes[0].id == "42"
     assert notes[0].title == "Valid Note"
+
+
+@patch("subprocess.run")
+def test_delete_note(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_run.return_value = mock_result
+
+    success = client.delete("123")
+
+    assert success is True
+    mock_run.assert_called_once()
+    args = mock_run.call_args[0][0]
+    assert "jbot:delete" in args
+    assert "123" in args
+    assert "--force" in args

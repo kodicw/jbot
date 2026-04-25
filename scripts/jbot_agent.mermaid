@@ -1,0 +1,26 @@
+graph TD
+    A[Start Agent] --> B[Initialize Environment]
+    B --> C[Assemble Context]
+    C --> D[Execute AI CLI]
+    D --> E[Verify Changes]
+    E --> F[End Agent]
+
+    subgraph "Context Assembly (nb-driven)"
+        C1[Get System Prompt]
+        C2[Get Directives & ADRs]
+        C3[Get Task Board]
+        C4[Get Git Status & Tree]
+        C5[Get Shared Memory Logs]
+        C6[Get Messages]
+        C1 --> C_ALL[Combine into Jinja2 Template]
+        C2 --> C_ALL
+        C3 --> C_ALL
+        C4 --> C_ALL
+        C5 --> C_ALL
+        C6 --> C_ALL
+    end
+
+    subgraph "Verification"
+        E1[Run .githooks/pre-commit]
+        E2[Check Exit Code]
+    end

@@ -3,6 +3,7 @@ import re
 import shutil
 from datetime import datetime
 
+# Context: [[nb:jbot:adr-173]], [[nb:jbot:adr-177]]
 import jbot_core as core
 
 
@@ -87,13 +88,52 @@ def rotate_messages(msg_dir: str, archive_dir: str, limit: int = 50) -> bool:
     return True
 
 
+def rotate_nb_notes(tag: str, limit: int = 5, preserve_ids: list = None) -> int:
+    """Rotates old notes in nb knowledge base by tag."""
+    from nb_client import NbClient
+
+    client = NbClient()
+    # Use ls instead of query for cleaner, tag-specific results
+    notes = client.ls(tags=[tag])
+    if len(notes) <= limit:
+        return 0
+
+    # Sort notes by ID numerically as a proxy for date (higher is newer)
+    try:
+        notes.sort(key=lambda x: int(x.id), reverse=True)
+    except ValueError:
+        # Fallback if some IDs are not numeric (unlikely in nb)
+        return 0
+
+    to_delete = notes[limit:]
+    deleted_count = 0
+    preserve_ids = preserve_ids or []
+
+    for note in to_delete:
+        if note.id in preserve_ids:
+            continue
+        if client.delete(note.id):
+            deleted_count += 1
+            core.log(f"Deleted old nb note: {note.id} ({note.title})", "Rotate")
+
+    return deleted_count
+
+
 def perform_rotations(project_dir: str) -> None:
     """Executes all automated data purging and rotation tasks."""
     purge_directives(
         os.path.join(project_dir, ".jbot/directives"),
         os.path.join(project_dir, ".jbot/directives/archive"),
     )
-    # Memory and tasks are now handled by nb and don't require manual flat-file rotation.
+
+    # Memory and tasks are now handled by nb.
+    rotate_nb_notes("type:tasks", limit=3, preserve_ids=["5"])
+    rotate_nb_notes("type:audit", limit=3)
+    rotate_nb_notes("type:idea", limit=5)
+    rotate_nb_notes("input:human", limit=10)
+    rotate_nb_notes("type:adr", limit=20)
+    rotate_nb_notes("memory", limit=10)
+
     rotate_messages(
         os.path.join(project_dir, ".jbot/messages"),
         os.path.join(project_dir, ".jbot/messages/archive"),

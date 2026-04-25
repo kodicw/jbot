@@ -4,9 +4,30 @@ import re
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import jbot_core as core
-import jbot_tasks as tasks
 import jbot_rotation
 from nb_client import NbClient
+
+
+# --- NB Stability Helpers ---
+def update_note_stably(title: str, content: str, tags: List[str]) -> bool:
+    """Updates an existing note if found by title and tags, otherwise adds a new one."""
+    client = NbClient()
+    try:
+        # Find existing notes with these tags
+        notes = client.ls(tags=tags)
+        target_id = None
+        for n in notes:
+            if n.title.lower() == title.lower():
+                target_id = n.id
+                break
+
+        if target_id:
+            return client.edit(target_id, content)
+        else:
+            return client.add(title, content, tags=tags) is not None
+    except Exception as e:
+        core.log(f"Error stably updating note '{title}': {e}", "Infra")
+        return False
 
 
 # --- Team & Registry ---
@@ -63,18 +84,37 @@ def get_note_content(query: str) -> Optional[str]:
     """Retrieves the full content of the first nb note matching the query."""
 
     try:
-        tag = query.replace("type:", "").replace("input:", "").replace("#", "")
         client = NbClient()
-
-        # 1. Search for the ID using 'nb jbot:q' which is the most reliable search
-        notes = client.query(f"#{tag}")
-
         note_id = None
-        if notes:
-            note_id = notes[0].id
 
-        # 2. Fallback to title search if tag search failed
-        if not note_id and tag == "prompt":
+        if query.startswith("type:") or query.startswith("#"):
+            tag = query.replace("type:", "").replace("#", "")
+            # Use ls for tag queries as it is more precise than q
+            notes = client.ls(tags=[tag])
+            if notes:
+                # Sort by ID descending to get the newest by default
+                notes.sort(key=lambda x: int(x.id), reverse=True)
+                # Prefer notes with "Authoritative" or "Board" in title for tasks
+                if tag == "tasks":
+                    for n in notes:
+                        if (
+                            "authoritative" in n.title.lower()
+                            or "board" in n.title.lower()
+                        ):
+                            note_id = n.id
+                            core.log(f"Found task board: {n.title} ({n.id})", "Infra")
+                            break
+                if not note_id:
+                    note_id = notes[0].id
+
+        if not note_id:
+            # 1. Search for the ID using 'nb jbot:q' which is the most reliable search for text
+            notes = client.query(query)
+            if notes:
+                note_id = notes[0].id
+
+        # 2. Fallback to title search if search failed
+        if not note_id and query == "type:prompt":
             notes = client.query("Authoritative System Prompt")
             if notes:
                 note_id = notes[0].id
@@ -153,21 +193,54 @@ def parse_directives(dir_path: str) -> List[Dict[str, str]]:
 
 
 # --- Dashboard ---
+def get_recent_adrs(count: int = 5) -> List[Dict[str, str]]:
+    """Retrieve the most recent ADRs from the nb knowledge base."""
+    try:
+        client = NbClient()
+        # ADRs must have #type:adr tag
+        notes = client.ls(tags=["type:adr"])
+        # Sort by ID descending to get the newest by default
+        notes.sort(key=lambda x: int(x.id), reverse=True)
+
+        results = []
+        for note in notes:
+            # Filter: must have ADR in title or be clearly an ADR
+            is_adr = "adr" in note.title.lower()
+            if is_adr:
+                results.append({"id": note.id, "title": note.title})
+
+            if len(results) >= count:
+                break
+        return results
+    except Exception as e:
+        core.log(f"Error fetching ADRs from nb: {e}", "Infra")
+        return []
+
+
 def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") -> bool:
-    """Generates a markdown dashboard summarizing the project status."""
+    """Generates a markdown dashboard summarizing the project status.
+
+    Context: [[nb:jbot:adr-193]] - Aligned with Authoritative Task Board
+    """
+    import jbot_tasks as tasks
+
     dashboard_content = "# JBot Dashboard\n\n"
     dashboard_content += (
         f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
     )
 
-    goal_path = core.find_file_upwards(".project_goal", project_dir)
+    tasks_data = tasks.parse_tasks()
     changelog_path = core.find_file_upwards("CHANGELOG.md", project_dir)
 
-    dashboard_content += "## 🎯 Company Vision\n"
-    if goal_path and os.path.exists(goal_path):
-        dashboard_content += f"> {core.read_file(goal_path)}\n\n"
+    dashboard_content += "## 🎯 Strategic Vision\n"
+    if tasks_data.get("vision"):
+        dashboard_content += f"> {tasks_data['vision']}\n\n"
     else:
-        dashboard_content += "No current vision defined.\n\n"
+        goal_path = core.find_file_upwards(".project_goal", project_dir)
+        if goal_path and os.path.exists(goal_path):
+            dashboard_content += f"> {core.read_file(goal_path)}\n\n"
+        else:
+            dashboard_content += "No current vision defined.\n\n"
 
     dashboard_content += "## 👥 Team Roster\n"
     agents = get_team_registry(project_dir)
@@ -182,11 +255,43 @@ def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") ->
         dashboard_content += "\n"
 
     dashboard_content += "## 🚀 Active Tasks\n"
-    tasks_data = tasks.parse_tasks()
-    if tasks_data["active"]:
-        for task in tasks_data["active"][:10]:
+    # Filter for truly active tasks (not marked [x]) as per ADR-193
+    active_tasks = [t for t in tasks_data["active"] if "- [ ]" in t]
+    if active_tasks:
+        for task in active_tasks[:10]:
             dashboard_content += f"{task}\n"
         dashboard_content += "\n"
+    else:
+        dashboard_content += "No active tasks.\n\n"
+
+    if tasks_data["backlog"]:
+        dashboard_content += "## 📦 Backlog Highlights\n"
+        for task in tasks_data["backlog"][:5]:
+            dashboard_content += f"{task}\n"
+        dashboard_content += "\n"
+
+    # Add Recently Completed section from Task Board
+    completed_tasks = []
+    for line in tasks_data["sections"]["completed"]:
+        stripped = line.strip()
+        if stripped.startswith("-"):
+            completed_tasks.append(stripped)
+
+    if completed_tasks:
+        dashboard_content += "## ✅ Recently Completed\n"
+        # Show first 5 completed tasks (most recent)
+        for task in completed_tasks[:5]:
+            dashboard_content += f"{task}\n"
+        dashboard_content += "\n"
+
+    dashboard_content += "## 📜 Recent ADRs\n"
+    adrs = get_recent_adrs(5)
+    if adrs:
+        for adr in adrs:
+            dashboard_content += f"- [[nb:{adr['id']}]] {adr['title']}\n"
+        dashboard_content += "\n"
+    else:
+        dashboard_content += "No ADRs found.\n\n"
 
     dashboard_content += "## 📈 Status & Progress\n"
     milestone_count = 0
@@ -197,7 +302,7 @@ def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") ->
     dashboard_content += f"- **Tasks Completed:** {tasks_data['done_count']}\n"
     dashboard_content += f"- **Milestones Achieved:** {milestone_count}\n\n"
 
-    dashboard_content += "## 🏆 Recent Milestones\n"
+    dashboard_content += "## ✅ Recent Milestones\n"
     if changelog_path and os.path.exists(changelog_path):
         with open(changelog_path, "r") as f:
             milestones = [line.strip() for line in f if line.strip().startswith("- **")]

@@ -1,0 +1,23 @@
+graph TD
+    A[Task Operation] --> B{Fetch Task Board}
+    B -->|get_note_content| C[Parse Markdown]
+    C --> D{Perform Action}
+    D -->|add_task| E[Insert into Section]
+    D -->|update_task| F[Modify Line]
+    D -->|complete_task| G[Move to Completed]
+    E --> H[Push to nb]
+    F --> H
+    G --> H
+
+    subgraph Parsing
+        C1[Split into Lines]
+        C2[Identify ## Sections]
+        C3[Extract Vision/Active/Backlog]
+        C4[Count Done Tasks]
+    end
+
+    subgraph "Push (nb-aware)"
+        H1[Find Stable ID 5]
+        H2[nb edit ID]
+        H3[Fallback: nb add]
+    end

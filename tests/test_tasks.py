@@ -8,6 +8,7 @@ import jbot_tasks as tasks
 
 
 def test_parse_tasks(tmp_path):
+    # Test with standard headers
     with patch(
         "jbot_infra.get_note_content",
         return_value="\n## Strategic Vision\nGoal: Excellence.\n\n## Active Tasks\n- [ ] **Task 1** (Agent: test)\n- [ ] **Task 2**\n\n## Backlog\n- [ ] **Backlog 1**\n\n## Completed Tasks\n- [x] **Task 3**\n",
@@ -16,6 +17,17 @@ def test_parse_tasks(tmp_path):
         assert data["vision"] == "Goal: Excellence."
         assert "- [ ] **Task 1** (Agent: test)" in data["active"]
         assert "- [ ] **Backlog 1**" in data["backlog"]
+        assert data["done_count"] == 1
+
+    # Test with icon-rich headers (ADR-193 compliance)
+    with patch(
+        "jbot_infra.get_note_content",
+        return_value="\n## 🎯 Project Goal\nGoal: AI Supremacy.\n\n## 🚀 Active Tasks\n- [ ] **Task Alpha**\n\n## 📦 Backlog\n- [ ] **Task Beta**\n\n## ✅ Completed Tasks\n- [x] **Task Gamma**\n",
+    ):
+        data = tasks.parse_tasks()
+        assert data["vision"] == "Goal: AI Supremacy."
+        assert "- [ ] **Task Alpha**" in data["active"]
+        assert "- [ ] **Task Beta**" in data["backlog"]
         assert data["done_count"] == 1
 
     with patch("jbot_infra.get_note_content", return_value=""):
@@ -71,12 +83,20 @@ def test_push_nb_tasks(mock_nb):
     mock_client = MagicMock()
     mock_nb.return_value = mock_client
 
+    # Case 1: No existing notes, should call add
+    mock_client.ls.return_value = []
+    mock_client.add.return_value = True
     assert tasks._push_nb_tasks("Content") is True
-    mock_client.add.assert_called_once_with(
-        title="Task Board", content="Content", tags=["type:tasks"], overwrite=True
-    )
+    mock_client.add.assert_called_once()
 
-    mock_client.add.side_effect = Exception("Error")
+    # Case 2: Existing notes, should call edit
+    mock_client.ls.return_value = [MagicMock(id="10")]
+    mock_client.edit.return_value = True
+    assert tasks._push_nb_tasks("New Content") is True
+    mock_client.edit.assert_called_once_with("10", "New Content", overwrite=True)
+
+    # Case 3: Error
+    mock_client.ls.side_effect = Exception("Error")
     assert tasks._push_nb_tasks("Content") is False
 
 
@@ -118,4 +138,4 @@ def test_complete_task_nb(mock_push, mock_get_note):
     assert tasks.complete_task("Finish Me") is True
     mock_push.assert_called_once()
     assert "- [x] **Finish Me**" in mock_push.call_args[0][0]
-    assert "## Completed Tasks" in mock_push.call_args[0][0]
+    assert "Completed Tasks" in mock_push.call_args[0][0]

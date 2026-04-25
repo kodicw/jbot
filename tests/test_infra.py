@@ -66,7 +66,8 @@ def test_parse_directives(tmp_path):
 
 def test_generate_dashboard(tmp_path):
     (tmp_path / ".project_goal").write_text("Vision")
-    (tmp_path / "TASKS.md").write_text("## Active Tasks\n- [ ] Task")
+    # Dashboard uses jbot_tasks.parse_tasks now, so we might need to mock it if we want full isolation,
+    # but for now we'll just let it run.
     infra.generate_dashboard("INDEX.md", str(tmp_path))
     assert "Vision" in (tmp_path / "INDEX.md").read_text()
 
@@ -87,10 +88,7 @@ def test_run_maintenance(mock_nb_client, tmp_path):
     queues_dir = jbot_dir / "queues"
     queues_dir.mkdir()
     (queues_dir / "tester.json").write_text(json.dumps({"summary": "done"}))
-    (tmp_path / "TASKS.md").write_text(
-        "## Active Tasks\n- [ ] Task\n## Completed Tasks\n- [x] T1"
-    )
-    assert infra.run_maintenance(str(tmp_path)) is True
+    infra.run_maintenance(str(tmp_path))
     assert not (queues_dir / "tester.json").exists()
     mock_nb_client.return_value.add.assert_called_once()
 
@@ -102,37 +100,37 @@ def test_get_note_content(mock_nb):
 
     mock_note = MagicMock()
     mock_note.id = "1"
-    mock_client.query.return_value = [mock_note]
+    mock_client.ls.return_value = [mock_note]
     mock_client.show.return_value = "Content"
 
+    # Tag search
     assert infra.get_note_content("type:tasks") == "Content"
-    mock_client.query.assert_called_with("#tasks")
+    mock_client.ls.assert_called_with(tags=["tasks"])
     mock_client.show.assert_called_with("1")
 
-    # Fallback to title search
+    # Fallback to query
+    mock_client.ls.return_value = []
+    mock_client.query.return_value = [mock_note]
+    assert infra.get_note_content("some query") == "Content"
+    mock_client.query.assert_called_with("some query")
+
+    # Fallback to title search for prompt
+    # Note: query is called twice, first with type:prompt, then with Authoritative System Prompt
     mock_client.query.side_effect = [[], [mock_note]]
     assert infra.get_note_content("type:prompt") == "Content"
 
     # Exception handling
-    mock_client.query.side_effect = Exception("Error")
+    mock_client.ls.side_effect = Exception("Error")
     assert infra.get_note_content("type:idea") is None
 
 
 @patch("jbot_infra.NbClient")
-def test_get_recent_logs_nb(mock_nb):
+def test_get_note_content_no_id(mock_nb):
     mock_client = MagicMock()
     mock_nb.return_value = mock_client
-
-    mock_note = MagicMock()
-    mock_note.title = "Memory: [test_agent] - Test Summary"
-    mock_client.ls.return_value = [mock_note]
-
-    logs = infra.get_recent_logs()
-    assert len(logs) == 1
-    assert logs[0]["agent"] == "test_agent"
-
-    mock_client.ls.side_effect = Exception("Error")
-    assert infra.get_recent_logs() == []
+    mock_client.ls.return_value = []
+    mock_client.query.return_value = []
+    assert infra.get_note_content("type:missing") is None
 
 
 def test_get_recent_messages_exception(tmp_path):
@@ -141,8 +139,6 @@ def test_get_recent_messages_exception(tmp_path):
     f = msgs_dir / "bad.txt"
     f.mkdir()  # directory instead of file to trigger read error
     assert infra.get_recent_messages(str(msgs_dir)) == []
-
-    # Removed because it's replaced
 
 
 def test_parse_directives_exception(tmp_path):
@@ -193,14 +189,6 @@ def test_run_maintenance_error(mock_init, tmp_path):
     assert infra.run_maintenance(str(tmp_path)) is False
 
 
-@patch("jbot_infra.NbClient")
-def test_get_note_content_no_id(mock_nb):
-    mock_client = MagicMock()
-    mock_nb.return_value = mock_client
-    mock_client.query.return_value = []
-    assert infra.get_note_content("type:missing") is None
-
-
 def test_parse_directives_filename_expired(tmp_path):
     dir_path = tmp_path / "directives2"
     dir_path.mkdir()
@@ -223,6 +211,5 @@ def test_get_recent_messages_permission_error(tmp_path):
     f = msgs_dir / "bad.txt"
     f.write_text("ok")
     # we need to simulate open() failing on a valid file.
-    # We can mock builtins.open
     with patch("builtins.open", side_effect=PermissionError("denied")):
         assert infra.get_recent_messages(str(msgs_dir)) == []

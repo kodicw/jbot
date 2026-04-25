@@ -2,7 +2,7 @@ _: {
   programs.jbot = {
     enable = true;
     projectDir = "/home/kodicw/code/jbot";
-    
+
     agents = {
       lead = {
         enable = true;

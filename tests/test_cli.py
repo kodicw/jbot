@@ -529,5 +529,36 @@ def test_cli_agent_command(tmp_path, capsys):
             description=None,
             project_dir=str(tmp_path),
             prompt_file=None,
-            gemini_pkg=None,
+            cli_bin=None,
+            cli_type=None,
+        )
+
+
+def test_cli_agent_command_full(tmp_path, capsys):
+    with patch("jbot_agent.run_agent") as mock_run_agent:
+        with patch(
+            "sys.argv",
+            [
+                "jbot_cli.py",
+                "-d",
+                str(tmp_path),
+                "agent",
+                "--name",
+                "test-agent",
+                "--cli-bin",
+                "/path/to/bin",
+                "--cli-type",
+                "opencode",
+            ],
+        ):
+            jbot_cli.main()
+
+        mock_run_agent.assert_called_once_with(
+            name="test-agent",
+            role=None,
+            description=None,
+            project_dir=str(tmp_path),
+            prompt_file=None,
+            cli_bin="/path/to/bin",
+            cli_type="opencode",
         )
