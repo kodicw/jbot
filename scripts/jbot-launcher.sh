@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/nix/store/sfvyavxai6qvzmv9p9x6mp4wwdz4v41m-bash-interactive-5.3p9/bin/bash
 # JBot Agent Launcher Script
 # Context: [[nb:jbot:202]] (ADR: Formal Verification for Bash Infrastructure)
 set -euo pipefail

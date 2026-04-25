@@ -119,7 +119,7 @@ class NbClient:
         """
         List notes in the notebook, optionally filtered by tags.
         """
-        args = [f"{self.notebook}:ls"]
+        args = [f"{self.notebook}:ls", "-a"]
         if tags:
             for tag in tags:
                 # Use #tag syntax for reliable tag filtering in nb queries

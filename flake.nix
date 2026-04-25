@@ -93,7 +93,7 @@
               ''
                 echo "Running ShellCheck..."
                 shellcheck ${./scripts}/*.sh ${./.githooks}/*
-                
+
                 echo "Running BATS tests..."
                 # Only run if tests exist
                 if [ -d ${./tests} ] && ls ${./tests}/*.bats >/dev/null 2>&1; then

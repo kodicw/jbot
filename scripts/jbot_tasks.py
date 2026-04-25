@@ -246,9 +246,8 @@ def complete_task(task_text_search: str) -> bool:
         # Ignore common markdown formatting for matching
         line_clean = line.replace("`", "").replace("*", "").replace("_", "")
         if (
-            re.search(r"- \[[ x]\]", line)
-            and task_text_search.lower() in line_clean.lower()
-        ):
+            re.search(r"- \[[ x]\]", line) or line.strip().startswith("- ")
+        ) and task_text_search.lower() in line_clean.lower():
             task_line_index = i
             break
 

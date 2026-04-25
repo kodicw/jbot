@@ -127,11 +127,11 @@ def perform_rotations(project_dir: str) -> None:
     )
 
     # Memory and tasks are now handled by nb.
-    rotate_nb_notes("type:tasks", limit=3, preserve_ids=["5"])
+    rotate_nb_notes("type:tasks", limit=3, preserve_ids=["198", "5"])
     rotate_nb_notes("type:audit", limit=3)
     rotate_nb_notes("type:idea", limit=5)
     rotate_nb_notes("input:human", limit=10)
-    rotate_nb_notes("type:adr", limit=20)
+    rotate_nb_notes("type:adr", limit=50)
     rotate_nb_notes("memory", limit=10)
 
     rotate_messages(

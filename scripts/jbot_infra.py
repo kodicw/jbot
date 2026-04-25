@@ -204,10 +204,8 @@ def get_recent_adrs(count: int = 5) -> List[Dict[str, str]]:
 
         results = []
         for note in notes:
-            # Filter: must have ADR in title or be clearly an ADR
-            is_adr = "adr" in note.title.lower()
-            if is_adr:
-                results.append({"id": note.id, "title": note.title})
+            # Since we filtered by tag type:adr in client.ls, we can trust these are ADRs/Architectural notes
+            results.append({"id": note.id, "title": note.title})
 
             if len(results) >= count:
                 break
@@ -260,7 +258,11 @@ def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") ->
     active_tasks = [t for t in tasks_data["active"] if "- [ ]" in t]
     if active_tasks:
         for task in active_tasks[:10]:
-            dashboard_content += f"{task}\n"
+            # Extract agent name from task if present: - [ ] **Text** (Agent: Name)
+            match = re.search(r"\(Agent:\s*([^)]+)\)", task)
+            agent_str = f" [{match.group(1)}]" if match else ""
+            task_clean = re.sub(r"\s*\(Agent:\s*[^)]+\)", "", task)
+            dashboard_content += f"{task_clean}{agent_str}\n"
         dashboard_content += "\n"
     else:
         dashboard_content += "No active tasks.\n\n"
@@ -320,6 +322,42 @@ def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") ->
 
     dashboard_content += f"- **Tasks Completed:** {tasks_data['done_count']}\n"
     dashboard_content += f"- **Milestones Achieved:** {milestone_count}\n\n"
+
+    # Technical ROI Metrics (Context: [[nb:jbot:adr-205]])
+    try:
+        client = NbClient()
+        all_notes = client.ls()
+        adr_notes = client.ls(tags=["type:adr"])
+
+        kb_total = len(all_notes)
+        adr_total = len(adr_notes)
+
+        velocity = (
+            tasks_data["done_count"] / milestone_count if milestone_count > 0 else 0
+        )
+        density = adr_total / milestone_count if milestone_count > 0 else adr_total
+
+        # Calculate completion ratio: Done / (Active + Backlog + Done)
+        total_tasks = (
+            len(tasks_data["active"])
+            + len(tasks_data["backlog"])
+            + tasks_data["done_count"]
+        )
+        completion_ratio = (
+            (tasks_data["done_count"] / total_tasks * 100) if total_tasks > 0 else 0
+        )
+
+        dashboard_content += "### 📊 Technical ROI (Engineering Metrics)\n"
+        dashboard_content += (
+            f"- **Engineering Velocity:** {velocity:.2f} tasks/milestone\n"
+        )
+        dashboard_content += (
+            f"- **Architectural Density:** {density:.2f} ADRs/milestone\n"
+        )
+        dashboard_content += f"- **Knowledge Base Growth:** {kb_total} records\n"
+        dashboard_content += f"- **Completion Ratio:** {completion_ratio:.1f}%\n\n"
+    except Exception as e:
+        core.log(f"Error calculating Technical ROI: {e}", "Infra")
 
     dashboard_content += "## ✅ Recent Milestones\n"
     if changelog_path and os.path.exists(changelog_path):

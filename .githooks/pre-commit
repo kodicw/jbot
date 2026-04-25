@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/nix/store/sfvyavxai6qvzmv9p9x6mp4wwdz4v41m-bash-interactive-5.3p9/bin/bash
 set -euo pipefail
 
 echo "[pre-commit] Running checks..."
@@ -41,10 +41,14 @@ fi
 
 # 5. ShellCheck
 echo "  -> shellcheck"
-if ! shellcheck scripts/*.sh .githooks/*; then
-  echo ""
-  echo "  FAIL: ShellCheck found issues in bash scripts."
-  exit 1
+if command -v shellcheck >/dev/null 2>&1; then
+  if ! shellcheck scripts/*.sh .githooks/*; then
+    echo ""
+    echo "  FAIL: ShellCheck found issues in bash scripts."
+    exit 1
+  fi
+else
+  echo "  (skipped: shellcheck not found)"
 fi
 
 echo "[pre-commit] All checks passed!"

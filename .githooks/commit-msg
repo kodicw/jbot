@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/nix/store/sfvyavxai6qvzmv9p9x6mp4wwdz4v41m-bash-interactive-5.3p9/bin/bash
 set -euo pipefail
 
 COMMIT_MSG_FILE="$1"
