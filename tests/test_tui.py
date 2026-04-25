@@ -1,5 +1,6 @@
 import os
 import sys
+import pytest
 from unittest.mock import patch, MagicMock
 
 sys.path.append(os.path.join(os.getcwd(), "scripts"))
@@ -58,33 +59,30 @@ def test_ai_refine_idea(mock_run, mock_logs, mock_nix, mock_git):
     assert "my idea" in prompt
 
 
-@patch("sys.exit")
 @patch("jbot_core.get_project_root", return_value="/tmp")
 @patch("jbot_tui.get_gum_choose")
-def test_main_exit(mock_choose, mock_root, mock_exit):
+def test_main_exit(mock_choose, mock_root):
     mock_choose.return_value = "❌ Exit"
-    tui.main()
-    mock_exit.assert_called_with(0)
+    with pytest.raises(SystemExit) as e:
+        tui.main()
+    assert e.value.code == 0
 
 
-@patch("sys.exit")
 @patch("jbot_core.get_project_root", return_value="/tmp")
 @patch("jbot_tui.get_gum_choose", return_value="💡 New Idea")
 @patch("jbot_tui.get_gum_write", return_value="")
-def test_main_empty_draft(mock_write, mock_choose, mock_root, mock_exit):
-    tui.main()
-    mock_exit.assert_called_with(0)
+def test_main_empty_draft(mock_write, mock_choose, mock_root):
+    with pytest.raises(SystemExit) as e:
+        tui.main()
+    assert e.value.code == 0
 
 
-@patch("sys.exit")
 @patch("jbot_core.get_project_root", return_value="/tmp")
 @patch("jbot_tui.get_gum_choose")
 @patch("jbot_tui.get_gum_write")
 @patch("jbot_tui.ai_refine_idea", return_value="Refined!")
 @patch("jbot_infra.NbClient")
-def test_main_idea_accept(
-    mock_nb, mock_ai, mock_write, mock_choose, mock_root, mock_exit
-):
+def test_main_idea_accept(mock_nb, mock_ai, mock_write, mock_choose, mock_root):
     mock_choose.side_effect = ["💡 New Idea", "✅ Accept & Push"]
     mock_write.return_value = "rough draft"
 
@@ -101,20 +99,19 @@ def test_main_idea_accept(
     )
 
 
-@patch("sys.exit")
 @patch("jbot_core.get_project_root", return_value="/tmp")
 @patch("jbot_tui.get_gum_choose")
 @patch("jbot_tui.get_gum_write")
 @patch("jbot_tui.ai_refine_idea", return_value="Refined!")
-def test_main_idea_discard(mock_ai, mock_write, mock_choose, mock_root, mock_exit):
-    mock_choose.side_effect = ["💬 Feedback", "❌ Discard"]
+def test_main_idea_discard(mock_ai, mock_write, mock_choose, mock_root):
+    mock_choose.side_effect = ["💡 New Idea", "❌ Discard"]
     mock_write.return_value = "rough draft"
 
-    tui.main()
-    mock_exit.assert_called_with(0)
+    with pytest.raises(SystemExit) as e:
+        tui.main()
+    assert e.value.code == 0
 
 
-@patch("sys.exit")
 @patch("jbot_core.get_project_root", return_value="/tmp")
 @patch("jbot_tui.get_gum_choose")
 @patch("jbot_tui.get_gum_write")
@@ -122,7 +119,7 @@ def test_main_idea_discard(mock_ai, mock_write, mock_choose, mock_root, mock_exi
 @patch("jbot_tui.ai_refine_idea", return_value="Refined!")
 @patch("jbot_infra.NbClient")
 def test_main_prompt_edit(
-    mock_nb, mock_ai, mock_run, mock_write, mock_choose, mock_root, mock_exit
+    mock_nb, mock_ai, mock_run, mock_write, mock_choose, mock_root
 ):
     mock_choose.side_effect = ["🔧 Update Prompt", "✏️ Edit Manually"]
     mock_write.side_effect = ["rough draft", "Final edit!"]
