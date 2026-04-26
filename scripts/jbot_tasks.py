@@ -1,165 +1,164 @@
 import re
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
-# Context: [[nb:jbot:adr-173]], [[nb:jbot:adr-193]]
+# Context: [[nb:jbot:adr-173]], [[nb:jbot:adr-193]], [[nb:jbot:57]]
 import jbot_core as core
 import jbot_infra as infra
 
 
-def _get_nb_tasks() -> str:
-    """Helper to fetch task board content from nb."""
-    return (
-        infra.get_note_content("type:tasks")
-        or "# JBot Task Board\n\n## Strategic Vision\n- Goal: Technical Excellence\n\n## Active Tasks\n\n## Backlog\n\n## Completed Tasks\n"
-    )
-
-
-def _push_nb_tasks(content: str) -> bool:
-    """Helper to push updated task board back to nb."""
+def _get_granular_tasks() -> List[Dict[str, Any]]:
+    """Fetches all granular tasks from nb."""
     client = infra.NbClient()
+    # Use -a to get all notes with the tag
+    notes = client.ls(tags=["type:task"])
 
-    try:
-        # Find the latest task board to update instead of creating a new one
-        notes = client.ls(tags=["type:tasks"])
-        if notes:
-            # Sort by ID descending as a proxy for newest (higher ID = newer)
-            notes.sort(key=lambda x: int(x.id), reverse=True)
-            # Prefer Authoritative Task Board (198 or 5) if it exists, otherwise use latest
-            target_id = None
-            for n in notes:
-                if n.id in ["198", "5"] or "Authoritative" in n.title:
-                    target_id = n.id
-                    break
-            if not target_id:
-                target_id = notes[0].id
+    tasks_list = []
+    for note in notes:
+        # Exclude notes that are clearly not individual tasks (e.g. ADRs or Task Board)
+        if "ADR:" in note.title or "Task Board" in note.title or "Vision" in note.title:
+            continue
 
-            return client.edit(target_id, content, overwrite=True)
-        else:
-            # Create a new authoritative task board
-            new_id = client.add(
-                title="Authoritative Task Board (CEO)",
-                content=content,
-                tags=["type:tasks"],
-            )
-            return new_id is not None
-    except Exception as e:
-        core.log(f"Error pushing tasks to nb: {e}", "Tasks")
-        return False
+        # Fetch full content to check status and agent
+        content = client.show(note.id)
+        if not content:
+            continue
+
+        status = None
+        if "status:backlog" in content:
+            status = "backlog"
+        elif "status:completed" in content:
+            status = "completed"
+        elif "status:active" in content:
+            status = "active"
+
+        if not status:
+            continue
+
+        agent_match = re.search(r"Agent:\s*([^)\n]+)", content)
+        agent = agent_match.group(1).strip() if agent_match else None
+
+        tasks_list.append(
+            {
+                "id": note.id,
+                "title": note.title,
+                "content": content,
+                "status": status,
+                "agent": agent,
+            }
+        )
+    return tasks_list
 
 
 def parse_tasks() -> Dict[str, Any]:
-    """Parses the task board from nb into sections and extracted data.
+    """Parses granular tasks from nb.
 
-    Context: [[nb:jbot:adr-193]] - Robust Section Parsing
+    Context: [[nb:jbot:57]] - Per-Task Note Model
     """
-    content = _get_nb_tasks()
+    # 1. Fetch Strategic Vision
+    vision = ""
+    vision_note = infra.get_note_content("type:vision")
+    if vision_note:
+        # Match vision text in Strategic Vision note
+        vision_match = re.search(
+            r"## Strategic Vision\s*\n*>\s*(.*)", vision_note, re.MULTILINE
+        )
+        if vision_match:
+            vision = vision_match.group(1).strip()
+        else:
+            # Fallback to lines after ## Strategic Vision
+            lines = vision_note.splitlines()
+            for i, line in enumerate(lines):
+                if "## Strategic Vision" in line and i + 1 < len(lines):
+                    vision = lines[i + 1].lstrip("> ").strip()
+                    break
 
     data = {
         "active": [],
         "done_count": 0,
         "backlog": [],
-        "vision": "",
+        "vision": vision,
         "sections": {
             "header": [],
-            "vision": [],
-            "active": [],
-            "backlog": [],
-            "completed": [],
+            "vision": [f"## Strategic Vision\n> {vision}\n"] if vision else [],
+            "active": ["## Active Tasks\n"],
+            "backlog": ["## Backlog\n"],
+            "completed": ["## ✅ Completed Tasks\n"],
         },
     }
 
-    lines = content.splitlines(keepends=True)
-    current_section = "header"
+    # 2. Fetch Granular Tasks
+    tasks_list = _get_granular_tasks()
 
-    # Robust regex for section matching as per ADR [[nb:jbot:adr-193]]
-    re_vision = re.compile(r"^##.*(vision|goal|strategic)", re.IGNORECASE)
-    re_active = re.compile(r"^##.*active", re.IGNORECASE)
-    re_backlog = re.compile(r"^##.*backlog", re.IGNORECASE)
-    re_completed = re.compile(r"^##.*(completed|done)", re.IGNORECASE)
+    for t in tasks_list:
+        agent_str = f" (Agent: {t['agent']})" if t["agent"] else ""
+        task_line = f"- [ ] **{t['title']}**{agent_str}"
 
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("##"):
-            if re_vision.search(stripped):
-                current_section = "vision"
-            elif re_active.search(stripped):
-                current_section = "active"
-            elif re_backlog.search(stripped):
-                current_section = "backlog"
-            elif re_completed.search(stripped):
-                current_section = "completed"
-
-        data["sections"][current_section].append(line)
-
-        if current_section == "vision" and not stripped.startswith("##"):
-            # Accumulate vision text, ignoring leading bullet points if they are just formatting
-            vision_line = re.sub(r"^[-*]\s+", "", stripped)
-            if vision_line:
-                data["vision"] += vision_line + " "
-        elif current_section == "active":
-            if re.match(r"^\s*-\s*\[\s*\]", stripped):
-                data["active"].append(stripped)
-            elif re.match(r"^\s*-\s*\[[xX]\]", stripped):
-                # Count [x] in active as done, but don't show in active dashboard list
-                data["done_count"] += 1
-        elif current_section == "backlog":
-            if re.match(r"^\s*-\s*\[\s*\]", stripped) or (
-                stripped.startswith("- ") and "[" not in stripped[:5]
-            ):
-                task_text = stripped
-                if "[" not in task_text[:5]:
-                    task_text = task_text.replace("- ", "- [ ] ", 1)
-                data["backlog"].append(task_text)
-
-        # done_count: Count everything in completed section, plus [x] anywhere else
-        if current_section == "completed":
-            if stripped.startswith("-"):
-                data["done_count"] += 1
-        elif (
-            current_section != "active"
-            and current_section != "completed"
-            and re.search(r"-\s*\[[xX]\]", stripped)
-        ):
+        if t["status"] == "active":
+            data["active"].append(task_line)
+            data["sections"]["active"].append(task_line + "\n")
+        elif t["status"] == "backlog":
+            data["backlog"].append(task_line)
+            data["sections"]["backlog"].append(task_line + "\n")
+        elif t["status"] == "completed":
             data["done_count"] += 1
+            completed_line = f"- [x] **{t['title']}**{agent_str}"
+            data["sections"]["completed"].append(completed_line + "\n")
 
-    data["vision"] = data["vision"].strip()
+    # 3. Fallback to old Authoritative Task Board if granular tasks are empty
+    if not tasks_list:
+        old_tasks = infra.get_note_content("type:tasks")
+        if old_tasks:
+            # Re-use simplified old parsing logic for migration/compatibility
+            lines = old_tasks.splitlines(keepends=True)
+            current_section = "header"
+            re_active = re.compile(r"^##.*active", re.IGNORECASE)
+            re_backlog = re.compile(r"^##.*backlog", re.IGNORECASE)
+            re_completed = re.compile(r"^##.*(completed|done)", re.IGNORECASE)
+
+            for line in lines:
+                stripped = line.strip()
+                if stripped.startswith("##"):
+                    if re_active.search(stripped):
+                        current_section = "active"
+                    elif re_backlog.search(stripped):
+                        current_section = "backlog"
+                    elif re_completed.search(stripped):
+                        current_section = "completed"
+
+                if current_section == "active" and re.match(
+                    r"^\s*-\s*\[\s*\]", stripped
+                ):
+                    data["active"].append(stripped)
+                elif current_section == "backlog" and re.match(
+                    r"^\s*-\s*\[\s*\]", stripped
+                ):
+                    data["backlog"].append(stripped)
+                elif current_section == "completed" and stripped.startswith("-"):
+                    data["done_count"] += 1
+                elif re.search(r"-\s*\[[xX]\]", stripped):
+                    data["done_count"] += 1
+
     return data
 
 
 def add_task(
     task_text: str, agent: Optional[str] = None, backlog: bool = False
 ) -> bool:
-    """Adds a new task to the nb task board."""
-    content = _get_nb_tasks()
+    """Adds a new granular task as an nb note."""
+    client = infra.NbClient()
 
-    lines = content.splitlines(keepends=True)
-
-    new_lines = []
-    added = False
-    task_entry = f"- [ ] **{task_text}**"
+    status_tag = "status:backlog" if backlog else "status:active"
+    content = f"Status: {status_tag}\n"
     if agent:
-        task_entry += f" (Agent: {agent})"
-    task_entry += "\n"
+        content += f"Agent: {agent}\n"
+    content += f"\nDescription: {task_text}\n"
 
-    target_section = "## Backlog" if backlog else "## Active Tasks"
+    tags = ["type:task", status_tag]
+    if agent:
+        tags.append(f"agent:{agent}")
 
-    for i, line in enumerate(lines):
-        if re.search(r"^##.*(Backlog|Active Tasks)", line, re.IGNORECASE):
-            if ("backlog" in line.lower() and backlog) or (
-                "active tasks" in line.lower() and not backlog
-            ):
-                new_lines.extend(lines[: i + 1])
-                new_lines.append(task_entry)
-                new_lines.extend(lines[i + 1 :])
-                added = True
-                break
-
-    if not added:
-        new_lines.append(f"\n{target_section}\n")
-        new_lines.append(task_entry)
-
-    final_content = "".join(new_lines)
-    return _push_nb_tasks(final_content)
+    new_id = client.add(title=task_text, content=content, tags=tags)
+    return new_id is not None
 
 
 def update_task(
@@ -168,112 +167,64 @@ def update_task(
     agent: Optional[str] = None,
     move_to: Optional[str] = None,
 ) -> bool:
-    """Updates a task in the nb task board."""
-    content = _get_nb_tasks()
+    """Updates a granular task in nb."""
+    client = infra.NbClient()
+    tasks_list = _get_granular_tasks()
 
-    lines = content.splitlines(keepends=True)
-
-    new_lines = []
-    task_line_index = -1
-
-    # Find the task
-    for i, line in enumerate(lines):
-        if "- [ ]" in line and task_text_search.lower() in line.lower():
-            task_line_index = i
+    target_task = None
+    for t in tasks_list:
+        if task_text_search.lower() in t["title"].lower():
+            target_task = t
             break
 
-    if task_line_index == -1:
-        core.log(f"Task matching '{task_text_search}' not found.", "Tasks")
+    if not target_task:
+        core.log(f"Granular task matching '{task_text_search}' not found.", "Tasks")
         return False
 
-    # Parse current task line
-    current_line = lines[task_line_index]
-    match = re.search(r"\*\*([^*]+)\*\*", current_line)
-    if match:
-        text = match.group(1)
-    else:
-        text_match = re.search(r"- \[ \]\s*(.*?)(?:\s*\(Agent:|\s*$)", current_line)
-        text = text_match.group(1).strip() if text_match else task_text_search
-
-    agent_match = re.search(r"\(Agent:\s*([^)]+)\)", current_line)
-    current_agent = agent_match.group(1) if agent_match else None
-
-    # Update values
-    final_text = new_text if new_text else text
-    final_agent = agent if agent else current_agent
-
-    new_task_line = f"- [ ] **{final_text}**"
-    if final_agent:
-        new_task_line += f" (Agent: {final_agent})"
-    new_task_line += "\n"
-
+    # Update content
+    new_title = new_text if new_text else target_task["title"]
+    final_agent = agent if agent else target_task["agent"]
+    final_status = target_task["status"]
     if move_to:
-        lines.pop(task_line_index)
-        added = False
-        for i, line in enumerate(lines):
-            new_lines.append(line)
-            if re.search(r"^##.*(Active Tasks|Backlog)", line, re.IGNORECASE):
-                if (move_to == "active" and "active tasks" in line.lower()) or (
-                    move_to == "backlog" and "backlog" in line.lower()
-                ):
-                    new_lines.append(new_task_line)
-                    added = True
-                    # Append the rest of the lines and break
-                    new_lines.extend(lines[i + 1 :])
-                    break
-        if not added:
-            new_lines.append(
-                f"\n## {'Active Tasks' if move_to == 'active' else 'Backlog'}\n"
-            )
-            new_lines.append(new_task_line)
-        final_content = "".join(new_lines)
-    else:
-        lines[task_line_index] = new_task_line
-        final_content = "".join(lines)
+        final_status = move_to  # active or backlog
 
-    return _push_nb_tasks(final_content)
+    status_tag = f"status:{final_status}"
+    content = f"Status: {status_tag}\n"
+    if final_agent:
+        content += f"Agent: {final_agent}\n"
+    content += f"\nDescription: {new_title}\n"
+
+    tags = ["type:task", status_tag]
+    if final_agent:
+        tags.append(f"agent:{final_agent}")
+
+    return client.edit(target_task["id"], content=content, title=new_title, tags=tags)
 
 
 def complete_task(task_text_search: str) -> bool:
-    """Marks a task as completed in the nb task board and moves it to the completed section."""
-    content = _get_nb_tasks()
+    """Marks a granular task as completed."""
+    client = infra.NbClient()
+    tasks_list = _get_granular_tasks()
 
-    lines = content.splitlines(keepends=True)
-
-    task_line_index = -1
-    for i, line in enumerate(lines):
-        # Match task line regardless of whether it is already checked
-        # Ignore common markdown formatting for matching
-        line_clean = line.replace("`", "").replace("*", "").replace("_", "")
-        if (
-            re.search(r"- \[[ x]\]", line) or line.strip().startswith("- ")
-        ) and task_text_search.lower() in line_clean.lower():
-            task_line_index = i
+    target_task = None
+    for t in tasks_list:
+        if task_text_search.lower() in t["title"].lower():
+            target_task = t
             break
 
-    if task_line_index == -1:
-        core.log(f"Task matching '{task_text_search}' not found.", "Tasks")
+    if not target_task:
+        core.log(
+            f"Granular task matching '{task_text_search}' not found for completion.",
+            "Tasks",
+        )
         return False
 
-    task_line = lines.pop(task_line_index)
-    # Ensure it's marked as [x]
-    completed_line = re.sub(r"- \[[ x]\]", "- [x]", task_line)
+    status_tag = "status:completed"
+    content = target_task["content"]
+    content = re.sub(r"status:(active|backlog)", status_tag, content)
 
-    new_lines = []
-    added = False
-    re_completed = re.compile(r"^##.*(completed|done)", re.IGNORECASE)
+    tags = ["type:task", status_tag]
+    if target_task["agent"]:
+        tags.append(f"agent:{target_task['agent']}")
 
-    for i, line in enumerate(lines):
-        new_lines.append(line)
-        if re_completed.search(line) and not added:
-            new_lines.append(completed_line)
-            added = True
-            # Note: We continue to add the rest of the lines
-
-    # If we haven't found a completed section, add one
-    if not added:
-        new_lines.append("\n## ✅ Completed Tasks\n")
-        new_lines.append(completed_line)
-
-    final_content = "".join(new_lines)
-    return _push_nb_tasks(final_content)
+    return client.edit(target_task["id"], content=content, tags=tags)

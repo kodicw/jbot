@@ -1,6 +1,6 @@
 # JBot Dashboard
 
-*Last Updated: 2026-04-25 19:04:41*
+*Last Updated: 2026-04-26 00:54:54*
 
 ## 🎯 Strategic Vision
 > **Autonomous, Multi-Agent Engineering on NixOS with Technical Purity.**
@@ -8,30 +8,33 @@
 ## 👥 Team Roster
 | Agent | Role | Description |
 |-------|------|-------------|
-| architect | Principal Architect | Critique architectural decisions, advocate for simplicity, challenge over-engineering, and keep the codebase lean. |
-| ceo | Technical Founder (CEO) | Set product vision, prioritize the roadmap in TASKS.md, and ensure architectural decisions align with long-term goals. |
-| lead | Lead Developer | Main autonomous agent managing the JBot project infrastructure and implementation. |
-| tester | QA Engineer | Verify architectural changes, run tests, and report regressions to the team. |
+| architect | Principal Architect | Review feature specialization logic, ensure modularity, and challenge over-engineering. |
+| ceo | Technical Founder (CEO) | Set product vision, prioritize the roadmap, and ensure all specialized agents align with long-term goals. |
+| dev-alignment | Alignment Specialist | Ensure technical implementations perfectly map to strategic goals and formal directives in nb. |
+| dev-cleanup | Maintenance Engineer (Janitor) | Proactively prune unused Nix code, stale memory notes, and technical debt using purity tools. |
+| dev-docs | Technical Writer | Maintain high-density documentation, Mermaid diagrams, and ADR clarity across the repo. |
+| dev-memory | Memory Specialist | Expert in RAG, knowledge base (nb) integration, and memory consolidation logic. |
+| dev-research | Research Specialist | Investigate new AI models, NixOS patterns, and emerging technologies to keep the organization at the cutting edge. |
+| dev-scheduler | Scheduling Specialist | Expert in systemd integration, agent orchestration, and NixOS module design. |
+| lead | Lead Developer | Main coordinator and implementer for core JBot infrastructure. |
+| manager | Conflict & Alignment Manager | Monitor agent outputs for strategic drift or non-compliance. Intervene when specialized agents fail to align with the organization's goals. |
+| tester | QA Engineer | Verify specialized feature implementations, run tests, and report regressions. |
 
 ## 🚀 Active Tasks
 No active tasks.
 
 ## 📦 Backlog Highlights
-- [ ] Implement automated PR generation for infrastructure updates.
+- [ ] **Implement automated PR generation for infrastructure updates**
 
 ## ✅ Recently Completed
-- [x] **Evaluate scaling efficiency in flat organization** (Agent: lead)
-- Add ROI metrics visualization to dashboard.
-- [x] **Extract jbot-launcher.sh for better testability and auditability.**
-- [x] **Implement ShellCheck static analysis for githooks and launcher.**
-- [x] Research formal verification for core bash scripts. (Architect)
+- [x] **Verify ADR-210 implementation and update dashboard** (Agent: lead)
 
 ## 📜 Recent ADRs
-- [[nb:208]] Reflection: [lead] - Evaluation of Flat Scaling Efficiency and Tool Robustness
-- [[nb:207]] Reflection: [architect] - Architectural Evaluation of Flat Scaling Efficiency
-- [[nb:205]] ADR: Technical ROI and Engineering Metrics
-- [[nb:202]] ADR: Formal Verification for Bash Infrastructure
-- [[nb:198]] Authoritative Task Board (CEO)
+- [[nb:63]] ADR-210: Flat Organization Scaling Efficiency
+- [[nb:57]] ADR: Per-Task Note Model for Scaling
+- [[nb:53]] Reflection: [lead] - Evaluation of Flat Scaling Efficiency and Tool Robustness
+- [[nb:51]] Knowledge Base Guide (nb)
+- [[nb:49]] Reflection: [architect] - Architectural Evaluation of Flat Scaling Efficiency
 
 ## 📊 Architectural Diagrams
 ### Jbot Agent
@@ -122,14 +125,14 @@ graph TD
 ```
 
 ## 📈 Status & Progress
-- **Tasks Completed:** 15
+- **Tasks Completed:** 1
 - **Milestones Achieved:** 15
 
 ### 📊 Technical ROI (Engineering Metrics)
-- **Engineering Velocity:** 1.00 tasks/milestone
-- **Architectural Density:** 1.27 ADRs/milestone
-- **Knowledge Base Growth:** 52 records
-- **Completion Ratio:** 93.8%
+- **Engineering Velocity:** 0.07 tasks/milestone
+- **Architectural Density:** 0.73 ADRs/milestone
+- **Knowledge Base Growth:** 31 records
+- **Completion Ratio:** 50.0%
 
 ## ✅ Recent Milestones
 - **Infrastructure CLI Integration:** Integrated `maintenance`, `purge`, `rotate`, `dashboard`, and `send-message` as subcommands in the `jbot` CLI.

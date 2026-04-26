@@ -102,11 +102,24 @@ class NbClient:
 
         return self._parse_ls_output(result.stdout)
 
-    def edit(self, note_id: str, content: str, overwrite: bool = True) -> bool:
+    def edit(
+        self,
+        note_id: str,
+        content: Optional[str] = None,
+        title: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        overwrite: bool = True,
+    ) -> bool:
         """
-        Update an existing note's content.
+        Update an existing note's content, title, or tags.
         """
-        args = [f"{self.notebook}:edit", note_id, "--content", content]
+        args = [f"{self.notebook}:edit", note_id]
+        if content is not None:
+            args.extend(["--content", content])
+        if title is not None:
+            args.extend(["--title", title])
+        if tags is not None:
+            args.extend(["--tags", ",".join(tags)])
         if overwrite:
             args.append("--overwrite")
 
