@@ -4,11 +4,12 @@ from typing import Dict, Any, Optional, List
 # Context: [[nb:jbot:adr-173]], [[nb:jbot:adr-193]], [[nb:jbot:57]]
 import jbot_core as core
 import jbot_infra as infra
+from jbot_memory_interface import get_memory_client
 
 
 def _get_granular_tasks() -> List[Dict[str, Any]]:
     """Fetches all granular tasks from nb."""
-    client = infra.NbClient()
+    client = get_memory_client()
     # Use -a to get all notes with the tag
     notes = client.ls(tags=["type:task"])
 
@@ -145,7 +146,7 @@ def add_task(
     task_text: str, agent: Optional[str] = None, backlog: bool = False
 ) -> bool:
     """Adds a new granular task as an nb note."""
-    client = infra.NbClient()
+    client = get_memory_client()
 
     status_tag = "status:backlog" if backlog else "status:active"
     content = f"Status: {status_tag}\n"
@@ -168,7 +169,7 @@ def update_task(
     move_to: Optional[str] = None,
 ) -> bool:
     """Updates a granular task in nb."""
-    client = infra.NbClient()
+    client = get_memory_client()
     tasks_list = _get_granular_tasks()
 
     target_task = None
@@ -203,7 +204,7 @@ def update_task(
 
 def complete_task(task_text_search: str) -> bool:
     """Marks a granular task as completed."""
-    client = infra.NbClient()
+    client = get_memory_client()
     tasks_list = _get_granular_tasks()
 
     target_task = None
@@ -228,3 +229,41 @@ def complete_task(task_text_search: str) -> bool:
         tags.append(f"agent:{target_task['agent']}")
 
     return client.edit(target_task["id"], content=content, tags=tags)
+
+
+def get_task_board_markdown() -> str:
+    """Returns the aggregated task board as a markdown string.
+
+    Context: [[nb:jbot:adr-210]]
+    """
+    data = parse_tasks()
+    output = []
+    
+    if data["vision"]:
+        output.append("## Strategic Vision")
+        output.append(f"> {data['vision']}\n")
+    
+    output.append("## Active Tasks")
+    if data["active"]:
+        output.extend([t.strip() for t in data["active"]])
+    else:
+        output.append("No active tasks.")
+    output.append("")
+
+    output.append("## Backlog")
+    if data["backlog"]:
+        output.extend([t.strip() for t in data["backlog"]])
+    else:
+        output.append("No backlog items.")
+    output.append("")
+
+    # Completed tasks are optional in the agent context to save tokens, 
+    # but let's include a summary or a few recent ones.
+    output.append("## Recently Completed")
+    completed = [t.strip() for t in data["sections"]["completed"] if t.strip().startswith("-")]
+    if completed:
+        output.extend(completed[:5])
+    else:
+        output.append("No recently completed tasks.")
+        
+    return "\n".join(output)

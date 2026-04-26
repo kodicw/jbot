@@ -9,8 +9,9 @@ import jbot_core as core
 class AiInterface(ABC):
     """Abstract base class for AI CLI interfaces."""
 
-    def __init__(self, binary_path: str):
+    def __init__(self, binary_path: str, model: str = None):
         self.binary_path = binary_path
+        self.model = model
 
     @abstractmethod
     def get_command(self, prompt: str) -> List[str]:
@@ -75,7 +76,11 @@ class GeminiInterface(AiInterface):
 
     def get_command(self, prompt: str) -> List[str]:
         # -y: assume yes, -p: prompt
-        return [self.binary_path, "-y", "-p", prompt]
+        cmd = [self.binary_path, "-y"]
+        if self.model:
+            cmd.extend(["-m", self.model])
+        cmd.extend(["-p", prompt])
+        return cmd
 
 
 class OpenCodeInterface(AiInterface):

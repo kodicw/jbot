@@ -69,17 +69,17 @@ def test_rotate_messages(tmp_path):
 
 
 def test_rotate_nb_notes():
-    from nb_client import NbNote
+    from jbot_memory_interface import MemoryNote
 
     mock_notes = [
-        NbNote(id="1", title="Oldest", tags=[]),
-        NbNote(id="2", title="Older", tags=[]),
-        NbNote(id="3", title="Middle", tags=[]),
-        NbNote(id="4", title="Newer", tags=[]),
-        NbNote(id="5", title="Newest", tags=[]),
+        MemoryNote(id="1", title="Oldest", tags=[]),
+        MemoryNote(id="2", title="Older", tags=[]),
+        MemoryNote(id="3", title="Middle", tags=[]),
+        MemoryNote(id="4", title="Newer", tags=[]),
+        MemoryNote(id="5", title="Newest", tags=[]),
     ]
 
-    with patch("nb_client.NbClient") as mock_client_class:
+    with patch("jbot_rotation.get_memory_client") as mock_client_class:
         mock_client = mock_client_class.return_value
         mock_client.ls.return_value = mock_notes
         mock_client.delete.return_value = True
@@ -95,14 +95,14 @@ def test_rotate_nb_notes():
 
 
 def test_rotate_nb_notes_preserve():
-    from nb_client import NbNote
+    from jbot_memory_interface import MemoryNote
 
     mock_notes = [
-        NbNote(id="1", title="Oldest", tags=[]),
-        NbNote(id="5", title="Newest", tags=[]),
+        MemoryNote(id="1", title="Oldest", tags=[]),
+        MemoryNote(id="5", title="Newest", tags=[]),
     ]
 
-    with patch("nb_client.NbClient") as mock_client_class:
+    with patch("jbot_rotation.get_memory_client") as mock_client_class:
         mock_client = mock_client_class.return_value
         mock_client.ls.return_value = mock_notes
         mock_client.delete.return_value = True
@@ -125,14 +125,14 @@ def test_perform_rotations(tmp_path):
 
 
 def test_perform_rotations_adr_limit():
-    from nb_client import NbNote
+    from jbot_memory_interface import MemoryNote
 
     # Create 60 mock ADR notes
     mock_notes = [
-        NbNote(id=str(i), title=f"ADR {i}", tags=["type:adr"]) for i in range(1, 61)
+        MemoryNote(id=str(i), title=f"ADR {i}", tags=["type:adr"]) for i in range(1, 61)
     ]
 
-    with patch("nb_client.NbClient") as mock_client_class:
+    with patch("jbot_rotation.get_memory_client") as mock_client_class:
         mock_client = mock_client_class.return_value
         mock_client.ls.return_value = mock_notes
         mock_client.delete.return_value = True
@@ -147,16 +147,16 @@ def test_perform_rotations_adr_limit():
 
 
 def test_perform_rotations_completed_limit():
-    from nb_client import NbNote
+    from jbot_memory_interface import MemoryNote
     from unittest.mock import patch
 
     # Create 30 mock completed notes
     mock_notes = [
-        NbNote(id=str(i), title=f"Task {i}", tags=["type:task", "status:completed"])
+        MemoryNote(id=str(i), title=f"Task {i}", tags=["type:task", "status:completed"])
         for i in range(1, 31)
     ]
 
-    with patch("nb_client.NbClient") as mock_client_class:
+    with patch("jbot_rotation.get_memory_client") as mock_client_class:
         mock_client = mock_client_class.return_value
         mock_client.ls.return_value = mock_notes
         mock_client.delete.return_value = True
@@ -169,3 +169,19 @@ def test_perform_rotations_completed_limit():
         # Should delete 10 notes (30 - 20)
         assert count == 10
         assert mock_client.delete.call_count == 10
+
+
+def test_rotate_nb_notes_non_numeric_ids():
+    from jbot_memory_interface import MemoryNote
+
+    mock_notes = [
+        MemoryNote(id="abc", title="Bad ID", tags=[]),
+        MemoryNote(id="def", title="Another Bad ID", tags=[]),
+    ]
+
+    with patch("jbot_rotation.get_memory_client") as mock_client_class:
+        mock_client = mock_client_class.return_value
+        mock_client.ls.return_value = mock_notes
+
+        # Should return 0 due to ValueError in sorting
+        assert rotation.rotate_nb_notes("test", limit=1) == 0

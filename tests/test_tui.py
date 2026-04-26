@@ -81,7 +81,7 @@ def test_main_empty_draft(mock_write, mock_choose, mock_root):
 @patch("jbot_tui.get_gum_choose")
 @patch("jbot_tui.get_gum_write")
 @patch("jbot_tui.ai_refine_idea", return_value="Refined!")
-@patch("jbot_infra.NbClient")
+@patch("jbot_tui.get_memory_client")
 def test_main_idea_accept(mock_nb, mock_ai, mock_write, mock_choose, mock_root):
     mock_choose.side_effect = ["💡 New Idea", "✅ Accept & Push"]
     mock_write.return_value = "rough draft"
@@ -117,7 +117,7 @@ def test_main_idea_discard(mock_ai, mock_write, mock_choose, mock_root):
 @patch("jbot_tui.get_gum_write")
 @patch("jbot_tui.run_command")
 @patch("jbot_tui.ai_refine_idea", return_value="Refined!")
-@patch("jbot_infra.NbClient")
+@patch("jbot_tui.get_memory_client")
 def test_main_prompt_edit(
     mock_nb, mock_ai, mock_run, mock_write, mock_choose, mock_root
 ):

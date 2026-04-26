@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Optional
 import jbot_core as core
 import jbot_rotation
 import jbot_utils as utils
-from nb_client import NbClient
+from jbot_memory_interface import get_memory_client
 
 
 # --- Team & Registry ---
@@ -17,6 +17,22 @@ def get_team_registry(project_dir: str = ".") -> Dict[str, Any]:
 
 
 # --- Messages ---
+def send_message(
+    project_dir: str, agent_name: str, body: str, subject: str = "No Subject"
+) -> bool:
+    """Sends a message by writing it to the .jbot/outbox directory."""
+    outbox_dir = os.path.join(project_dir, ".jbot", "outbox")
+    os.makedirs(outbox_dir, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    microsecond = datetime.now().strftime("%f")
+    filename = f"{timestamp}_{microsecond}_{agent_name}.txt"
+    file_path = os.path.join(outbox_dir, filename)
+
+    message_content = f"To: all\nFrom: {agent_name}\nSubject: {subject}\n\n{body}\n"
+    return core.write_file(file_path, message_content)
+
+
 def get_recent_messages(
     msgs_dir: str, count: int = 5, include_human: bool = False
 ) -> List[Dict[str, str]]:
@@ -43,27 +59,43 @@ def get_recent_messages(
     return results
 
 
-def send_message(
-    project_dir: str, agent_name: str, body: str, subject: str = "No Subject"
-) -> bool:
-    """Sends a message by writing it to the .jbot/outbox directory."""
-    outbox_dir = os.path.join(project_dir, ".jbot", "outbox")
-    os.makedirs(outbox_dir, exist_ok=True)
+def parse_message_headers(content: str) -> Dict[str, str]:
+    """Parses From and Subject headers from message content."""
+    lines = content.split("\n")
+    from_line = next(
+        (line for line in lines if line.startswith("From:")), "From: unknown"
+    )
+    subject_line = next(
+        (line for line in lines if line.startswith("Subject:")), "Subject: none"
+    )
+    return {
+        "from": from_line.replace("From:", "").strip(),
+        "subject": subject_line.replace("Subject:", "").strip(),
+    }
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    microsecond = datetime.now().strftime("%f")
-    filename = f"{timestamp}_{microsecond}_{agent_name}.txt"
-    file_path = os.path.join(outbox_dir, filename)
 
-    message_content = f"To: all\nFrom: {agent_name}\nSubject: {subject}\n\n{body}\n"
-    return core.write_file(file_path, message_content)
+def get_vision(project_dir: str = ".") -> str:
+    """Retrieves the project vision, falling back to .project_goal if needed."""
+    try:
+        import jbot_tasks as tasks
+        tasks_data = tasks.parse_tasks()
+        if tasks_data.get("vision"):
+            return tasks_data["vision"]
+    except Exception as e:
+        core.log(f"Error parsing tasks for vision: {e}", "Infra")
+
+    goal_path = core.find_file_upwards(".project_goal", project_dir)
+    if goal_path and os.path.exists(goal_path):
+        return core.read_file(goal_path).strip()
+
+    return "No current vision defined."
 
 
 def get_note_content(query: str) -> Optional[str]:
     """Retrieves the full content of the first nb note matching the query."""
 
     try:
-        client = NbClient()
+        client = get_memory_client()
         note_id = None
 
         if query.startswith("type:") or query.startswith("#"):
@@ -113,7 +145,7 @@ def get_recent_logs(count: int = 10) -> List[Dict[str, Any]]:
     """Retrieve recent entries from the nb knowledge base."""
     try:
         # Get list of memory notes
-        client = NbClient()
+        client = get_memory_client()
         notes = client.ls(tags=["memory"], limit=count)
 
         entries = []
@@ -145,27 +177,13 @@ def parse_directives(dir_path: str) -> List[Dict[str, str]]:
     )
 
     valid_directives = []
-    today = datetime.now().strftime("%Y-%m-%d")
 
     for df in dir_files:
         try:
-            with open(os.path.join(dir_path, df), "r") as f:
-                content = f.read()
-                is_expired = False
-                content_exp_match = re.search(
-                    r"Expiration:\s*(\d{4}-\d{2}-\d{2})", content, re.IGNORECASE
-                )
-                filename_exp_match = re.search(r"(\d{4}-\d{2}-\d{2})", df)
-
-                if content_exp_match:
-                    if today > content_exp_match.group(1):
-                        is_expired = True
-                elif filename_exp_match:
-                    if today > filename_exp_match.group(1):
-                        is_expired = True
-
-                if not is_expired:
-                    valid_directives.append({"filename": df, "content": content})
+            df_path = os.path.join(dir_path, df)
+            content = core.read_file(df_path)
+            if content and not utils.is_directive_expired(content, df):
+                valid_directives.append({"filename": df, "content": content})
         except Exception:
             pass
     return valid_directives
@@ -222,7 +240,7 @@ def consolidate_memory(project_dir: str) -> None:
     if "NB_USER_EMAIL" not in env:
         env["NB_USER_EMAIL"] = "system@internal.jbot"
 
-    client = NbClient(env=env)
+    client = get_memory_client(env=env)
 
     for q_file in os.listdir(queues_dir):
         if q_file.endswith(".json"):

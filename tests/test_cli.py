@@ -241,7 +241,7 @@ def test_handle_system(tmp_path, capsys):
 @patch("subprocess.run")
 def test_handle_system_edit(mock_run, tmp_path):
     with patch("jbot_infra.get_note_content", return_value=None):
-        with patch("jbot_infra.NbClient") as mock_nb:
+        with patch("jbot_cli.get_memory_client") as mock_nb:
             jbot_cli.handle_system(str(tmp_path), "edit")
             mock_nb.return_value.add.assert_called_once()
             mock_run.assert_called_once()
@@ -249,7 +249,7 @@ def test_handle_system_edit(mock_run, tmp_path):
 
     mock_run.reset_mock()
     with patch("jbot_infra.get_note_content", return_value="Exists"):
-        with patch("jbot_infra.NbClient") as mock_nb:
+        with patch("jbot_cli.get_memory_client") as mock_nb:
             jbot_cli.handle_system(str(tmp_path), "edit")
             mock_nb.return_value.add.assert_not_called()
             mock_run.assert_called_once()
@@ -531,8 +531,8 @@ def test_cli_agent_command(tmp_path, capsys):
             prompt_file=None,
             cli_bin=None,
             cli_type=None,
+            cli_model=None,
         )
-
 
 def test_cli_agent_command_full(tmp_path, capsys):
     with patch("jbot_agent.run_agent") as mock_run_agent:
@@ -561,4 +561,61 @@ def test_cli_agent_command_full(tmp_path, capsys):
             prompt_file=None,
             cli_bin="/path/to/bin",
             cli_type="opencode",
+            cli_model=None,
         )
+
+
+def test_get_status_advanced(tmp_path, capsys):
+    # Test line 23 (vision from tasks_data) and 40 (truncated tasks)
+    with patch("jbot_tasks.parse_tasks", return_value={"vision": "V", "active": ["T" + str(i) for i in range(10)], "done_count": 5}):
+        jbot_cli.get_status(str(tmp_path))
+        captured = capsys.readouterr()
+        assert "Strategic Vision:\n> V" in captured.out
+        assert "... and 5 more." in captured.out
+
+
+def test_cli_maintenance_push_note(tmp_path, capsys):
+    # Test 345-357
+    with patch("jbot_utils.update_note_stably", return_value=True):
+        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "maintenance", "push-note", "--title", "T", "--tags", "t1,t2"]):
+            # Mock stdin
+            with patch("sys.stdin.read", return_value="content"):
+                jbot_cli.main()
+                assert "Successfully pushed stable note" in capsys.readouterr().out
+
+    # Test with file
+    f = tmp_path / "note.txt"
+    f.write_text("file content")
+    with patch("jbot_utils.update_note_stably", return_value=True):
+        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "maintenance", "push-note", "--title", "T", "--tags", "t", "--file", str(f)]):
+            jbot_cli.main()
+            assert "Successfully pushed stable note" in capsys.readouterr().out
+
+
+def test_cli_rotate_nb_and_all(tmp_path, capsys):
+    # 376-377, 379-380
+    with patch("jbot_rotation.perform_rotations"):
+        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "rotate", "nb"]):
+            jbot_cli.main()
+            assert "NB notes rotated." in capsys.readouterr().out
+
+        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "rotate", "all"]):
+            jbot_cli.main()
+            assert "Full data rotation performed." in capsys.readouterr().out
+
+
+def test_cli_infra_update(tmp_path, capsys):
+    with patch("jbot_infra_updates.generate_infra_pr", return_value=True):
+        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "maintenance", "infra-update"]):
+            jbot_cli.main()
+            assert "Infrastructure update process completed." in capsys.readouterr().out
+
+def test_cli_agent_selection(tmp_path, capsys):
+    # 388-404
+    registry = {"agent1": {"role": "dev", "description": "d"}}
+    with patch("jbot_infra.get_team_registry", return_value=registry):
+        with patch("jbot_tui.get_gum_choose", return_value="agent1 (dev)"):
+            with patch("jbot_agent.run_agent") as mock_run:
+                with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "agent"]):
+                    jbot_cli.main()
+                    mock_run.assert_called_once()

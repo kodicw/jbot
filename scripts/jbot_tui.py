@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 import os
 import sys
+
+# Ensure local scripts are prioritized over installed ones
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import subprocess
 import jbot_core as core
 import jbot_infra as infra
+from jbot_memory_interface import get_memory_client
 
 
 def run_command(cmd, capture=True):
@@ -148,7 +153,7 @@ def main():
     # 5. Push to NB
     title = f"{title_prefix}: {rough_draft[:30]}..."
 
-    client = infra.NbClient()
+    client = get_memory_client()
     print("\n[NB] Pushing to knowledge base...")
     overwrite = "Feedback" in action or "Prompt" in action
 

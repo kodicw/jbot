@@ -1,10 +1,15 @@
 import os
 import sys
+
+# Ensure local scripts are prioritized over installed ones
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import subprocess
 from typing import Optional
 
 import jbot_core as core
 import jbot_infra as infra
+import jbot_tasks as tasks
 import jbot_agent_interface as interface
 
 
@@ -38,7 +43,7 @@ def assemble_context(
 
     # 3. Project Goal & Roadmap
     goal = infra.get_note_content("type:goal") or "No project goal defined in nb."
-    task_board = infra.get_note_content("type:tasks") or "No task board found in nb."
+    task_board = tasks.get_task_board_markdown()
 
     # 4. Human Input & Ideas
     human_input = infra.get_note_content("input:human") or "No active human feedback."
@@ -159,6 +164,7 @@ def run_agent(
     prompt_file: Optional[str] = None,
     cli_bin: Optional[str] = None,
     cli_type: Optional[str] = None,
+    cli_model: Optional[str] = None,
 ) -> None:
     """
     Main execution logic for a JBot Agent.
@@ -177,6 +183,7 @@ def run_agent(
         or "gemini"
     )
     cli_type = cli_type or os.environ.get("CLI_TYPE")
+    cli_model = cli_model or os.environ.get("CLI_MODEL")
 
     if not all([name, role, project_dir, prompt_file]):
         print(

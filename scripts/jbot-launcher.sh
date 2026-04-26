@@ -1,12 +1,11 @@
-#!/nix/store/sfvyavxai6qvzmv9p9x6mp4wwdz4v41m-bash-interactive-5.3p9/bin/bash
+#!/usr/bin/env bash
 # JBot Agent Launcher Script
 # Context: [[nb:jbot:202]] (ADR: Formal Verification for Bash Infrastructure)
 set -euo pipefail
 
 # Required environment variables:
 # AGENT_NAME, AGENT_ROLE, AGENT_DESCRIPTION, PROJECT_DIR, PROMPT_FILE,
-# CLI_BIN, CLI_TYPE, NB_DIR, HM_PROFILE, USER_ID,
-# MKDIR_BIN, CP_BIN, ID_BIN, DATE_BIN, MKTEMP_BIN, TIMEOUT_BIN, BWRAP_BIN,
+# CLI_BIN, CLI_TYPE, CLI_MODEL, NB_DIR, HM_PROFILE, USER_ID,
 # AGENTS_JSON, JBOT_CLI_BIN
 
 # Optional environment variables (with defaults):
@@ -14,20 +13,20 @@ set -euo pipefail
 # GIT_COMMITTER_NAME, GIT_COMMITTER_EMAIL, EDITOR, TERM, PAGER,
 # DBUS_SESSION_BUS_ADDRESS
 
-echo "[$("${DATE_BIN}" "+%Y-%m-%d %H:%M:%S")] JBot (${AGENT_NAME}): Launching agent runner in sandbox..."
+echo "[$(date "+%Y-%m-%d %H:%M:%S")] JBot (${AGENT_NAME}): Launching agent runner in sandbox..."
 
-"${MKDIR_BIN}" -p "${PROJECT_DIR}/.jbot/queues"
-"${MKDIR_BIN}" -p "${PROJECT_DIR}/.jbot/outbox"
+mkdir -p "${PROJECT_DIR}/.jbot/queues"
+mkdir -p "${PROJECT_DIR}/.jbot/outbox"
 
 # Provide the agent registry to the project directory
-"${CP_BIN}" "${AGENTS_JSON}" "${PROJECT_DIR}/.jbot/agents.json"
+cp "${AGENTS_JSON}" "${PROJECT_DIR}/.jbot/agents.json"
 
 # Create a minimal fake passwd file to satisfy Node.js os.userInfo()
-FAKE_PASSWD=$("${MKTEMP_BIN}")
+FAKE_PASSWD=$(mktemp)
 echo "${AGENT_NAME}:x:${USER_ID}:${USER_ID}:JBot Agent:${HOME}:/bin/bash" > "${FAKE_PASSWD}"
 
 # Execute agent in bubblewrap sandbox
-"${TIMEOUT_BIN}" 30m "${BWRAP_BIN}" \
+timeout 30m bwrap \
   --ro-bind /nix/store /nix/store \
   --ro-bind /etc/resolv.conf /etc/resolv.conf \
   --ro-bind /etc/hosts /etc/hosts \
@@ -63,6 +62,7 @@ echo "${AGENT_NAME}:x:${USER_ID}:${USER_ID}:JBot Agent:${HOME}:/bin/bash" > "${F
   --setenv GIT_COMMITTER_EMAIL "${GIT_COMMITTER_EMAIL:-"jbot@internal"}" \
   --setenv CLI_BIN "${CLI_BIN}" \
   --setenv CLI_TYPE "${CLI_TYPE}" \
+  --setenv CLI_MODEL "${CLI_MODEL}" \
   --setenv EDITOR "${EDITOR:-cat}" \
   --setenv TERM "${TERM:-dumb}" \
   --setenv PAGER "${PAGER:-cat}" \
@@ -77,4 +77,5 @@ echo "${AGENT_NAME}:x:${USER_ID}:${USER_ID}:JBot Agent:${HOME}:/bin/bash" > "${F
     --desc "${AGENT_DESCRIPTION}" \
     --prompt "${PROMPT_FILE}" \
     --cli-bin "${CLI_BIN}" \
-    --cli-type "${CLI_TYPE}"
+    --cli-type "${CLI_TYPE}" \
+    --cli-model "${CLI_MODEL}"

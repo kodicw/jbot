@@ -5,16 +5,9 @@ from dataclasses import dataclass
 from typing import List, Optional, Dict
 
 
-@dataclass
-class NbNote:
-    id: str
-    title: str
-    tags: List[str]
-    content: Optional[str] = None
-    filename: Optional[str] = None
+from jbot_memory_interface import MemoryInterface, MemoryNote
 
-
-class NbClient:
+class NbClient(MemoryInterface):
     """
     A standalone Python client for interacting with the `nb` CLI knowledge base.
     This client is designed to be reusable and can be exposed as an MCP server.
@@ -46,8 +39,9 @@ class NbClient:
 
     def _run(self, args: List[str]) -> subprocess.CompletedProcess:
         """Helper to run nb commands."""
+        nb_bin = self.env.get("NB_BIN", "nb")
         return subprocess.run(
-            ["nb", "--no-color"] + args,
+            [nb_bin, "--no-color"] + args,
             capture_output=True,
             text=True,
             env=self.env,
@@ -88,10 +82,10 @@ class NbClient:
             return result.stdout.strip()
         return None
 
-    def query(self, query: str) -> List[NbNote]:
+    def query(self, query: str) -> List[MemoryNote]:
         """
         Search notes in the notebook using nb <notebook>:q
-        Returns a list of NbNote objects.
+        Returns a list of MemoryNote objects.
         """
         # Use --names-only or similar if available, but nb q doesn't seem to have it.
         # However, we can use nb ls with a query string in some versions,
@@ -128,7 +122,7 @@ class NbClient:
 
     def ls(
         self, tags: Optional[List[str]] = None, limit: Optional[int] = None
-    ) -> List[NbNote]:
+    ) -> List[MemoryNote]:
         """
         List notes in the notebook, optionally filtered by tags.
         """
@@ -155,9 +149,9 @@ class NbClient:
             notes = notes[:limit]
         return notes
 
-    def _parse_ls_output(self, output: str) -> List[NbNote]:
+    def _parse_ls_output(self, output: str) -> List[MemoryNote]:
         """
-        Parse the output of nb ls or nb q into NbNote objects.
+        Parse the output of nb ls or nb q into MemoryNote objects.
         Expected format: [jbot:123] Title of the note
         Or: [123] Title of the note
         """
@@ -174,7 +168,7 @@ class NbClient:
                 title = match.group(2).strip()
                 # Remove emoji indicators if present (🔖, 🔒, etc.)
                 title = re.sub(r"^[🔖🔒📂🌄📄📹🔉📖✔️✅📌]\s*", "", title)
-                notes.append(NbNote(id=note_id, title=title, tags=[]))
+                notes.append(MemoryNote(id=note_id, title=title, tags=[]))
         return notes
 
     def delete(self, note_id: str) -> bool:

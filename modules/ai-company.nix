@@ -4,37 +4,59 @@ _: {
     projectDir = "/home/kodicw/code/jbot";
 
     agents = {
-      # --- JBot Flat Organization (Core Peers) ---
+      # --- JBot Hierarchical Specialist Organization ---
 
       lead = {
         enable = true;
-        role = "Lead Developer";
-        description = "Main coordinator and implementer for core JBot infrastructure.";
+        role = "Managerial Lead";
+        description = "Orchestrator and task delegator. Decomposes high-level goals into sub-tasks for specialized agents using the nb task board.";
+        model = "gemini-1.5-pro";
         interval = "hourly";
+      };
+
+      architect = {
+        enable = true;
+        role = "System Architect";
+        description = "High-level design and ADR maintenance. Translates complex requirements into actionable technical plans.";
+        model = "gemini-1.5-pro"; # High-reasoning for design
+        interval = "*-*-* 00/2:00:00";
+        dependsOn = [ "lead" ];
+      };
+
+      security = {
+        enable = true;
+        role = "Security Auditor";
+        description = "Compliance and security gatekeeper. Audits all code changes and sandbox constraints.";
+        model = "gemini-1.5-flash";
+        interval = "*-*-* 00/4:00:00";
+        dependsOn = [ "lead" ];
+      };
+
+      engineer = {
+        enable = true;
+        role = "Implementation Engineer";
+        description = "Core developer. Executes code changes, refactoring, and feature implementation delegated by the Lead.";
+        model = "gemini-1.5-flash";
+        interval = "*-*-* 00/2:00:00";
+        dependsOn = [ "architect" ];
       };
 
       tester = {
         enable = true;
         role = "QA Engineer";
-        description = "Verify feature implementations, run tests, and report regressions.";
-        interval = "*-*-* 00/4:00:00";
-        dependsOn = [ "lead" ];
+        description = "Test automation and verification. Ensures 100% pass rate and reports regressions.";
+        model = "gemini-1.5-flash";
+        interval = "*-*-* 00/2:00:00";
+        dependsOn = [ "engineer" ];
       };
 
-      architect = {
+      researcher = {
         enable = true;
-        role = "Principal Architect";
-        description = "Review architectural integrity, ensure modularity, and challenge over-engineering.";
-        interval = "*-*-* 00/4:00:00";
+        role = "Research Specialist";
+        description = "Information gathering and documentation. Monitors the ecosystem and maintains the knowledge base.";
+        model = "gemini-1.5-flash";
+        interval = "daily";
         dependsOn = [ "lead" ];
-      };
-
-      ceo = {
-        enable = true;
-        role = "Technical Founder (CEO)";
-        description = "Set product vision, prioritize the roadmap, and ensure strategic alignment.";
-        interval = "*-*-* 00/8:00:00";
-        dependsOn = [ "architect" ];
       };
     };
   };

@@ -11,14 +11,6 @@ let
   jbot-cli = pkgs.callPackage ../pkgs/jbot-cli.nix { scripts = ../scripts; };
   jbotPython = jbot-cli.python;
 
-  bwrap = "${pkgs.bubblewrap}/bin/bwrap";
-  timeout = "${pkgs.coreutils}/bin/timeout";
-  mkdir = "${pkgs.coreutils}/bin/mkdir";
-  cp = "${pkgs.coreutils}/bin/cp";
-  id = "${pkgs.coreutils}/bin/id";
-  date = "${pkgs.coreutils}/bin/date";
-  mktemp = "${pkgs.coreutils}/bin/mktemp";
-
   agentModule = _: {
     options = {
       enable = lib.mkEnableOption "this JBot agent";
@@ -59,6 +51,11 @@ let
         ];
         default = "gemini";
         description = "The type of AI CLI interface to use.";
+      };
+      model = lib.mkOption {
+        type = lib.types.str;
+        default = "gemini-1.5-pro";
+        description = "The AI model to use (e.g., gemini-1.5-flash for worker agents).";
       };
       promptFile = lib.mkOption {
         type = lib.types.path;
@@ -233,7 +230,8 @@ in
       JBOT_BIN="${jbot-cli}/bin/jbot"
       if [ -x "$JBOT_BIN" ]; then
         export EDITOR=cat
-        export PATH="$PATH:${lib.makeBinPath [ pkgs.git ]}"
+        export PATH="$PATH:${lib.makeBinPath [ pkgs.git pkgs.nb ]}"
+        export NB_BIN="${pkgs.nb}/bin/nb"
         export NB_USER_NAME="JBot (${config.home.username})"
         export NB_USER_EMAIL="${config.home.username}@nixos"
         echo "$AUDIT_CONTENT" | "$JBOT_BIN" maintenance push-note --title "ADR: Environment and Tool Registry" --tags "type:adr,type:audit" || true
@@ -298,21 +296,13 @@ in
                     "${agent.opencodePackage}/bin/opencode"
                 }"
                 export CLI_TYPE="${agent.cliType}"
+                export CLI_MODEL="${agent.model}"
                 export AGENTS_JSON="${agentsJson}"
                 export JBOT_CLI_BIN="${jbot-cli}/bin/jbot"
 
-                # Binaries
-                export MKDIR_BIN="${mkdir}"
-                export CP_BIN="${cp}"
-                export ID_BIN="${id}"
-                export DATE_BIN="${date}"
-                export MKTEMP_BIN="${mktemp}"
-                export TIMEOUT_BIN="${timeout}"
-                export BWRAP_BIN="${bwrap}"
-
                 # Environment paths
                 export HM_PROFILE="${config.home.homeDirectory}/.nix-profile"
-                export USER_ID=$(${id} -u)
+                export USER_ID=$(${pkgs.coreutils}/bin/id -u)
                 export NB_DIR="${config.home.homeDirectory}/.nb"
 
                 # Standard Identity

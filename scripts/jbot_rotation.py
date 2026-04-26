@@ -5,6 +5,8 @@ from datetime import datetime
 
 # Context: [[nb:jbot:adr-173]], [[nb:jbot:adr-177]]
 import jbot_core as core
+import jbot_utils as utils
+from jbot_memory_interface import get_memory_client
 
 
 def purge_directives(dir_path: str, archive_path: str) -> int:
@@ -14,7 +16,6 @@ def purge_directives(dir_path: str, archive_path: str) -> int:
         return 0
 
     os.makedirs(archive_path, exist_ok=True)
-    today = datetime.now().strftime("%Y-%m-%d")
     purged_count = 0
 
     dir_files = [
@@ -24,36 +25,16 @@ def purge_directives(dir_path: str, archive_path: str) -> int:
     ]
 
     for df in dir_files:
-        is_expired = False
         df_path = os.path.join(dir_path, df)
         if os.path.isdir(df_path):
             continue
-
-        date_match = re.search(r"(\d{4}-\d{2}-\d{2})", df)
-        exp_date_from_filename = date_match.group(1) if date_match else None
 
         try:
             directive_content = core.read_file(df_path)
             if not directive_content:
                 continue
 
-            content_exp_match = re.search(
-                r"Expiration:\s*(\d{4}-\d{2}-\d{2})", directive_content, re.IGNORECASE
-            )
-            if content_exp_match:
-                exp_date = content_exp_match.group(1)
-                if today > exp_date:
-                    is_expired = True
-                    core.log(f"Directive {df} expired (content: {exp_date}).", "Purge")
-            elif exp_date_from_filename:
-                if today > exp_date_from_filename:
-                    is_expired = True
-                    core.log(
-                        f"Directive {df} expired (filename: {exp_date_from_filename}).",
-                        "Purge",
-                    )
-
-            if is_expired:
+            if utils.is_directive_expired(directive_content, df):
                 dest_path = os.path.join(archive_path, df)
                 if os.path.exists(dest_path):
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -90,9 +71,7 @@ def rotate_messages(msg_dir: str, archive_dir: str, limit: int = 50) -> bool:
 
 def rotate_nb_notes(tag: str, limit: int = 5, preserve_ids: list = None) -> int:
     """Rotates old notes in nb knowledge base by tag."""
-    from nb_client import NbClient
-
-    client = NbClient()
+    client = get_memory_client()
     # Use ls instead of query for cleaner, tag-specific results
     notes = client.ls(tags=[tag])
     if len(notes) <= limit:
@@ -135,7 +114,7 @@ def perform_rotations(project_dir: str) -> None:
     rotate_nb_notes("type:research", limit=20)
     rotate_nb_notes("type:benchmarks", limit=20)
     rotate_nb_notes("status:completed", limit=20)
-    rotate_nb_notes("memory", limit=10)
+    rotate_nb_notes("memory", limit=50)
 
     rotate_messages(
         os.path.join(project_dir, ".jbot/messages"),

@@ -1,0 +1,27 @@
+graph TD
+    A[Start Rotation Loop] --> B[Purge Directives]
+    B --> C[Rotate Messages]
+    C --> D[Rotate nb Notes]
+    D --> E[End Rotation]
+
+    subgraph "Purge Directives"
+        B1[Check Expiration Date]
+        B2{Expired?}
+        B2 -->|Yes| B3[Move to archive/]
+        B2 -->|No| B4[Keep in directives/]
+    end
+
+    subgraph "Rotate Messages"
+        C1[List .jbot/messages]
+        C2{Count > Limit?}
+        C2 -->|Yes| C3[Move oldest to archive/]
+    end
+
+    subgraph "Rotate NB (Knowledge Base)"
+        D1[Filter by Tag]
+        D2[Sort by Stable ID Desc]
+        D3{Count > Tag Limit?}
+        D3 -->|Yes| D4[Delete Oldest Notes]
+        D1 --> D1_ADR[ADR Limit: 50]
+        D1 --> D1_MEM[Memory Limit: 50]
+    end

@@ -100,9 +100,9 @@ def test_ls_notes(mock_run, client):
 
     mock_run.assert_called_once()
     args = mock_run.call_args[0][0]
-    assert "jbot:ls" in args
-    assert "#memory" in args
-    assert "--5" in args
+    assert "jbot:search" in args
+    assert "--list" in args
+    assert "memory" in args
 
 
 def test_client_default_env():
@@ -190,3 +190,62 @@ def test_delete_note(mock_run, client):
     assert "jbot:delete" in args
     assert "123" in args
     assert "--force" in args
+
+
+@patch("subprocess.run")
+def test_edit_note(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_run.return_value = mock_result
+
+    success = client.edit("123", content="New Content", title="New Title", tags=["t1", "t2"])
+
+    assert success is True
+    args = mock_run.call_args[0][0]
+    assert "jbot:edit" in args
+    assert "123" in args
+    assert "--content" in args
+    assert "New Content" in args
+    assert "--title" in args
+    assert "New Title" in args
+    assert "--tags" in args
+    assert "t1,t2" in args
+    assert "--overwrite" in args
+
+
+@patch("subprocess.run")
+def test_ls_notes_with_limit(mock_run, client):
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+    mock_result.stdout = "[1] One\n[2] Two\n[3] Three"
+    mock_run.return_value = mock_result
+
+    # Test limit when tags are None
+    notes = client.ls(limit=2)
+    assert len(notes) == 3  # Mock returns 3 regardless of limit
+    args = mock_run.call_args[0][0]
+    assert "--2" in args
+
+    # Test limit when tags are present
+    mock_run.reset_mock()
+    notes = client.ls(tags=["tag"], limit=1)
+    assert len(notes) == 1
+    assert notes[0].id == "1"
+
+
+def test_client_init_mock_less():
+    # Test initialization when less is missing
+    with patch("os.path.exists") as mock_exists, \
+         patch("os.makedirs") as mock_makedirs, \
+         patch("builtins.open", create=True) as mock_open, \
+         patch("os.chmod") as mock_chmod:
+        
+        # Mock paths: /tmp/jbot_bin does not exist, less does not exist
+        mock_exists.side_effect = lambda p: False
+        
+        client = NbClient(notebook="test")
+        
+        assert "/tmp/jbot_bin" in client.env["PATH"]
+        mock_makedirs.assert_called_with("/tmp/jbot_bin", exist_ok=True)
+        mock_open.assert_called()
+        mock_chmod.assert_called()

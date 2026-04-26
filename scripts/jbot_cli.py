@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import os
 import sys
+
+# Ensure local scripts are prioritized over installed ones
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import argparse
 import subprocess
 import jbot_core as core
@@ -10,6 +14,8 @@ import jbot_rotation
 import jbot_utils as utils
 import jbot_agent
 import jbot_tui
+import jbot_infra_updates
+from jbot_memory_interface import get_memory_client
 
 
 def get_status(project_dir: str) -> None:
@@ -18,14 +24,8 @@ def get_status(project_dir: str) -> None:
 
     print("\n--- JBot Organization Status ---")
 
-    tasks_data = tasks.parse_tasks()
-    if tasks_data.get("vision"):
-        print(f"\n🎯 Strategic Vision:\n> {tasks_data['vision']}")
-    else:
-        goal_path = ".project_goal"
-        if os.path.exists(goal_path):
-            with open(goal_path, "r") as f:
-                print(f"\n🎯 Company Vision:\n> {f.read().strip()}")
+    vision = infra.get_vision(project_dir)
+    print(f"\n🎯 Strategic Vision:\n> {vision}")
 
     # Real-time Environment Context
     print("\n🌍 Environment Context:")
@@ -93,14 +93,8 @@ def get_messages(project_dir: str, count: int = 5) -> None:
 
     print(f"\n--- Recent Messages (Last {len(messages)}) ---")
     for m in messages:
-        content = m["content"].split("\n")
-        from_line = next(
-            (line for line in content if line.startswith("From:")), "From: unknown"
-        )
-        subject_line = next(
-            (line for line in content if line.startswith("Subject:")), "Subject: none"
-        )
-        print(f"[{m['filename']}] {from_line} - {subject_line}")
+        headers = infra.parse_message_headers(m["content"])
+        print(f"[{m['filename']}] From: {headers['from']} - Subject: {headers['subject']}")
 
 
 def handle_version(project_root: str, action: str, part: str = None) -> None:
@@ -198,7 +192,7 @@ def handle_system(project_root: str, action: str, agent_name: str = None) -> Non
         if not infra.get_note_content("type:prompt"):
             print("Note: Creating new system prompt note in nb.")
             # Create a skeleton if empty
-            client = infra.NbClient()
+            client = get_memory_client()
             client.add("System Prompt", "Initialize prompt here.", tags=["type:prompt"])
 
         # Use interactive nb edit
@@ -256,6 +250,7 @@ def main():
     m_parser = subparsers.add_parser("maintenance", help="Run maintenance")
     m_sub = m_parser.add_subparsers(dest="m_action")
     m_sub.add_parser("run", help="Run full maintenance loop")
+    m_sub.add_parser("infra-update", help="Generate automated PR for infra updates")
     push_note_parser = m_sub.add_parser(
         "push-note", help="Stably push/update an nb note"
     )
@@ -286,6 +281,7 @@ def main():
     agent_parser.add_argument(
         "--cli-type", choices=["gemini", "opencode"], help="Type of AI CLI"
     )
+    agent_parser.add_argument("--cli-model", help="AI model to use")
 
     # Versioning
     v_parser = subparsers.add_parser("version", help="Manage versioning")
@@ -355,6 +351,12 @@ def main():
             else:
                 print(f"Failed to push note: {args.title}")
                 sys.exit(1)
+        elif args.m_action == "infra-update":
+            if jbot_infra_updates.generate_infra_pr(project_root):
+                print("Infrastructure update process completed.")
+            else:
+                print("Infrastructure update failed or no updates needed.")
+                sys.exit(1)
         else:
             # Default to full maintenance run if no action or 'run'
             infra.run_maintenance(project_root)
@@ -411,6 +413,7 @@ def main():
             prompt_file=getattr(args, "prompt", None),
             cli_bin=getattr(args, "cli_bin", None),
             cli_type=getattr(args, "cli_type", None),
+            cli_model=getattr(args, "cli_model", None),
         )
     elif args.command == "human":
         jbot_tui.main()

@@ -27,7 +27,7 @@ def test_get_recent_messages(tmp_path):
     assert infra.get_recent_messages("nonexistent_dir") == []
 
 
-@patch("jbot_infra.NbClient")
+@patch("jbot_infra.get_memory_client")
 def test_get_recent_logs(mock_nb):
     mock_client = MagicMock()
     mock_nb.return_value = mock_client
@@ -43,7 +43,7 @@ def test_get_recent_logs(mock_nb):
     assert logs[1]["agent"] == "a2"
 
 
-@patch("jbot_infra.NbClient")
+@patch("jbot_infra.get_memory_client")
 def test_get_recent_logs_exception(mock_nb):
     mock_client = MagicMock()
     mock_nb.return_value = mock_client
@@ -82,7 +82,7 @@ def test_send_message(tmp_path):
     assert len(msg_files) == 1 and "ceo.txt" in msg_files[0]
 
 
-@patch("jbot_infra.NbClient")
+@patch("jbot_infra.get_memory_client")
 def test_run_maintenance(mock_nb_client, tmp_path):
     jbot_dir = tmp_path / ".jbot"
     jbot_dir.mkdir()
@@ -94,7 +94,7 @@ def test_run_maintenance(mock_nb_client, tmp_path):
     mock_nb_client.return_value.add.assert_called_once()
 
 
-@patch("jbot_infra.NbClient")
+@patch("jbot_infra.get_memory_client")
 def test_get_note_content(mock_nb):
     mock_client = MagicMock()
     mock_nb.return_value = mock_client
@@ -125,7 +125,7 @@ def test_get_note_content(mock_nb):
     assert infra.get_note_content("type:idea") is None
 
 
-@patch("jbot_infra.NbClient")
+@patch("jbot_infra.get_memory_client")
 def test_get_note_content_no_id(mock_nb):
     mock_client = MagicMock()
     mock_nb.return_value = mock_client
@@ -179,7 +179,7 @@ def test_consolidate_memory_errors(tmp_path):
     f = queues / "agent.json"
     f.write_text('{"summary": "test"}')
     # trigger error by bad nb client
-    with patch("jbot_infra.NbClient") as mock_nb:
+    with patch("jbot_infra.get_memory_client") as mock_nb:
         mock_nb.return_value.add.side_effect = Exception("err")
         infra.consolidate_memory(str(tmp_path))
         assert f.exists()  # Should not have been removed due to error

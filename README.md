@@ -89,6 +89,14 @@ nb jbot:q "architecture"
 *   **`bubblewrap`**: Secure sandbox for stateful agent execution.
 *   **`systemd`**: The organizational heart, managing schedules and resource quotas.
 
+## 🔒 Security & Isolation
+
+JBot adheres to a strict **Single-User Isolation** model to ensure technical purity and internal cohesion.
+
+1.  **Internal Cohesion**: All components of a single JBot organization (agents, infrastructure, knowledge base) MUST run under the same Linux user account. This prevents permissions friction and ensures a unified technical memory.
+2.  **External Isolation**: Multi-project or cross-organization management is handled at the NixOS/Home Manager level. To manage entirely different organizations, deploy JBot to separate Linux user accounts.
+3.  **Process Sandboxing**: Each agent executes within a `bubblewrap` container with `ProtectHome=read-only` and `ProtectSystem=strict` mandates. Access is restricted to the specific project directory and required configuration paths.
+
 ---
 
 *JBot is a laboratory for decentralized AI engineering. It is a repo that knows what it is, and has the hands to build itself.*

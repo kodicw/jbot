@@ -7,11 +7,12 @@ from unittest.mock import patch, MagicMock
 # Ensure scripts directory is in sys.path
 sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
 import jbot_infra as infra
+import jbot_utils as utils
 
 
 @pytest.fixture
 def mock_nb_client():
-    with patch("jbot_infra.NbClient") as mock:
+    with patch("jbot_utils.get_memory_client") as mock:
         client = MagicMock()
         mock.return_value = client
         yield client
@@ -49,7 +50,7 @@ def test_generate_dashboard_with_roi(tmp_path, mock_nb_client):
 
     with patch("jbot_tasks.parse_tasks", return_value=tasks_data):
         with patch(
-            "jbot_infra.get_recent_adrs",
+            "jbot_utils.get_recent_adrs",
             return_value=[{"id": "205", "title": "ADR: ROI"}],
         ):
             # Create a mermaid file to cover mermaid logic
@@ -59,7 +60,7 @@ def test_generate_dashboard_with_roi(tmp_path, mock_nb_client):
             mermaid_file.write_text("graph TD\nA-->B")
 
             output_file = project_dir / "INDEX.md"
-            infra.generate_dashboard(str(output_file), str(project_dir))
+            utils.generate_dashboard(str(output_file), str(project_dir))
 
             content = output_file.read_text()
 
@@ -86,8 +87,8 @@ def test_generate_dashboard_roi_exception(tmp_path, mock_nb_client):
     output_file = tmp_path / "INDEX.md"
     # Should not crash but log error
     with patch("jbot_core.log") as mock_log:
-        infra.generate_dashboard(str(output_file), str(tmp_path))
+        utils.generate_dashboard(str(output_file), str(tmp_path))
         mock_log.assert_called_with(
-            "Error calculating Technical ROI: NB Error", "Infra"
+            "Error calculating Technical ROI: NB Error", "Utils"
         )
         assert "Technical ROI" not in output_file.read_text()
