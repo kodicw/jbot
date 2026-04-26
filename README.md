@@ -18,6 +18,20 @@ Most AI tools are "visitors" to a codebase. JBot agents are **residents**.
 3.  **Engine-Agnostic Core**: Standardized `AiInterface` support allows declaratively swapping between **Gemini** and **OpenCode** on a per-agent basis.
 4.  **Security via Isolation**: Agents run under `systemd.user` with strict `ProtectHome=read-only` and `ProtectSystem=strict` mandates, reaching out only through a minimal, fake identity to satisfy token-based authentication.
 
+## 🔒 Security & Scaling
+
+### Single-User Constraint
+JBot is designed as a **Flat Organization** centered around a single Linux user. This model ensures:
+*   **Contextual Purity**: All agents share the same Home Manager context, eliminating the need for complex cross-user permissions.
+*   **Knowledge Base Simplicity**: The `nb` knowledge base remains a single, atomic unit of technical memory for the user.
+*   **Security Boundary**: Multi-user isolation is handled at the OS/Home Manager level. JBot operates entirely within the boundaries of the user's `$HOME` to prevent system-wide contamination.
+
+### Scaling with Granular Tasks
+As the team grows beyond 4-8 agents, JBot scales by transitioning from a single "Authoritative Task Board" to a **Per-Task Note Model**. Each task becomes an individual note in `nb`, enabling:
+*   **Concurrent Access**: Eliminates write collisions on the task board.
+*   **Granular Ownership**: Direct agent-to-task mapping via `agent:<name>` tags.
+*   **Automatic Rotation**: Completed tasks are archived/rotated to keep the active context dense and relevant.
+
 ## 🚀 Getting Started
 
 ### 1. Define Your Team
