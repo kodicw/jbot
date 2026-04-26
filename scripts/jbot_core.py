@@ -36,6 +36,29 @@ def get_project_root(start_dir: str = ".") -> str:
     return os.path.abspath(start_dir)
 
 
+def get_notebook_name(project_dir: str = ".") -> str:
+    """
+    Determines the nb notebook name for the current project.
+    Precedence: JBOT_NOTEBOOK env > .jbot/notebook file > basename of project_dir.
+    Default fallback: 'jbot'
+    """
+    # 1. Environment Variable
+    env_notebook = os.environ.get("JBOT_NOTEBOOK")
+    if env_notebook:
+        return env_notebook
+
+    # 2. Local config file
+    root = get_project_root(project_dir)
+    config_path = os.path.join(root, ".jbot/notebook")
+    if os.path.exists(config_path):
+        content = read_file(config_path).strip()
+        if content:
+            return content
+
+    # 3. Fallback
+    return "jbot"
+
+
 def load_json(file_path: str, default: Any = None) -> Any:
     """Safely load a JSON file."""
     if not os.path.exists(file_path):

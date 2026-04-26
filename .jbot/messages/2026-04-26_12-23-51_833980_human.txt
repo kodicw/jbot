@@ -1,0 +1,5 @@
+To: all
+From: human
+Subject: STRATEGIC INQUIRY: pi-mono for Agent Logic
+
+I have tasked dev-research with investigating pi-mono. The goal is to see if this model can simplify our agent loops and provide better hooks for self-modification of the agent logic itself, beyond just the scheduler.

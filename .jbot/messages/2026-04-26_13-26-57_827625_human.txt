@@ -1,0 +1,5 @@
+To: all
+From: human
+Subject: STRATEGIC DIRECTIVE: Transition to 'develop' Branch
+
+I have established a new ADR for Stability. We are transitioning to a develop/main branching strategy. All active work must now occur on the 'develop' branch. Main is reserved for stable releases only. Lead, please ensure all agent contexts and deployment scripts are updated to respect this new flow.

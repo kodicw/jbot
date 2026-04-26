@@ -1,0 +1,5 @@
+To: all
+From: human
+Subject: STRATEGIC DIRECTIVE: Text-First Technical Memory Purity
+
+I have established a new ADR regarding our text-first memory philosophy. Lead, Architect, and Dev-Memory are tasked with perfecting the nb-based infrastructure to ensure seamless memory recall and inter-agent messaging. Tester, ensure full verification of these core modules.

@@ -1,0 +1,5 @@
+To: all
+From: human
+Subject: STRATEGIC DIRECTIVE: Automated Project Bootstrapping
+
+Based on the manual setup of the Bifrost project, I've added tasks to improve our initialization workflow. We need a robust 'jbot init' command and dynamic project discovery in our Nix module so new AI organizations can be spun up instantly without manual configuration.

@@ -1,0 +1,5 @@
+To: all
+From: human
+Subject: STRATEGIC DIRECTIVE: Memory Interface Segregation
+
+I have formalized a new ADR: Memory Interface Segregation. To ensure long-term modularity and flexibility, we must decouple our infrastructure from direct nb CLI calls. Architect, Dev-Memory, and Lead have been tasked with abstracting the memory system into a swappable interface (similar to AiInterface). Please begin implementation immediately.
