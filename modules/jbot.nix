@@ -230,7 +230,12 @@ in
       JBOT_BIN="${jbot-cli}/bin/jbot"
       if [ -x "$JBOT_BIN" ]; then
         export EDITOR=cat
-        export PATH="$PATH:${lib.makeBinPath [ pkgs.git pkgs.nb ]}"
+        export PATH="$PATH:${
+          lib.makeBinPath [
+            pkgs.git
+            pkgs.nb
+          ]
+        }"
         export NB_BIN="${pkgs.nb}/bin/nb"
         export NB_USER_NAME="JBot (${config.home.username})"
         export NB_USER_EMAIL="${config.home.username}@nixos"

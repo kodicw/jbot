@@ -75,15 +75,26 @@ def parse_message_headers(content: str) -> Dict[str, str]:
 
 
 def get_vision(project_dir: str = ".") -> str:
-    """Retrieves the project vision, falling back to .project_goal if needed."""
-    try:
-        import jbot_tasks as tasks
-        tasks_data = tasks.parse_tasks()
-        if tasks_data.get("vision"):
-            return tasks_data["vision"]
-    except Exception as e:
-        core.log(f"Error parsing tasks for vision: {e}", "Infra")
+    """Retrieves the project vision from nb or .project_goal."""
+    # 1. Try nb note with type:vision
+    vision_note = get_note_content("type:vision")
+    if vision_note:
+        # Match vision text in Strategic Vision note
+        vision_match = re.search(
+            r"## Strategic Vision\s*\n*>\s*(.*)", vision_note, re.MULTILINE
+        )
+        if vision_match:
+            return vision_match.group(1).strip()
 
+        # Fallback to direct content if no header match
+        lines = [
+            line.lstrip("> ").strip()
+            for line in vision_note.splitlines()
+            if line.strip()
+        ]
+        if lines:
+            return lines[0]
+    # 2. Try .project_goal file
     goal_path = core.find_file_upwards(".project_goal", project_dir)
     if goal_path and os.path.exists(goal_path):
         return core.read_file(goal_path).strip()

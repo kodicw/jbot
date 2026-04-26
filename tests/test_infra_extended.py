@@ -6,7 +6,6 @@ from unittest.mock import patch, MagicMock
 
 # Ensure scripts directory is in sys.path
 sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
-import jbot_infra as infra
 import jbot_utils as utils
 
 

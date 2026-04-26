@@ -2,7 +2,7 @@ import os
 import re
 import glob
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 
 import jbot_core as core
 import jbot_tasks as tasks
@@ -49,7 +49,9 @@ def get_recent_adrs(count: int = 5) -> List[Dict[str, str]]:
         return []
 
 
-def get_directive_expiration(content: str, filename: Optional[str] = None) -> Optional[str]:
+def get_directive_expiration(
+    content: str, filename: Optional[str] = None
+) -> Optional[str]:
     """Extracts expiration date from content or filename."""
     # 1. Check content for "Expiration: YYYY-MM-DD"
     content_exp_match = re.search(
@@ -66,14 +68,16 @@ def get_directive_expiration(content: str, filename: Optional[str] = None) -> Op
 
     return None
 
+
 def is_directive_expired(content: str, filename: Optional[str] = None) -> bool:
     """Checks if a directive is expired based on today's date."""
     exp_date = get_directive_expiration(content, filename)
     if not exp_date:
         return False
-    
+
     today = datetime.now().strftime("%Y-%m-%d")
     return today > exp_date
+
 
 def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") -> bool:
     """Generates a markdown dashboard summarizing the project status.

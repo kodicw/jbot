@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from dataclasses import dataclass
+
 
 @dataclass
 class MemoryNote:
@@ -9,6 +10,7 @@ class MemoryNote:
     tags: List[str]
     content: Optional[str] = None
     filename: Optional[str] = None
+
 
 class MemoryInterface(ABC):
     """
@@ -60,12 +62,14 @@ class MemoryInterface(ABC):
         """Delete a note by ID."""
         pass
 
+
 def get_memory_client(backend: str = "nb", **kwargs) -> MemoryInterface:
     """
     Factory function to instantiate the configured memory backend.
     """
     if backend == "nb":
         from nb_client import NbClient
+
         return NbClient(**kwargs)
     else:
         raise ValueError(f"Unsupported memory backend: {backend}")

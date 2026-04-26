@@ -198,7 +198,9 @@ def test_edit_note(mock_run, client):
     mock_result.returncode = 0
     mock_run.return_value = mock_result
 
-    success = client.edit("123", content="New Content", title="New Title", tags=["t1", "t2"])
+    success = client.edit(
+        "123", content="New Content", title="New Title", tags=["t1", "t2"]
+    )
 
     assert success is True
     args = mock_run.call_args[0][0]
@@ -235,16 +237,17 @@ def test_ls_notes_with_limit(mock_run, client):
 
 def test_client_init_mock_less():
     # Test initialization when less is missing
-    with patch("os.path.exists") as mock_exists, \
-         patch("os.makedirs") as mock_makedirs, \
-         patch("builtins.open", create=True) as mock_open, \
-         patch("os.chmod") as mock_chmod:
-        
+    with (
+        patch("os.path.exists") as mock_exists,
+        patch("os.makedirs") as mock_makedirs,
+        patch("builtins.open", create=True) as mock_open,
+        patch("os.chmod") as mock_chmod,
+    ):
         # Mock paths: /tmp/jbot_bin does not exist, less does not exist
         mock_exists.side_effect = lambda p: False
-        
+
         client = NbClient(notebook="test")
-        
+
         assert "/tmp/jbot_bin" in client.env["PATH"]
         mock_makedirs.assert_called_with("/tmp/jbot_bin", exist_ok=True)
         mock_open.assert_called()

@@ -18,7 +18,12 @@ def test_gemini_interface():
 def test_opencode_interface():
     interface = jbot_agent_interface.OpenCodeInterface("/path/to/opencode")
     cmd = interface.get_command("Hello")
-    assert cmd == ["/path/to/opencode", "run", "Hello", "--dangerously-skip-permissions"]
+    assert cmd == [
+        "/path/to/opencode",
+        "run",
+        "Hello",
+        "--dangerously-skip-permissions",
+    ]
 
 
 def test_get_interface():

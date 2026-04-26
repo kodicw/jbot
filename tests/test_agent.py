@@ -47,7 +47,9 @@ def agent_env(tmp_path):
             patch("jbot_infra.get_note_content") as mock_get_note,
             patch("jbot_infra.get_recent_logs", return_value=[]),
             patch("jbot_infra.get_recent_messages", return_value=[]),
-            patch("jbot_tasks.get_task_board_markdown", return_value="## Tasks\n- Task 1"),
+            patch(
+                "jbot_tasks.get_task_board_markdown", return_value="## Tasks\n- Task 1"
+            ),
         ):
 
             def side_effect(query):

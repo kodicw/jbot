@@ -175,7 +175,9 @@ def test_get_granular_tasks_missing_data():
 
 def test_parse_tasks_old_board_sections():
     # Test lines 123-126, 135, 137, 139
-    old_board = "## Active Tasks\n- [ ] A\n## Backlog\n- [ ] B\n## Completed\n- [x] C\n- [X] D"
+    old_board = (
+        "## Active Tasks\n- [ ] A\n## Backlog\n- [ ] B\n## Completed\n- [x] C\n- [X] D"
+    )
     with patch("jbot_tasks._get_granular_tasks", return_value=[]):
         with patch("jbot_infra.get_note_content", side_effect=[None, old_board]):
             data = tasks.parse_tasks()

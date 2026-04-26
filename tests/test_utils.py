@@ -1,6 +1,5 @@
 import os
 import sys
-import pytest
 from unittest.mock import patch, MagicMock
 
 # Ensure scripts directory is in sys.path
@@ -24,7 +23,9 @@ def test_update_note_stably_edit():
     with patch("jbot_utils.get_memory_client") as mock_nb:
         mock_client = MagicMock()
         mock_nb.return_value = mock_client
-        mock_client.ls.return_value = [MemoryNote(id="100", title="Title", tags=["tag"])]
+        mock_client.ls.return_value = [
+            MemoryNote(id="100", title="Title", tags=["tag"])
+        ]
         mock_client.edit.return_value = True
 
         assert utils.update_note_stably("Title", "Content", ["tag"]) is True
@@ -53,7 +54,16 @@ def test_is_directive_expired():
 def test_generate_dashboard_goal_fallback(tmp_path):
     (tmp_path / ".project_goal").write_text("Fallback Goal")
     # Mock tasks to have no vision
-    with patch("jbot_tasks.parse_tasks", return_value={"vision": "", "active": [], "backlog": [], "done_count": 0, "sections": {"completed": []}}):
+    with patch(
+        "jbot_tasks.parse_tasks",
+        return_value={
+            "vision": "",
+            "active": [],
+            "backlog": [],
+            "done_count": 0,
+            "sections": {"completed": []},
+        },
+    ):
         with patch("jbot_infra.get_team_registry", return_value={}):
             utils.generate_dashboard("INDEX.md", str(tmp_path))
             content = (tmp_path / "INDEX.md").read_text()
@@ -64,8 +74,17 @@ def test_generate_dashboard_messages(tmp_path):
     (tmp_path / ".jbot/messages").mkdir(parents=True)
     (tmp_path / ".jbot/messages/m1.txt").write_text("From: alice\nSubject: hi\n\nbody")
     (tmp_path / ".jbot/messages/m2.txt").write_text("No headers")
-    
-    with patch("jbot_tasks.parse_tasks", return_value={"vision": "V", "active": [], "backlog": [], "done_count": 0, "sections": {"completed": []}}):
+
+    with patch(
+        "jbot_tasks.parse_tasks",
+        return_value={
+            "vision": "V",
+            "active": [],
+            "backlog": [],
+            "done_count": 0,
+            "sections": {"completed": []},
+        },
+    ):
         with patch("jbot_infra.get_team_registry", return_value={}):
             utils.generate_dashboard("INDEX.md", str(tmp_path))
             content = (tmp_path / "INDEX.md").read_text()
@@ -75,7 +94,7 @@ def test_generate_dashboard_messages(tmp_path):
 
 def test_generate_dashboard_error(tmp_path):
     with patch("jbot_tasks.parse_tasks", side_effect=Exception("Task Error")):
-         with patch("jbot_infra.get_team_registry", return_value={}):
-             utils.generate_dashboard("INDEX.md", str(tmp_path))
-             content = (tmp_path / "INDEX.md").read_text()
-             assert "# JBot Dashboard" in content
+        with patch("jbot_infra.get_team_registry", return_value={}):
+            utils.generate_dashboard("INDEX.md", str(tmp_path))
+            content = (tmp_path / "INDEX.md").read_text()
+            assert "# JBot Dashboard" in content

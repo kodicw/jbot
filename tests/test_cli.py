@@ -534,6 +534,7 @@ def test_cli_agent_command(tmp_path, capsys):
             cli_model=None,
         )
 
+
 def test_cli_agent_command_full(tmp_path, capsys):
     with patch("jbot_agent.run_agent") as mock_run_agent:
         with patch(
@@ -567,7 +568,14 @@ def test_cli_agent_command_full(tmp_path, capsys):
 
 def test_get_status_advanced(tmp_path, capsys):
     # Test line 23 (vision from tasks_data) and 40 (truncated tasks)
-    with patch("jbot_tasks.parse_tasks", return_value={"vision": "V", "active": ["T" + str(i) for i in range(10)], "done_count": 5}):
+    with patch(
+        "jbot_tasks.parse_tasks",
+        return_value={
+            "vision": "V",
+            "active": ["T" + str(i) for i in range(10)],
+            "done_count": 5,
+        },
+    ):
         jbot_cli.get_status(str(tmp_path))
         captured = capsys.readouterr()
         assert "Strategic Vision:\n> V" in captured.out
@@ -577,7 +585,20 @@ def test_get_status_advanced(tmp_path, capsys):
 def test_cli_maintenance_push_note(tmp_path, capsys):
     # Test 345-357
     with patch("jbot_utils.update_note_stably", return_value=True):
-        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "maintenance", "push-note", "--title", "T", "--tags", "t1,t2"]):
+        with patch(
+            "sys.argv",
+            [
+                "jbot_cli.py",
+                "-d",
+                str(tmp_path),
+                "maintenance",
+                "push-note",
+                "--title",
+                "T",
+                "--tags",
+                "t1,t2",
+            ],
+        ):
             # Mock stdin
             with patch("sys.stdin.read", return_value="content"):
                 jbot_cli.main()
@@ -587,7 +608,22 @@ def test_cli_maintenance_push_note(tmp_path, capsys):
     f = tmp_path / "note.txt"
     f.write_text("file content")
     with patch("jbot_utils.update_note_stably", return_value=True):
-        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "maintenance", "push-note", "--title", "T", "--tags", "t", "--file", str(f)]):
+        with patch(
+            "sys.argv",
+            [
+                "jbot_cli.py",
+                "-d",
+                str(tmp_path),
+                "maintenance",
+                "push-note",
+                "--title",
+                "T",
+                "--tags",
+                "t",
+                "--file",
+                str(f),
+            ],
+        ):
             jbot_cli.main()
             assert "Successfully pushed stable note" in capsys.readouterr().out
 
@@ -606,9 +642,13 @@ def test_cli_rotate_nb_and_all(tmp_path, capsys):
 
 def test_cli_infra_update(tmp_path, capsys):
     with patch("jbot_infra_updates.generate_infra_pr", return_value=True):
-        with patch("sys.argv", ["jbot_cli.py", "-d", str(tmp_path), "maintenance", "infra-update"]):
+        with patch(
+            "sys.argv",
+            ["jbot_cli.py", "-d", str(tmp_path), "maintenance", "infra-update"],
+        ):
             jbot_cli.main()
             assert "Infrastructure update process completed." in capsys.readouterr().out
+
 
 def test_cli_agent_selection(tmp_path, capsys):
     # 388-404

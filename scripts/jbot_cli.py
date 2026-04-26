@@ -15,6 +15,7 @@ import jbot_utils as utils
 import jbot_agent
 import jbot_tui
 import jbot_infra_updates
+import jbot_init
 from jbot_memory_interface import get_memory_client
 
 
@@ -94,7 +95,9 @@ def get_messages(project_dir: str, count: int = 5) -> None:
     print(f"\n--- Recent Messages (Last {len(messages)}) ---")
     for m in messages:
         headers = infra.parse_message_headers(m["content"])
-        print(f"[{m['filename']}] From: {headers['from']} - Subject: {headers['subject']}")
+        print(
+            f"[{m['filename']}] From: {headers['from']} - Subject: {headers['subject']}"
+        )
 
 
 def handle_version(project_root: str, action: str, part: str = None) -> None:
@@ -208,7 +211,16 @@ def main():
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
+    # Init
+    init_parser = subparsers.add_parser(
+        "init", help="Initialize a new JBot organization"
+    )
+    init_parser.add_argument(
+        "name", nargs="?", help="Organization name (defaults to directory name)"
+    )
+
     # Status
+
     subparsers.add_parser("status", help="Show current vision and status")
 
     # Tasks
@@ -309,9 +321,16 @@ def main():
     project_root = core.get_project_root(args.dir)
 
     # Enforce single-user isolation constraint
-    core.ensure_single_user(project_root)
+    if args.command != "init":
+        core.ensure_single_user(project_root)
 
-    if args.command == "status":
+    if args.command == "init":
+        if jbot_init.init_project(args.dir, args.name):
+            print(f"Project initialized in {args.dir}")
+        else:
+            print("Failed to initialize project.")
+            sys.exit(1)
+    elif args.command == "status":
         get_status(project_root)
     elif args.command == "task":
         if args.task_action == "list":

@@ -1,11 +1,11 @@
 import os
 import subprocess
 import re
-from dataclasses import dataclass
 from typing import List, Optional, Dict
 import jbot_core as core
 
 from jbot_memory_interface import MemoryInterface, MemoryNote
+
 
 class NbClient(MemoryInterface):
     """
@@ -13,7 +13,9 @@ class NbClient(MemoryInterface):
     This client is designed to be reusable and can be exposed as an MCP server.
     """
 
-    def __init__(self, notebook: Optional[str] = None, env: Optional[Dict[str, str]] = None):
+    def __init__(
+        self, notebook: Optional[str] = None, env: Optional[Dict[str, str]] = None
+    ):
         self.env = env or os.environ.copy()
         self.notebook = notebook or core.get_notebook_name()
 

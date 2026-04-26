@@ -56,22 +56,7 @@ def parse_tasks() -> Dict[str, Any]:
     Context: [[nb:jbot:57]] - Per-Task Note Model
     """
     # 1. Fetch Strategic Vision
-    vision = ""
-    vision_note = infra.get_note_content("type:vision")
-    if vision_note:
-        # Match vision text in Strategic Vision note
-        vision_match = re.search(
-            r"## Strategic Vision\s*\n*>\s*(.*)", vision_note, re.MULTILINE
-        )
-        if vision_match:
-            vision = vision_match.group(1).strip()
-        else:
-            # Fallback to lines after ## Strategic Vision
-            lines = vision_note.splitlines()
-            for i, line in enumerate(lines):
-                if "## Strategic Vision" in line and i + 1 < len(lines):
-                    vision = lines[i + 1].lstrip("> ").strip()
-                    break
+    vision = infra.get_vision()
 
     data = {
         "active": [],
@@ -238,11 +223,11 @@ def get_task_board_markdown() -> str:
     """
     data = parse_tasks()
     output = []
-    
+
     if data["vision"]:
         output.append("## Strategic Vision")
         output.append(f"> {data['vision']}\n")
-    
+
     output.append("## Active Tasks")
     if data["active"]:
         output.extend([t.strip() for t in data["active"]])
@@ -257,13 +242,15 @@ def get_task_board_markdown() -> str:
         output.append("No backlog items.")
     output.append("")
 
-    # Completed tasks are optional in the agent context to save tokens, 
+    # Completed tasks are optional in the agent context to save tokens,
     # but let's include a summary or a few recent ones.
     output.append("## Recently Completed")
-    completed = [t.strip() for t in data["sections"]["completed"] if t.strip().startswith("-")]
+    completed = [
+        t.strip() for t in data["sections"]["completed"] if t.strip().startswith("-")
+    ]
     if completed:
         output.extend(completed[:5])
     else:
         output.append("No recently completed tasks.")
-        
+
     return "\n".join(output)
