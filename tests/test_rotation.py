@@ -122,3 +122,50 @@ def test_perform_rotations(tmp_path):
 
     # Just ensure it runs without crashing
     rotation.perform_rotations(str(tmp_path))
+
+
+def test_perform_rotations_adr_limit():
+    from nb_client import NbNote
+
+    # Create 60 mock ADR notes
+    mock_notes = [
+        NbNote(id=str(i), title=f"ADR {i}", tags=["type:adr"]) for i in range(1, 61)
+    ]
+
+    with patch("nb_client.NbClient") as mock_client_class:
+        mock_client = mock_client_class.return_value
+        mock_client.ls.return_value = mock_notes
+        mock_client.delete.return_value = True
+
+        # Run rotation for ADRs (should be called inside perform_rotations)
+        # But we'll test the rotate_nb_notes call directly for the adr tag
+        count = rotation.rotate_nb_notes("type:adr", limit=50)
+
+        # Should delete 10 notes (60 - 50)
+        assert count == 10
+        assert mock_client.delete.call_count == 10
+
+
+def test_perform_rotations_completed_limit():
+    from nb_client import NbNote
+    from unittest.mock import patch
+
+    # Create 30 mock completed notes
+    mock_notes = [
+        NbNote(id=str(i), title=f"Task {i}", tags=["type:task", "status:completed"])
+        for i in range(1, 31)
+    ]
+
+    with patch("nb_client.NbClient") as mock_client_class:
+        mock_client = mock_client_class.return_value
+        mock_client.ls.return_value = mock_notes
+        mock_client.delete.return_value = True
+
+        # Run rotation for completed tasks
+        import jbot_rotation as rotation
+
+        count = rotation.rotate_nb_notes("status:completed", limit=20)
+
+        # Should delete 10 notes (30 - 20)
+        assert count == 10
+        assert mock_client.delete.call_count == 10

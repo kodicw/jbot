@@ -228,7 +228,23 @@ def generate_dashboard(output_file: str = "INDEX.md", project_dir: str = ".") ->
         f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
     )
 
-    tasks_data = tasks.parse_tasks()
+    try:
+        tasks_data = tasks.parse_tasks()
+    except Exception as e:
+        core.log(f"Error parsing tasks for dashboard: {e}", "Infra")
+        tasks_data = {
+            "active": [],
+            "done_count": 0,
+            "backlog": [],
+            "vision": "",
+            "sections": {
+                "header": [],
+                "vision": [],
+                "active": [],
+                "backlog": [],
+                "completed": [],
+            },
+        }
     changelog_path = core.find_file_upwards("CHANGELOG.md", project_dir)
 
     dashboard_content += "## 🎯 Strategic Vision\n"

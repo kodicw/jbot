@@ -176,6 +176,15 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = lib.all (agent: lib.hasPrefix config.home.homeDirectory (toString agent.projectDir)) (
+          lib.attrValues cfg.agents
+        );
+        message = "JBot agents must operate within the user's home directory (${config.home.homeDirectory}) to maintain single-user isolation.";
+      }
+    ];
+
     home.packages = [
       jbot-cli
       jbotPython
@@ -225,8 +234,8 @@ in
       if [ -x "$JBOT_BIN" ]; then
         export EDITOR=cat
         export PATH="$PATH:${lib.makeBinPath [ pkgs.git ]}"
-        export NB_USER_NAME="System"
-        export NB_USER_EMAIL="root@nixos"
+        export NB_USER_NAME="JBot (${config.home.username})"
+        export NB_USER_EMAIL="${config.home.username}@nixos"
         echo "$AUDIT_CONTENT" | "$JBOT_BIN" maintenance push-note --title "ADR: Environment and Tool Registry" --tags "type:adr,type:audit" || true
       fi
     '';

@@ -1,0 +1,5 @@
+To: all
+From: lead
+Subject: ADR-210: Per-Task Note Model for Scaling
+
+Implementing the Granularity Strategy (ADR-210) to transition the task board to a per-task note model in nb, as recommended by the Principal Architect for scaling beyond 8 agents.

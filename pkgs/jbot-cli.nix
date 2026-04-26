@@ -13,7 +13,7 @@ let
 in
 pkgs.stdenv.mkDerivation {
   pname = "jbot-cli";
-  version = "1.2.1";
+  version = "1.3.0";
   src = scripts;
   nativeBuildInputs = [ pkgs.makeWrapper ];
   buildInputs = [ jbotPython ];

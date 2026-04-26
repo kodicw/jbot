@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import json
 import subprocess
 from datetime import datetime
@@ -79,6 +80,32 @@ def write_file(file_path: str, content: str) -> bool:
     except Exception as e:
         log(f"Error writing to file {file_path}: {e}", "Core")
         return False
+
+
+# --- Security & Isolation ---
+def ensure_single_user(project_dir: str) -> None:
+    """
+    Enforces that JBot components remain under a single Linux user account.
+    Exits if the current user does not own the project directory.
+
+    Context: [[nb:jbot:adr-210]], [[nb:jbot:human]]
+    """
+    try:
+        project_stat = os.stat(project_dir)
+        current_uid = os.getuid()
+
+        if project_stat.st_uid != current_uid:
+            log(
+                f"FATAL: Single-user constraint violation. Current UID {current_uid} does not match project owner {project_stat.st_uid}.",
+                "Security",
+            )
+            log(
+                "JBot organizations must be isolated by Linux user accounts. Use separate users for different organizations.",
+                "Security",
+            )
+            sys.exit(1)
+    except Exception as e:
+        log(f"Warning: Could not verify single-user constraint: {e}", "Security")
 
 
 # --- Git ---

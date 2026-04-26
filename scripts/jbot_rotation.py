@@ -132,6 +132,9 @@ def perform_rotations(project_dir: str) -> None:
     rotate_nb_notes("type:idea", limit=5)
     rotate_nb_notes("input:human", limit=10)
     rotate_nb_notes("type:adr", limit=50)
+    rotate_nb_notes("type:research", limit=20)
+    rotate_nb_notes("type:benchmarks", limit=20)
+    rotate_nb_notes("status:completed", limit=20)
     rotate_nb_notes("memory", limit=10)
 
     rotate_messages(
