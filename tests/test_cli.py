@@ -465,7 +465,7 @@ def test_cli_infrastructure_commands(tmp_path, capsys):
         patch("jbot_infra.run_maintenance"),
         patch("jbot_rotation.purge_directives", return_value=5),
         patch("jbot_rotation.rotate_messages", return_value=True),
-        patch("jbot_infra.generate_dashboard", return_value=True),
+        patch("jbot_utils.generate_dashboard", return_value=True),
     ):
         # send-message
         with patch(

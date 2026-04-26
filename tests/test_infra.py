@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock
 # Ensure scripts directory is in sys.path
 sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
 import jbot_infra as infra
+import jbot_utils as utils
 
 
 def test_get_team_registry(tmp_path):
@@ -68,7 +69,7 @@ def test_generate_dashboard(tmp_path):
     (tmp_path / ".project_goal").write_text("Vision")
     # Dashboard uses jbot_tasks.parse_tasks now, so we might need to mock it if we want full isolation,
     # but for now we'll just let it run.
-    infra.generate_dashboard("INDEX.md", str(tmp_path))
+    utils.generate_dashboard("INDEX.md", str(tmp_path))
     assert "Vision" in (tmp_path / "INDEX.md").read_text()
 
 
@@ -156,7 +157,7 @@ def test_generate_dashboard_advanced(tmp_path):
         '{"agent1": {"role": "dev", "description": "desc"}}'
     )
     (tmp_path / "CHANGELOG.md").write_text("- **Milestone 1**\n- **Milestone 2**")
-    infra.generate_dashboard("INDEX.md", str(tmp_path))
+    utils.generate_dashboard("INDEX.md", str(tmp_path))
     content = (tmp_path / "INDEX.md").read_text()
     assert "agent1" in content
     assert "**Milestones Achieved:** 2" in content

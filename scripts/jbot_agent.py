@@ -184,6 +184,7 @@ def run_agent(
         )
         sys.exit(1)
 
+    core.ensure_single_user(project_dir)
     core.log(f"Starting execution loop for {role}...", name)
 
     # 0. Initialize Non-interactive Environment (Identity & NB)

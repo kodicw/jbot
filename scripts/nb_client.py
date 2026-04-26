@@ -132,21 +132,28 @@ class NbClient:
         """
         List notes in the notebook, optionally filtered by tags.
         """
-        args = [f"{self.notebook}:ls", "-a"]
         if tags:
-            for tag in tags:
-                # Use #tag syntax for reliable tag filtering in nb queries
-                clean_tag = tag.lstrip("#")
-                args.append(f"#{clean_tag}")
+            # Use 'nb search --tag' for reliable tag filtering
+            args = [f"{self.notebook}:search", "--list"]
+            tag_query = ",".join([t.lstrip("#") for t in tags])
+            args.extend(["--tag", tag_query])
 
-        if limit is not None:
-            args.append(f"--{limit}")
+            # search doesn't support --limit directly in all versions,
+            # but we can handle it in parsing or by adding it if supported
+            # For now, we'll parse all and limit in Python
+        else:
+            args = [f"{self.notebook}:ls", "-a"]
+            if limit is not None:
+                args.append(f"--{limit}")
 
         result = self._run(args)
         if result.returncode != 0:
             return []
 
-        return self._parse_ls_output(result.stdout)
+        notes = self._parse_ls_output(result.stdout)
+        if limit is not None and tags:
+            notes = notes[:limit]
+        return notes
 
     def _parse_ls_output(self, output: str) -> List[NbNote]:
         """

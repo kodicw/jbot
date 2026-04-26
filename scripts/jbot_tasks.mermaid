@@ -1,23 +1,25 @@
 graph TD
-    A[Task Operation] --> B{Fetch Task Board}
-    B -->|get_note_content| C[Parse Markdown]
-    C --> D{Perform Action}
-    D -->|add_task| E[Insert into Section]
-    D -->|update_task| F[Modify Line]
-    D -->|complete_task| G[Move to Completed]
-    E --> H[Push to nb]
-    F --> H
-    G --> H
-
-    subgraph Parsing
-        C1[Split into Lines]
-        C2[Identify ## Sections]
-        C3[Extract Vision/Active/Backlog]
-        C4[Count Done Tasks]
+    A[Task Operation] --> B{Fetch Task Data}
+    B --> B1[Fetch Strategic Vision]
+    B --> B2[Fetch Granular Tasks]
+    B2 -->|nb ls tags:type:task| C[Process Each Task Note]
+    C --> D{Action Type}
+    
+    D -->|add_task| E[Create New Task Note]
+    D -->|update_task| F[Update Task Note]
+    D -->|complete_task| G[Mark Note Completed]
+    
+    E -->|nb add| H[Update Technical Memory]
+    F -->|nb edit| H
+    G -->|nb edit status| H
+    
+    subgraph "Granular Per-Task Model"
+        C1[Check status:active/backlog/completed]
+        C2[Extract Agent Assignments]
+        C1 --> C
+        C2 --> C
     end
-
-    subgraph "Push (nb-aware)"
-        H1[Find Stable ID 5]
-        H2[nb edit ID]
-        H3[Fallback: nb add]
+    
+    subgraph "Strategic Alignment"
+        B1 -->|nb show type:vision| S1[Parse Vision Section]
     end

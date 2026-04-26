@@ -7,6 +7,7 @@ import jbot_core as core
 import jbot_tasks as tasks
 import jbot_infra as infra
 import jbot_rotation
+import jbot_utils as utils
 import jbot_agent
 import jbot_tui
 
@@ -311,6 +312,9 @@ def main():
     args = parser.parse_args()
     project_root = core.get_project_root(args.dir)
 
+    # Enforce single-user isolation constraint
+    core.ensure_single_user(project_root)
+
     if args.command == "status":
         get_status(project_root)
     elif args.command == "task":
@@ -346,7 +350,7 @@ def main():
                 content = sys.stdin.read()
 
             tags = args.tags.split(",")
-            if infra.update_note_stably(args.title, content, tags):
+            if utils.update_note_stably(args.title, content, tags):
                 print(f"Successfully pushed stable note: {args.title}")
             else:
                 print(f"Failed to push note: {args.title}")
@@ -377,7 +381,7 @@ def main():
         else:
             rotate_parser.print_help()
     elif args.command == "dashboard":
-        if infra.generate_dashboard(project_dir=project_root):
+        if utils.generate_dashboard(project_dir=project_root):
             print("Dashboard regenerated.")
     elif args.command == "agent":
         if not getattr(args, "name", None):

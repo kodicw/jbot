@@ -1,6 +1,6 @@
 # JBot Dashboard
 
-*Last Updated: 2026-04-26 16:03:44*
+*Last Updated: 2026-04-26 16:08:27*
 
 ## 🎯 Strategic Vision
 > **Autonomous, Multi-Agent Engineering on NixOS with Technical Purity.**
@@ -27,23 +27,22 @@
 ## 📦 Backlog Highlights
 - [ ] **Docker-based test runner for faster verification cycles** (Agent: tester)
 - [ ] **Document external isolation and multi-user NixOS patterns in `README.md`** (Agent: architect)
-- [ ] **Enforce single Linux user account constraint in `jbot.nix` and `flake.nix`** (Agent: lead)
 - [ ] **Enhance agent-to-agent message threading in dashboard** (Agent: architect)
-- [ ] **Implement automated PR generation for infrastructure updates**
+- [ ] **Markdown Scratchpads: document intent in hidden directory before execution**
 
 ## ✅ Recently Completed
 - [x] **Audit hierarchical logic and prune redundant code** (Agent: architect)
 - [x] **Automated memory rotation integration and locking** (Agent: lead)
 - [x] **Consolidate rotation scripts into unified module** (Agent: lead)
+- [x] **Enforce single Linux user account constraint in `jbot.nix` and `flake.nix`** (Agent: lead)
 - [x] **Establish and implement Architecture Visualization in INDEX.md dashboard** (Agent: architect)
-- [x] **Finalize and Verify Stateless Agent Execution Model** (Agent: architect)
 
 ## 📜 Recent ADRs
 - [[nb:85]] ADR: Knowledge Base Structure (adr/, research/, benchmarks/)
 - [[nb:57]] ADR: Per-Task Note Model for Scaling
 - [[nb:53]] Reflection: [lead] - Evaluation of Flat Scaling Efficiency and Tool Robustness
-- [[nb:51]] Knowledge Base Guide (nb)
 - [[nb:49]] Reflection: [architect] - Architectural Evaluation of Flat Scaling Efficiency
+- [[nb:7]] ADR: Environment and Tool Registry
 
 ## 📊 Architectural Diagrams
 ### Jbot Agent
@@ -106,42 +105,75 @@ graph TD
     end
 ```
 
+### Jbot Rotation
+```mermaid
+graph TD
+    A[Start Rotation Loop] --> B[Purge Directives]
+    B --> C[Rotate Messages]
+    C --> D[Rotate nb Notes]
+    D --> E[End Rotation]
+
+    subgraph "Purge Directives"
+        B1[Check Expiration Date]
+        B2{Expired?}
+        B2 -->|Yes| B3[Move to archive/]
+        B2 -->|No| B4[Keep in directives/]
+    end
+
+    subgraph "Rotate Messages"
+        C1[List .jbot/messages]
+        C2{Count > Limit?}
+        C2 -->|Yes| C3[Move oldest to archive/]
+    end
+
+    subgraph "Rotate NB (Knowledge Base)"
+        D1[Filter by Tag]
+        D2[Sort by Stable ID Desc]
+        D3{Count > Tag Limit?}
+        D3 -->|Yes| D4[Delete Oldest Notes]
+        D1 --> D1_ADR[ADR Limit: 50]
+        D1 --> D1_MEM[Memory Limit: 10]
+    end
+```
+
 ### Jbot Tasks
 ```mermaid
 graph TD
-    A[Task Operation] --> B{Fetch Task Board}
-    B -->|get_note_content| C[Parse Markdown]
-    C --> D{Perform Action}
-    D -->|add_task| E[Insert into Section]
-    D -->|update_task| F[Modify Line]
-    D -->|complete_task| G[Move to Completed]
-    E --> H[Push to nb]
-    F --> H
-    G --> H
-
-    subgraph Parsing
-        C1[Split into Lines]
-        C2[Identify ## Sections]
-        C3[Extract Vision/Active/Backlog]
-        C4[Count Done Tasks]
+    A[Task Operation] --> B{Fetch Task Data}
+    B --> B1[Fetch Strategic Vision]
+    B --> B2[Fetch Granular Tasks]
+    B2 -->|nb ls tags:type:task| C[Process Each Task Note]
+    C --> D{Action Type}
+    
+    D -->|add_task| E[Create New Task Note]
+    D -->|update_task| F[Update Task Note]
+    D -->|complete_task| G[Mark Note Completed]
+    
+    E -->|nb add| H[Update Technical Memory]
+    F -->|nb edit| H
+    G -->|nb edit status| H
+    
+    subgraph "Granular Per-Task Model"
+        C1[Check status:active/backlog/completed]
+        C2[Extract Agent Assignments]
+        C1 --> C
+        C2 --> C
     end
-
-    subgraph "Push (nb-aware)"
-        H1[Find Stable ID 5]
-        H2[nb edit ID]
-        H3[Fallback: nb add]
+    
+    subgraph "Strategic Alignment"
+        B1 -->|nb show type:vision| S1[Parse Vision Section]
     end
 ```
 
 ## 📈 Status & Progress
-- **Tasks Completed:** 15
+- **Tasks Completed:** 16
 - **Milestones Achieved:** 18
 
 ### 📊 Technical ROI (Engineering Metrics)
-- **Engineering Velocity:** 0.83 tasks/milestone
-- **Architectural Density:** 0.61 ADRs/milestone
-- **Knowledge Base Growth:** 53 records
-- **Completion Ratio:** 68.2%
+- **Engineering Velocity:** 0.89 tasks/milestone
+- **Architectural Density:** 0.56 ADRs/milestone
+- **Knowledge Base Growth:** 54 records
+- **Completion Ratio:** 72.7%
 
 ## ✅ Recent Milestones
 - **Architectural Evaluation of Flat Scaling:** Validated the efficiency of the flat organization model and single-user sandbox for long-term technical purity (ADR-210).
